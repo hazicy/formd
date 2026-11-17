@@ -1,0 +1,17 @@
+{
+  "name": "@typo/client",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@typo/core": "*",
+    "yjs": "^13.6.27",
+    "base64-js": "^1.5.1"
+  }
+}

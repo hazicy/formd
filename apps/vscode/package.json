@@ -1,0 +1,184 @@
+{
+  "name": "typo-vscode",
+  "displayName": "Typo — Collaborative Markdown",
+  "description": "在 VS Code 中编辑和协作 Typo Markdown 文档",
+  "version": "0.2.0",
+  "publisher": "typo-local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.cjs",
+  "activationEvents": [
+    "onFileSystem:typo",
+    "onView:typo.notes"
+  ],
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs",
+    "typecheck": "tsc -p tsconfig.json && tsc -p test/tsconfig.json",
+    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository",
+    "build:test": "esbuild test/suite.ts --bundle --platform=node --format=cjs --external:vscode --external:@playwright/test --outfile=dist/test.cjs"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "typo.openNote",
+        "title": "Typo: 打开协作文档"
+      },
+      {
+        "command": "typo.createNote",
+        "title": "Typo: 新建协作文档",
+        "icon": "$(add)"
+      },
+      {
+        "command": "typo.deleteNote",
+        "title": "Typo: 删除协作文档",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "typo.refreshNotes",
+        "title": "Typo: 刷新文档",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "typo.renameNote",
+        "title": "Typo: 重命名文档",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "typo.openInBrowser",
+        "title": "Typo: 在 Web 中打开",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "typo.configureServer",
+        "title": "Typo: 配置服务器",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "typo.undo",
+        "title": "Typo: 撤销自己的修改",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "typo.redo",
+        "title": "Typo: 重做自己的修改",
+        "icon": "$(redo)"
+      }
+    ],
+    "configuration": {
+      "title": "Typo",
+      "properties": {
+        "typo.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:3001",
+          "description": "Typo API 服务地址"
+        },
+        "typo.webUrl": {
+          "type": "string",
+          "default": "http://localhost:5173",
+          "description": "Typo Web 客户端地址，用于在浏览器中打开文档"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "typo",
+          "title": "Typo",
+          "icon": "media/typo.svg"
+        }
+      ]
+    },
+    "views": {
+      "typo": [
+        {
+          "id": "typo.notes",
+          "name": "协作文档",
+          "icon": "media/typo.svg",
+          "contextualTitle": "Typo"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "typo.createNote",
+          "when": "view == typo.notes",
+          "group": "navigation@1"
+        },
+        {
+          "command": "typo.refreshNotes",
+          "when": "view == typo.notes",
+          "group": "navigation@2"
+        },
+        {
+          "command": "typo.configureServer",
+          "when": "view == typo.notes",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "typo.openInBrowser",
+          "when": "view == typo.notes && viewItem == typoNote",
+          "group": "inline@1"
+        },
+        {
+          "command": "typo.renameNote",
+          "when": "view == typo.notes && viewItem == typoNote",
+          "group": "1_modify@1"
+        },
+        {
+          "command": "typo.deleteNote",
+          "when": "view == typo.notes && viewItem == typoNote",
+          "group": "1_modify@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "typo.undo",
+          "when": "resourceScheme == typo"
+        },
+        {
+          "command": "typo.redo",
+          "when": "resourceScheme == typo"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "typo.undo",
+        "key": "ctrl+z",
+        "mac": "cmd+z",
+        "when": "editorTextFocus && resourceScheme == typo"
+      },
+      {
+        "command": "typo.redo",
+        "key": "ctrl+y",
+        "mac": "cmd+shift+z",
+        "when": "editorTextFocus && resourceScheme == typo"
+      },
+      {
+        "command": "typo.redo",
+        "key": "ctrl+shift+z",
+        "when": "editorTextFocus && resourceScheme == typo"
+      }
+    ]
+  },
+  "dependencies": {
+    "@typo/client": "*",
+    "ws": "^8.18.3",
+    "@typo/y-vscode": "*",
+    "yjs": "^13.6.27"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.95.0",
+    "@types/ws": "^8.18.1",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.0"
+  }
+}

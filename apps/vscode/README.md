@@ -1,0 +1,18 @@
+# Typo for VS Code
+
+活动栏点击 **Typo 羽毛图标**，打开「协作文档」视图。
+
+- 侧栏顶部：新建文档、刷新列表、配置服务器。
+- 点击文档：在 VS Code 原生 Markdown 编辑器中打开。
+- 右键文档：重命名、删除；行内按钮在 Web 中打开。
+- Markdown 预览：使用 VS Code 的「打开侧边预览」（Cmd/Ctrl+K V）。
+
+设置 `typo.serverUrl`（默认 `http://localhost:3001`）与 Web 连接同一个后端。设置 `typo.webUrl`（默认 `http://localhost:5173`）用于浏览器打开文档。
+
+正文通过 `@typo/y-vscode` 双向增量绑定到 Y.Text，**无需保存**，未保存状态也能和 Web 实时协作。支持多光标编辑、离线会话重连和当前客户端的 Yjs 撤销/重做（Cmd/Ctrl+Z，macOS Cmd+Shift+Z / 其他平台 Ctrl+Y）。远端更新应用时继续输入会重算增量，避免覆盖本地文字。
+
+Ctrl/Cmd+S 只确认编辑器保存状态，不会再次把整篇旧快照写回共享文档。标题修改后刷新列表；打开中的文档保留原 URI，避免重复绑定。
+
+开发：在仓库根目录运行 `npm run dev`，在 VS Code 按 F5 启动扩展开发宿主。打包运行 `npm run package:vscode`，安装生成的 `typo-vscode-0.2.0.vsix`。
+
+这是无鉴权的单实例开发 MVP。离线修改尚未同步时请保持文档打开，或先复制/导出正文；断线草稿只存在会话内存中。切换服务器前请关闭当前协作文档。暂未实现成员列表和远端光标。

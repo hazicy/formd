@@ -1,0 +1,12 @@
+node_modules
+package-lock.json
+dist
+.expo
+.tmp
+test-results
+playwright-report
+*.vsix
+apps/server/data
+apps/mobile/AGENTS.md
+
+.vscode-test/

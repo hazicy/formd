@@ -1,0 +1,131 @@
+# Typo
+
+面向 Web、Expo / React Native 和 VS Code 的协作 Markdown 工作空间。使用 **npm workspaces + TypeScript** 组织 monorepo。
+
+```text
+apps/
+  web/       Vite + React，Markdown 编辑、GFM 预览、搜索与导出
+  mobile/    Expo + React Native + Expo Router，编辑、预览与导出
+  vscode/    VS Code 扩展，文档侧栏、原生 Markdown 编辑器与实时协作
+  server/    Express + WebSocket，文档 API 与 Yjs 同步
+packages/
+  core/      文档类型、校验、示例内容
+  client/    跨平台 API client、Yjs 会话、重连与文本差异更新
+  y-vscode/  VS Code 与 Y.Text 的双向增量绑定、异步竞态处理、协作撤销
+```
+
+## 快速开始
+
+需要 Node.js 22.12+ 与 npm 10+。依赖和锁文件统一在仓库根目录管理。
+
+```bash
+npm ci
+npm run dev
+```
+
+- Web：<http://localhost:5173>
+- API：<http://localhost:3001/api/health>
+- 首次启动会创建欢迎文档，服务端数据保存在 `apps/server/data/notes.json`。
+
+在两个窗口中打开同一篇文档即可验证实时协作。标题离开输入框或按 Enter 时保存；正文编辑后立即发送 Yjs 更新，服务端以 100ms 防抖持久化，正常退出前会再次写盘。不要同时启动两个服务端进程使用相同数据目录。
+
+## Web
+
+由官方 `create-vite` React TypeScript 模板创建。
+
+```bash
+npm run dev:web
+npm run build -w @typo/web
+```
+
+可将 `apps/web/.env.example` 复制为 `.env.local` 配置 `VITE_API_URL`。支持新建、重命名、删除、标题搜索、编辑/分屏/预览、Markdown 格式快捷操作、分享当前文档链接、下载 `.md` 与窄屏侧栏。Markdown 原始 HTML 不执行。
+
+## Expo / React Native
+
+由官方 `create-expo-app` TypeScript 模板创建，目前使用 Expo SDK 58，原生 iOS/Android 使用 Expo Router 路由。共享 `@typo/client` 与 `@typo/core`，原生界面独立实现。
+
+```bash
+# 在一个终端启动后端，并允许局域网设备连接
+HOST=0.0.0.0 npm run dev:server
+
+# 将 apps/mobile/.env.example 复制为 apps/mobile/.env.local
+# 把 EXPO_PUBLIC_API_URL 改成电脑的局域网地址，例如 http://192.168.1.100:3001
+npm run dev:mobile
+```
+
+手机与电脑需在同一网络。iOS 模拟器可以使用 `http://localhost:3001`，Android 模拟器通常使用 `http://10.0.2.2:3001`。真机的 `localhost` 指向手机自身。
+
+移动端支持列表、下拉刷新、创建、标题修改、正文协作、预览、系统分享导出和删除。Expo Crypto 提供 Yjs 所需的原生随机数；Metro 只为原生端适配 `lib0/webcrypto`。可按 [Expo SDK 文档](https://docs.expo.dev/versions/v58.0.0/) 设置匹配的运行环境。
+
+```bash
+# 验证 iOS/Android JavaScript 产物；这不生成原生安装包
+cd apps/mobile
+npx expo export --platform ios --platform android --output-dir dist
+```
+
+## VS Code 扩展
+
+用 VS Code 打开仓库，按 F5 选择「运行 Typo VS Code 扩展」，会自动构建并启动 Extension Development Host。
+
+活动栏点击 **Typo 羽毛图标** 即可打开「协作文档」视图。顶部支持新建、刷新和配置服务器；点击文档打开编辑器，右键可重命名/删除，行内按钮在 Web 打开。命令面板同时提供：
+
+- `Typo: 打开协作文档`
+- `Typo: 新建协作文档`
+- `Typo: 删除协作文档`
+
+设置 `typo.serverUrl` 指向与 Web 相同的后端，`typo.webUrl` 指向 Web 客户端地址。文档使用 `typo:` 虚拟文件系统，保留 VS Code 原生 Markdown 编辑体验；预览使用 VS Code 的「打开侧边预览」。
+
+**正文逐次编辑实时同步，无需 Ctrl/Cmd+S 或 Auto Save**。实现位于 [`packages/y-vscode`](packages/y-vscode/README.md)，参考 y-monaco 的增量绑定方式，并处理 VS Code 编辑 API 的异步版本冲突。远端修改以局部 TextEdit 应用，多光标编辑按 offset 写入 Y.Text。Cmd/Ctrl+Z 和协作重做命令只撤销当前绑定的本地修改。保存仅确认缓冲区状态，不会用旧的全文快照覆盖合并结果。暂不包含远端成员/光标显示。
+
+```bash
+npm run package:vscode
+# 得到 apps/vscode/typo-vscode-0.2.0.vsix
+code --install-extension apps/vscode/typo-vscode-0.2.0.vsix
+```
+
+## 校验
+
+```bash
+npm run typecheck
+npm run build
+npm test
+npm run lint -w @typo/mobile
+npm run lint -w @typo/web
+
+# 真实 VS Code 扩展宿主 + Chrome/Chromium 联测
+npm run test:vscode
+
+# 首次安装 Playwright 浏览器
+npx playwright install chromium
+npm run test:e2e
+# 如果本机已有 Chrome，可使用 PLAYWRIGHT_CHANNEL=chrome npm run test:e2e
+```
+
+集成测试使用临时数据目录与真实 HTTP/WebSocket，覆盖文档 CRUD、两客户端并发修改收敛、断线编辑重连、服务重启恢复、删除通知和输入校验。y-vscode 绑定测试还覆盖异步编辑期间输入、相同字符并发插入、多光标 UTF-16 offset、独立撤销/重做和绑定释放。`npm run test:vscode` 使用独立临时用户目录启动 VS Code 扩展宿主及真实浏览器，验证侧栏、未保存输入实时同步、并发合并、光标位置、保存和重命名后的稳定绑定；默认下载测试 VS Code，可设置 `VSCODE_EXECUTABLE_PATH` 使用已有可执行文件，`PLAYWRIGHT_CHANNEL=chrome` 使用已有 Chrome。
+
+浏览器测试使用 3002/5174 端口与 `.tmp/e2e-data`，覆盖双窗口编辑、预览、重命名、导出、窄屏侧栏和删除通知。
+
+`npm run build` 构建 Web、服务端和 VS Code 扩展；Expo 的移动端导出单独运行。移动端 JavaScript 打包通过不代表已经验证真机行为或生成签名安装包。
+
+## API 与配置
+
+| 接口                    | 用途                         |
+| ----------------------- | ---------------------------- |
+| `GET /api/health`       | 健康检查                     |
+| `GET /api/notes`        | 列出文档元数据               |
+| `POST /api/notes`       | 创建 `{ title, content }`    |
+| `PATCH /api/notes/:id`  | 修改 `{ title }`             |
+| `DELETE /api/notes/:id` | 删除文档并通知已连接客户端   |
+| `WS /sync/:id`          | Base64 编码的 Yjs 二进制更新 |
+
+后端从进程环境读取 `PORT`（3001）、`HOST`（127.0.0.1）、`DATA_DIR`（相对服务端工作目录的 `data`）、`ALLOWED_ORIGINS`（逗号分隔）。后端 `.env.example` 为配置说明，不会自动加载；可通过 shell 设置环境变量。不同 Web 地址需加入 `ALLOWED_ORIGINS`，例如局域网 Web 开发地址。生产环境前端和服务端需使用 HTTPS/WSS。
+
+## 当前边界
+
+这是可运行的单实例开发 MVP。暂未实现登录、团队与文档权限、只读分享、版本历史、附件上传、在线成员/光标、生产数据库与多实例扩展。当前分享链接用于定位文档，不是权限控制；连接到此服务的客户端可以访问全部文档。
+
+正文断线修改保留在当前客户端会话内存中，重连后自动合并；尚未同步时关闭页面、切换文档或退出应用会丢失该部分修改，应等待连接恢复或先导出。标题使用 REST 保存，更新后由 Web 列表每 5 秒刷新，移动端可下拉刷新。
+
+依赖审计仍有 Expo 指纹工具及 VSIX 打包工具链的 moderate 告警。已将移动端 Markdown 解析器覆盖为修复版 `markdown-it >=14.3.3`，避免旧渲染库携带的高风险解析器；不要使用 `npm audit fix --force` 降级 Expo SDK。
+
+后续可在保留共享客户端协议的前提下，将存储替换为 PostgreSQL、加入身份鉴权与授权，再扩展版本记录和客户端持久离线缓存。

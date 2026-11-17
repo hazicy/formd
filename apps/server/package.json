@@ -1,0 +1,26 @@
+{
+  "name": "@typo/server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --external:express --external:cors --external:ws --external:yjs --external:base64-js --outfile=dist/index.js",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@typo/core": "*",
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "ws": "^8.18.3",
+    "yjs": "^13.6.27",
+    "base64-js": "^1.5.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.17",
+    "@types/ws": "^8.18.1",
+    "esbuild": "^0.25.0"
+  }
+}

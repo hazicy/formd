@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.expo/
+.env
+.env.local
+*.tsbuildinfo
+*.vsix
+apps/server/data/
+.DS_Store
+.tmp/
+test-results/
+playwright-report/
+.eslintcache
+
+.vscode-test/
