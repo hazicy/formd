@@ -10,6 +10,6 @@ export default defineConfig({
   dialect: 'postgresql',
   schema: './src/storage/schema.ts',
   dbCredentials: { url: DATABASE_URL },
-  tablesFilter: ['notes'],
+  tablesFilter: ['folders', 'documents'],
   strict: true,
 });

@@ -5,6 +5,7 @@ import {
   validPresenceUser,
   validRelativeSelection,
   type Note,
+  type Folder,
   type PresenceUser,
   type PresenceMember,
   type RelativeSelection,
@@ -36,10 +37,14 @@ export class TypoClient {
   list(): Promise<Note[]> {
     return this.request('/api/notes');
   }
-  create(title = '未命名文档', content = ''): Promise<Note> {
+  create(
+    title = '未命名文档',
+    content = '',
+    folderId: string | null = null,
+  ): Promise<Note> {
     return this.request('/api/notes', {
       method: 'POST',
-      body: JSON.stringify({ title, content }),
+      body: JSON.stringify({ title, content, folderId }),
     });
   }
   rename(id: string, title: string): Promise<Note> {
@@ -50,6 +55,35 @@ export class TypoClient {
   }
   delete(id: string): Promise<{ ok: boolean }> {
     return this.request(`/api/notes/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+  }
+  move(id: string, folderId: string | null): Promise<Note> {
+    return this.request(`/api/notes/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ folderId }),
+    });
+  }
+  listFolders(): Promise<Folder[]> {
+    return this.request('/api/folders');
+  }
+  createFolder(name: string, parentId: string | null = null): Promise<Folder> {
+    return this.request('/api/folders', {
+      method: 'POST',
+      body: JSON.stringify({ name, parentId }),
+    });
+  }
+  updateFolder(
+    id: string,
+    changes: Partial<Pick<Folder, 'name' | 'parentId'>>,
+  ): Promise<Folder> {
+    return this.request(`/api/folders/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(changes),
+    });
+  }
+  deleteFolder(id: string): Promise<{ ok: boolean }> {
+    return this.request(`/api/folders/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
   }

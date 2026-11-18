@@ -2,6 +2,7 @@ export * from './presence';
 export interface Note {
   id: string;
   title: string;
+  folderId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,4 +16,19 @@ export function isNoteId(value: string): boolean {
 }
 export function markdownFilename(title: string): string {
   return normalizeTitle(title).replace(/[\\/:*?"<>|\x00-\x1f]/g, '-') + '.md';
+}
+
+export interface Folder {
+  id: string;
+  parentId: string | null;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function isFolderId(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(value)
+  );
 }

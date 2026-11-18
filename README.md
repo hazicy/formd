@@ -6,7 +6,7 @@
 
 Formd 采用 **TypeScript + pnpm monorepo，三个客户端共用一个服务端**。Web、移动端和 VS Code 各自负责界面与平台交互，共用文档 API 和协作客户端，不直接访问数据库。
 
-- **HTTP**：Hono 提供文档列表、新建、重命名和删除。服务端校验请求，变更写入 PostgreSQL 后再返回成功。
+- **HTTP**：Hono 提供文档和文件夹的列表、新建、重命名、移动和删除。服务端校验请求，变更写入 PostgreSQL 后再返回成功。
 - **实时协作**：客户端通过 `/sync/:id` 连接服务端，使用 Yjs 的 `Y.Text` 合并正文编辑。在线成员和光标通过同一个 WebSocket 广播，只存在内存中，不写数据库。
 - **持久化**：服务端通过 `NoteStore` 保存文档元数据和 Yjs 状态。运行时使用 Drizzle ORM + PostgreSQL，自动化测试使用独立的内存存储。服务端启动时从数据库恢复文档，正文更新合并后异步写入。
 - **部署边界**：当前每个数据库只运行一个服务端实例。PostgreSQL 负责持久化，不负责跨进程同步 Yjs 房间。
@@ -56,11 +56,13 @@ pnpm run dev
 
 - Web：<http://localhost:5173>
 - API：<http://localhost:3001/api/health>
-- PostgreSQL：使用 DBCode 中 `testdog` 连接的主机、端口和账号，将数据库名设为 `formd`。该库已建好 `public.notes`；在其他数据库初始化表可运行 `pnpm --filter @typo/server run db:push`。
+- PostgreSQL 15+：使用 DBCode 中 `testdog` 连接的主机、端口和账号，将数据库名设为 `formd`。该库已建好 `public.folders` 和 `public.documents`；在其他数据库初始化表可运行 `pnpm --filter @typo/server run db:push`。旧 `notes` 表不再读取，也不会自动迁移或删除。
 
 在两个窗口中打开同一篇文档即可验证实时协作。正文编辑后立即发送 Yjs 更新，服务端合并待写入的更新并保存到 PostgreSQL，正常退出前会写入剩余更新。实时协作仍由单个服务端进程维护，不要同时启动多个服务端进程连接同一个 Formd 数据库。
 
 ## Web
+
+侧栏可以浏览、新建、重命名和移动文件夹，并在当前目录新建文档；编辑器工具栏可以移动当前文档。移动不改变文档链接。同级文件夹不能重名，不能移动到自身或后代，只能删除空文件夹。
 
 由官方 `create-vite` React TypeScript 模板创建。
 

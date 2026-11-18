@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import * as Y from 'yjs';
-import { fromByteArray, toByteArray } from 'base64-js';
 import { normalizeTitle, type Note } from '@typo/core';
 import type { NoteStore } from './storage/index.js';
 
@@ -29,7 +28,7 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
   function save(note: Note, doc: Y.Doc) {
     return store.upsert({
       ...note,
-      state: fromByteArray(Y.encodeStateAsUpdate(doc)),
+      state: Y.encodeStateAsUpdate(doc),
     });
   }
   async function flushDirty() {
@@ -72,15 +71,16 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
   }
   for (const { state, ...note } of stored) {
     const doc = new Y.Doc();
-    Y.applyUpdate(doc, toByteArray(state));
+    Y.applyUpdate(doc, state);
     notes.set(note.id, note);
     attach(note.id, doc);
   }
-  async function add(title: string, content: string) {
+  async function add(title: string, content: string, folderId: string | null) {
     const now = new Date().toISOString();
     const note: Note = {
       id: randomUUID(),
       title: normalizeTitle(title),
+      folderId,
       createdAt: now,
       updatedAt: now,
     };
@@ -96,17 +96,25 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
     attach(note.id, doc);
     return note;
   }
-  function rename(id: string, title: string) {
+  function update(
+    id: string,
+    changes: Partial<Pick<Note, 'title' | 'folderId'>>,
+  ) {
     return write(async () => {
       const note = notes.get(id);
       if (!note) return undefined;
       const renamed = {
         ...note,
-        title: normalizeTitle(title),
+        ...changes,
+        title:
+          changes.title === undefined
+            ? note.title
+            : normalizeTitle(changes.title),
         updatedAt: new Date().toISOString(),
       };
       await save(renamed, docs.get(id)!);
       note.title = renamed.title;
+      note.folderId = renamed.folderId;
       if (renamed.updatedAt > note.updatedAt)
         note.updatedAt = renamed.updatedAt;
       return note;
@@ -131,9 +139,9 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
       ),
     has: (id: string) => notes.has(id),
     getDoc: (id: string) => docs.get(id),
-    create: (title: string, content: string) =>
-      write(() => add(title, content)),
-    rename,
+    create: (title: string, content: string, folderId: string | null) =>
+      write(() => add(title, content, folderId)),
+    update,
     remove,
     async close() {
       closing = true;
@@ -150,5 +158,5 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
 
 export type NoteService = Pick<
   Awaited<ReturnType<typeof createNoteService>>,
-  'list' | 'has' | 'create' | 'rename' | 'remove'
+  'list' | 'has' | 'create' | 'update' | 'remove'
 >;

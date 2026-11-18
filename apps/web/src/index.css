@@ -671,3 +671,28 @@ svg {
     gap: 2px;
   }
 }
+
+.folder-controls {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.folder-controls select {
+  flex: 1;
+  min-width: 0;
+}
+
+.folder-controls select,
+.document-folder {
+  border: 1px solid #dce0d6;
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: inherit;
+  color: inherit;
+  font: inherit;
+}
+
+.document-folder {
+  max-width: min(14rem, 25vw);
+}

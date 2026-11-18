@@ -16,7 +16,7 @@ export async function createTypoServer(
       throw error;
     },
   );
-  const app = createHttpApp(notes, allowedOrigins);
+  const app = createHttpApp(notes, store, allowedOrigins);
   const server = createServer(getRequestListener(app.fetch));
   collaboration.bind(server, notes.getDoc, allowedOrigins);
 

@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   FileText,
+  FolderPlus,
   Feather,
   ChevronRight,
   Share2,
@@ -27,6 +28,7 @@ import {
   TypoClient,
   markdownFilename,
   type Note,
+  type Folder,
   type NoteSession,
   type PresenceUser,
   createGuestUser,
@@ -72,6 +74,8 @@ export default function App() {
     }
   }
   const [notes, setNotes] = useState<Note[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [folderId, setFolderId] = useState<string | null>(null);
   const [selected, setSelected] = useState(location.hash.slice(1));
   const [query, setQuery] = useState('');
   const [content, setContent] = useState('');
@@ -91,6 +95,40 @@ export default function App() {
   const titleDirty = useRef(false);
   const titleVersion = useRef(0);
   const note = notes.find((n) => n.id === selected);
+  const currentFolder = folders.find((folder) => folder.id === folderId);
+  const currentFolderId = currentFolder?.id ?? null;
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleNotes = notes.filter((entry) =>
+    normalizedQuery
+      ? entry.title.toLowerCase().includes(normalizedQuery)
+      : entry.folderId === currentFolderId,
+  );
+  const byFolderId = new Map(folders.map((folder) => [folder.id, folder]));
+  function folderPath(id: string) {
+    const names: string[] = [];
+    let folder = byFolderId.get(id);
+    while (folder) {
+      names.unshift(folder.name);
+      folder = folder.parentId ? byFolderId.get(folder.parentId) : undefined;
+    }
+    return names.join(' / ');
+  }
+  const folderOptions = folders.map((folder) => (
+    <option key={folder.id} value={folder.id}>
+      {folderPath(folder.id)}
+    </option>
+  ));
+  async function mutateFolder(action: () => Promise<unknown>) {
+    setBusy(true);
+    try {
+      await action();
+      await refresh();
+    } catch (error) {
+      setError(String(error));
+    } finally {
+      setBusy(false);
+    }
+  }
   function select(id: string) {
     location.hash = id;
     setSelected(id);
@@ -98,7 +136,11 @@ export default function App() {
   }
   async function refresh() {
     try {
-      const data = await client.list();
+      const [data, directories] = await Promise.all([
+        client.list(),
+        client.listFolders(),
+      ]);
+      setFolders(directories);
       setNotes(data);
       setError('');
       return data;
@@ -153,7 +195,7 @@ export default function App() {
   async function create() {
     setBusy(true);
     try {
-      const n = await client.create();
+      const n = await client.create(undefined, undefined, currentFolderId);
       setNotes((prev) => [n, ...prev]);
       select(n.id);
     } catch (e) {
@@ -253,6 +295,82 @@ export default function App() {
         >
           <Plus size={17} /> 新建文档
         </button>
+        <div className="folder-controls">
+          <select
+            aria-label="浏览文件夹"
+            value={currentFolderId ?? ''}
+            onChange={(event) => setFolderId(event.target.value || null)}
+          >
+            <option value="">根目录</option>
+            {folderOptions}
+          </select>
+          <button
+            aria-label="新建文件夹"
+            title="新建文件夹"
+            disabled={busy}
+            onClick={() => {
+              const name = window.prompt('文件夹名称')?.trim();
+              if (name)
+                void mutateFolder(async () => {
+                  const folder = await client.createFolder(
+                    name,
+                    currentFolderId,
+                  );
+                  setFolderId(folder.id);
+                });
+            }}
+          >
+            <FolderPlus size={16} />
+          </button>
+        </div>
+        {currentFolder && (
+          <div className="folder-controls">
+            <button
+              disabled={busy}
+              onClick={() => {
+                const name = window
+                  .prompt('文件夹名称', currentFolder.name)
+                  ?.trim();
+                if (name && name !== currentFolder.name)
+                  void mutateFolder(() =>
+                    client.updateFolder(currentFolder.id, { name }),
+                  );
+              }}
+            >
+              重命名
+            </button>
+            <select
+              aria-label="移动文件夹到"
+              value={currentFolder.parentId ?? ''}
+              disabled={busy}
+              onChange={(event) => {
+                const parentId = event.target.value || null;
+                void mutateFolder(() =>
+                  client.updateFolder(currentFolder.id, { parentId }),
+                );
+              }}
+            >
+              <option value="">根目录</option>
+              {folderOptions.filter(
+                (option) => option.key !== currentFolder.id,
+              )}
+            </select>
+            <button
+              aria-label="删除文件夹"
+              title="删除空文件夹"
+              disabled={busy}
+              onClick={() => {
+                if (window.confirm(`删除空文件夹「${currentFolder.name}」？`))
+                  void mutateFolder(async () => {
+                    await client.deleteFolder(currentFolder.id);
+                    setFolderId(currentFolder.parentId);
+                  });
+              }}
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        )}
         <div className="search">
           <Search size={15} />
           <input
@@ -264,26 +382,23 @@ export default function App() {
         </div>
         <div className="section-label">
           <span>我的文档</span>
-          <span>{notes.length.toString().padStart(2, '0')}</span>
+          <span>{visibleNotes.length.toString().padStart(2, '0')}</span>
         </div>
         <nav className="notes" aria-label="文档列表">
-          {notes
-            .filter((n) => n.title.toLowerCase().includes(query.toLowerCase()))
-            .map((n) => (
-              <button
-                key={n.id}
-                className={`note ${selected === n.id ? 'active' : ''}`}
-                onClick={() => select(n.id)}
-                aria-current={selected === n.id ? 'page' : undefined}
-              >
-                <FileText size={15} />
-                <span>{n.title}</span>
-              </button>
-            ))}
-          {query &&
-            !notes.some((n) =>
-              n.title.toLowerCase().includes(query.toLowerCase()),
-            ) && <p className="empty">没有匹配的文档</p>}
+          {visibleNotes.map((n) => (
+            <button
+              key={n.id}
+              className={`note ${selected === n.id ? 'active' : ''}`}
+              onClick={() => select(n.id)}
+              aria-current={selected === n.id ? 'page' : undefined}
+            >
+              <FileText size={15} />
+              <span>{n.title}</span>
+            </button>
+          ))}
+          {normalizedQuery && !visibleNotes.length && (
+            <p className="empty">没有匹配的文档</p>
+          )}
         </nav>
         <div className="sidebar-footer">
           <div className="avatar">T</div>
@@ -317,6 +432,23 @@ export default function App() {
             )}
             {note && (
               <>
+                {folders.length > 0 && (
+                  <select
+                    className="document-folder"
+                    aria-label="移动文档到"
+                    value={note.folderId ?? ''}
+                    disabled={busy}
+                    onChange={(event) => {
+                      const destination = event.target.value || null;
+                      void mutateFolder(() =>
+                        client.move(note.id, destination),
+                      );
+                    }}
+                  >
+                    <option value="">根目录</option>
+                    {folderOptions}
+                  </select>
+                )}
                 <span className="status">
                   <span
                     className={`dot ${status !== 'connected' ? 'offline' : ''}`}

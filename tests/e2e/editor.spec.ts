@@ -153,3 +153,56 @@ test('online members, names, colored selections and wrapped/scrolled remote curs
   ).toBeVisible();
   await request.delete(`http://127.0.0.1:3002/api/notes/${note.id}`);
 });
+
+test('organize a document in nested folders without changing its link', async ({
+  page,
+  request,
+}) => {
+  const api = 'http://127.0.0.1:3002/api';
+  const parent = await (
+    await request.post(`${api}/folders`, { data: { name: 'Projects' } })
+  ).json();
+  const folder = await (
+    await request.post(`${api}/folders`, {
+      data: { name: 'Drafts', parentId: parent.id },
+    })
+  ).json();
+  const note = await (
+    await request.post(`${api}/notes`, {
+      data: { title: 'Move this document', content: '# Draft' },
+    })
+  ).json();
+  const cycle = await request.patch(`${api}/folders/${parent.id}`, {
+    data: { parentId: folder.id },
+  });
+  expect(cycle.status()).toBe(409);
+  const duplicate = await request.post(`${api}/folders`, {
+    data: { name: 'Projects' },
+  });
+  expect(duplicate.status()).toBe(409);
+
+  await page.goto(`/#${note.id}`);
+  const move = page.getByRole('combobox', { name: '移动文档到' });
+  await move.selectOption(folder.id);
+  await expect(move).toHaveValue(folder.id);
+  const notEmpty = await request.delete(`${api}/folders/${folder.id}`);
+  expect(notEmpty.status()).toBe(409);
+  await page
+    .getByRole('combobox', { name: '浏览文件夹' })
+    .selectOption(folder.id);
+  await expect(
+    page.getByRole('button', { name: 'Move this document' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('textbox', { name: 'Markdown 编辑器' }),
+  ).toHaveValue('# Draft');
+  await expect(page).toHaveURL(new RegExp(`#${note.id}$`));
+  await move.selectOption('');
+  await expect(move).toHaveValue('');
+  expect(
+    (await request.delete(`${api}/folders/${folder.id}`)).ok(),
+  ).toBeTruthy();
+  expect(
+    (await request.delete(`${api}/folders/${parent.id}`)).ok(),
+  ).toBeTruthy();
+});
