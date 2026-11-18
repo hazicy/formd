@@ -31,7 +31,7 @@ export class PresenceController implements vscode.Disposable {
   private renderPending = false;
   private selectionTimer?: ReturnType<typeof setTimeout>;
   constructor(private readonly entries: () => Iterable<Entry>) {
-    this.status.name = 'Typo 在线成员';
+    this.status.name = 'Formd 在线成员';
     this.status.command = 'typo.showMembers';
     this.subscriptions.push(
       this.status,
@@ -199,7 +199,7 @@ export class PresenceController implements vscode.Disposable {
     this.renderPending = true;
     void Promise.resolve()
       .then(() => this.render())
-      .catch((error) => console.error('Typo presence:', error))
+      .catch((error) => console.error('Formd presence:', error))
       .finally(() => {
         this.renderPending = false;
       });

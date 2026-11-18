@@ -31,7 +31,7 @@ interface Entry {
 export function activate(context: vscode.ExtensionContext) {
   const changes = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   const entries = new Map<string, Entry>();
-  const output = vscode.window.createOutputChannel('Typo');
+  const output = vscode.window.createOutputChannel('Formd');
   const stored = context.globalState.get<PresenceUser>('typo.profile');
   const profile = validPresenceUser(stored)
     ? stored
@@ -65,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(changes, output, tree, presence, recent);
   function report(error: unknown) {
     output.appendLine(String(error));
-    void vscode.window.showErrorMessage(`Typo: ${String(error)}`);
+    void vscode.window.showErrorMessage(`Formd: ${String(error)}`);
   }
   function getEntry(uri: vscode.Uri): Entry {
     const id = idOf(uri);
@@ -98,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         stop();
-        reject(new Error('连接超时，请检查 Typo 服务地址'));
+        reject(new Error('连接超时，请检查 Formd 服务地址'));
       }, 10000);
       const stop = session.subscribe(() => {
         if (session.status === 'connected') {
@@ -125,7 +125,7 @@ export function activate(context: vscode.ExtensionContext) {
         (error) => {
           output.appendLine(error.stack || error.message);
           void vscode.window.showErrorMessage(
-            `Typo 实时绑定已暂停：${error.message}。请先导出当前正文，再重新打开文档。`,
+            `Formd 实时绑定已暂停：${error.message}。请先导出当前正文，再重新打开文档。`,
           );
         },
         entry.initialState,
@@ -176,10 +176,10 @@ export function activate(context: vscode.ExtensionContext) {
       entry.mtime = Math.max(Date.now(), entry.mtime + 1);
     },
     delete: () => {
-      throw vscode.FileSystemError.NoPermissions('请使用 Typo: 删除协作文档');
+      throw vscode.FileSystemError.NoPermissions('请使用 Formd: 删除协作文档');
     },
     rename: () => {
-      throw vscode.FileSystemError.NoPermissions('请使用 Typo: 重命名文档');
+      throw vscode.FileSystemError.NoPermissions('请使用 Formd: 重命名文档');
     },
   };
   context.subscriptions.push(
@@ -210,7 +210,7 @@ export function activate(context: vscode.ExtensionContext) {
     const notes = await client().list();
     const picked = await vscode.window.showQuickPick(
       notes.map((note) => ({ label: note.title, description: note.id, note })),
-      { placeHolder: '选择 Typo 文档' },
+      { placeHolder: '选择 Formd 文档' },
     );
     return picked?.note;
   }
@@ -283,7 +283,7 @@ export function activate(context: vscode.ExtensionContext) {
   register('typo.configureServer', async () => {
     const config = vscode.workspace.getConfiguration('typo');
     const server = await vscode.window.showInputBox({
-      prompt: 'Typo 服务器地址',
+      prompt: 'Formd 服务器地址',
       value: config.get('serverUrl', 'http://localhost:3001'),
       validateInput: (value) => {
         try {
@@ -318,7 +318,7 @@ export function activate(context: vscode.ExtensionContext) {
         void tree.refresh();
         if (entries.size)
           void vscode.window.showInformationMessage(
-            'Typo 服务器已切换。现有文档继续连接原服务器，请关闭协作文档后再打开其他服务器的文档。',
+            'Formd 服务器已切换。现有文档继续连接原服务器，请关闭协作文档后再打开其他服务器的文档。',
           );
       }
     }),

@@ -100,7 +100,7 @@ export function createTypoServer(
     persist();
     return note;
   }
-  if (!existsSync(file)) add('欢迎来到 Typo', welcomeMarkdown);
+  if (!existsSync(file)) add('欢迎来到 Formd', welcomeMarkdown);
   const app = express();
   app.use(cors({ origin: allowedOrigins }));
   app.use(express.json({ limit: '2mb' }));

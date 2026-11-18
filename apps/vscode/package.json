@@ -1,7 +1,7 @@
 {
   "name": "typo-vscode",
-  "displayName": "Typo — Collaborative Markdown",
-  "description": "在 VS Code 中编辑和协作 Typo Markdown 文档",
+  "displayName": "Formd — Collaborative Markdown",
+  "description": "在 VS Code 中编辑和协作 Formd Markdown 文档",
   "version": "0.3.0",
   "publisher": "typo-local",
   "license": "MIT",
@@ -27,85 +27,85 @@
     "commands": [
       {
         "command": "typo.openNote",
-        "title": "Typo: 打开协作文档"
+        "title": "Formd: 打开协作文档"
       },
       {
         "command": "typo.createNote",
-        "title": "Typo: 新建协作文档",
+        "title": "Formd: 新建协作文档",
         "icon": "$(add)"
       },
       {
         "command": "typo.deleteNote",
-        "title": "Typo: 删除协作文档",
+        "title": "Formd: 删除协作文档",
         "icon": "$(trash)"
       },
       {
         "command": "typo.refreshNotes",
-        "title": "Typo: 刷新文档",
+        "title": "Formd: 刷新文档",
         "icon": "$(refresh)"
       },
       {
         "command": "typo.renameNote",
-        "title": "Typo: 重命名文档",
+        "title": "Formd: 重命名文档",
         "icon": "$(edit)"
       },
       {
         "command": "typo.openInBrowser",
-        "title": "Typo: 在 Web 中打开",
+        "title": "Formd: 在 Web 中打开",
         "icon": "$(globe)"
       },
       {
         "command": "typo.configureServer",
-        "title": "Typo: 配置服务器",
+        "title": "Formd: 配置服务器",
         "icon": "$(gear)"
       },
       {
         "command": "typo.undo",
-        "title": "Typo: 撤销自己的修改",
+        "title": "Formd: 撤销自己的修改",
         "icon": "$(discard)"
       },
       {
         "command": "typo.redo",
-        "title": "Typo: 重做自己的修改",
+        "title": "Formd: 重做自己的修改",
         "icon": "$(redo)"
       },
       {
         "command": "typo.jumpToMember",
-        "title": "Typo: 定位成员光标",
+        "title": "Formd: 定位成员光标",
         "icon": "$(go-to-file)"
       },
       {
         "command": "typo.followMember",
-        "title": "Typo: 跟随成员",
+        "title": "Formd: 跟随成员",
         "icon": "$(pin)"
       },
       {
         "command": "typo.stopFollowing",
-        "title": "Typo: 停止跟随",
+        "title": "Formd: 停止跟随",
         "icon": "$(debug-stop)"
       },
       {
         "command": "typo.showMembers",
-        "title": "Typo: 查看在线成员"
+        "title": "Formd: 查看在线成员"
       },
       {
         "command": "typo.clearRecent",
-        "title": "Typo: 清空最近访问",
+        "title": "Formd: 清空最近访问",
         "icon": "$(clear-all)"
       }
     ],
     "configuration": {
-      "title": "Typo",
+      "title": "Formd",
       "properties": {
         "typo.serverUrl": {
           "type": "string",
           "default": "http://localhost:3001",
-          "description": "Typo API 服务地址"
+          "description": "Formd API 服务地址"
         },
         "typo.webUrl": {
           "type": "string",
           "default": "http://localhost:5173",
-          "description": "Typo Web 客户端地址，用于在浏览器中打开文档"
+          "description": "Formd Web 客户端地址，用于在浏览器中打开文档"
         },
         "typo.displayName": {
           "type": "string",
@@ -125,7 +125,7 @@
       "activitybar": [
         {
           "id": "typo",
-          "title": "Typo",
+          "title": "Formd",
           "icon": "media/typo.svg"
         }
       ]
@@ -136,12 +136,12 @@
           "id": "typo.notes",
           "name": "协作文档",
           "icon": "media/typo.svg",
-          "contextualTitle": "Typo"
+          "contextualTitle": "Formd"
         },
         {
           "id": "typo.recent",
           "name": "最近访问",
-          "contextualTitle": "Typo 最近访问"
+          "contextualTitle": "Formd 最近访问"
         }
       ]
     },

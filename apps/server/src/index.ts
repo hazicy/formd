@@ -9,7 +9,7 @@ const instance = createTypoServer(
   origins,
 );
 instance.server.listen(port, process.env.HOST || '127.0.0.1', () =>
-  console.log(`Typo API: http://localhost:${port}`),
+  console.log(`Formd API: http://localhost:${port}`),
 );
 for (const signal of ['SIGINT', 'SIGTERM'])
   process.once(signal, () => {

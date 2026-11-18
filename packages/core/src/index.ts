@@ -16,7 +16,7 @@ export function isNoteId(value: string): boolean {
 export function markdownFilename(title: string): string {
   return normalizeTitle(title).replace(/[\\/:*?"<>|\x00-\x1f]/g, '-') + '.md';
 }
-export const welcomeMarkdown = `# 欢迎来到 Typo 👋
+export const welcomeMarkdown = `# 欢迎来到 Formd 👋
 
 把想法写下来，和团队一起让它成形。
 

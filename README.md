@@ -1,4 +1,4 @@
-# Typo
+# Formd
 
 面向 Web、Expo / React Native 和 VS Code 的协作 Markdown 工作空间。使用 **npm workspaces + TypeScript** 组织 monorepo。
 
@@ -65,13 +65,13 @@ npx expo export --platform ios --platform android --output-dir dist
 
 ## VS Code 扩展
 
-用 VS Code 打开仓库，按 F5 选择「运行 Typo VS Code 扩展」，会自动构建并启动 Extension Development Host。
+用 VS Code 打开仓库，按 F5 选择「运行 Formd VS Code 扩展」，会自动构建并启动 Extension Development Host。
 
-活动栏点击 **Typo 羽毛图标** 即可打开「协作文档」视图。顶部支持新建、刷新和配置服务器；点击文档打开编辑器，右键可重命名/删除，行内按钮在 Web 打开。命令面板同时提供：
+活动栏点击 **Formd 羽毛图标** 即可打开「协作文档」视图。顶部支持新建、刷新和配置服务器；点击文档打开编辑器，右键可重命名/删除，行内按钮在 Web 打开。命令面板同时提供：
 
-- `Typo: 打开协作文档`
-- `Typo: 新建协作文档`
-- `Typo: 删除协作文档`
+- `Formd: 打开协作文档`
+- `Formd: 新建协作文档`
+- `Formd: 删除协作文档`
 
 设置 `typo.serverUrl` 指向与 Web 相同的后端，`typo.webUrl` 指向 Web 客户端地址。文档使用 `typo:` 虚拟文件系统，保留 VS Code 原生 Markdown 编辑体验；预览使用 VS Code 的「打开侧边预览」。
 
@@ -87,7 +87,7 @@ code --install-extension apps/vscode/typo-vscode-0.3.0.vsix
 
 Web 顶部显示在线成员头像与人数，点击可展开成员列表，编辑自己的显示名称和光标颜色；编辑区显示彩色远端光标、姓名标签和选区。位置使用 Yjs 相对位置，能随并发编辑移动，覆盖层同步文本换行与滚动。自己的选区也会在远端插入后保持锚定。
 
-VS Code 的 Typo 活动栏新增「在线成员」，显示当前文档的成员、客户端和所在行列。点击成员定位光标，行内图钉开始跟随，顶部停止按钮结束跟随；切换文档或使用键盘/鼠标移动选区也会结束跟随。跟随只滚动定位当前文档的成员光标，不自动跨文件切换。编辑器中显示成员颜色、姓名和选区，概览标尺标记位置。参考 [Live Share 的协作交互](https://learn.microsoft.com/en-us/visualstudio/liveshare/use/coedit-follow-focus-visual-studio-code)。
+VS Code 的 Formd 活动栏新增「在线成员」，显示当前文档的成员、客户端和所在行列。点击成员定位光标，行内图钉开始跟随，顶部停止按钮结束跟随；切换文档或使用键盘/鼠标移动选区也会结束跟随。跟随只滚动定位当前文档的成员光标，不自动跨文件切换。编辑器中显示成员颜色、姓名和选区，概览标尺标记位置。参考 [Live Share 的协作交互](https://learn.microsoft.com/en-us/visualstudio/liveshare/use/coedit-follow-focus-visual-studio-code)。
 
 扩展设置 `typo.displayName` 修改名称，`typo.cursorColor` 设置十六进制颜色，留空使用自动分配的访客资料。Web 资料保存在当前浏览器，VS Code 默认访客资料保存在扩展状态中。当前没有登录身份，列表按连接会话统计，同一个人打开多个窗口会显示多个会话，展示的是当前文档的在线状态。
 

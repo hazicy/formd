@@ -143,7 +143,7 @@ export default function App() {
               if (note) void back();
             }}
           >
-            <Text style={s.brand}>{note ? '‹ 文档列表' : 'typo.'}</Text>
+            <Text style={s.brand}>{note ? '‹ 文档列表' : 'Formd.'}</Text>
           </Pressable>
           <Pressable
             onPress={() => {

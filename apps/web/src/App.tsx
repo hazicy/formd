@@ -236,7 +236,7 @@ export default function App() {
           <span className="brand-icon">
             <Feather size={23} />
           </span>{' '}
-          typo<span style={{ color: '#91a182' }}>.</span>
+          Formd<span style={{ color: '#91a182' }}>.</span>
           <button
             className="mobile-menu"
             aria-label="关闭侧栏"

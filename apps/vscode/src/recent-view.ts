@@ -77,7 +77,7 @@ export class RecentView
     this.refresh();
     void this.state
       .update('typo.recentNotes', this.records)
-      .then(undefined, (error) => console.error('Typo recent notes:', error));
+      .then(undefined, (error) => console.error('Formd recent notes:', error));
   }
 
   dispose() {

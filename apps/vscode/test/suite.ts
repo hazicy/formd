@@ -64,7 +64,7 @@ export async function run() {
     const item = api.notes.getTreeItem(note);
     assert.equal(item.contextValue, 'typoNote');
     assert.equal(item.command?.command, 'typo.openNote');
-    console.log('PASS Typo sidebar view and note item command');
+    console.log('PASS Formd sidebar view and note item command');
     const uri = await vscode.commands.executeCommand<vscode.Uri>(
       'typo.openNote',
       note,
