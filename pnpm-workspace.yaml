@@ -6,6 +6,7 @@ nodeLinker: hoisted
 
 overrides:
   markdown-it: ^14.3.3
+  react-native-reanimated: 4.7.1
 
 allowBuilds:
   esbuild: true
