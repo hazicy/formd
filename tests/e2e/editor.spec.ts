@@ -206,3 +206,33 @@ test('organize a document in nested folders without changing its link', async ({
     (await request.delete(`${api}/folders/${parent.id}`)).ok(),
   ).toBeTruthy();
 });
+
+test('browse and search the workspace without opening an editor', async ({
+  page,
+  request,
+}) => {
+  const api = 'http://127.0.0.1:3002/api';
+  const note = await (
+    await request.post(`${api}/notes`, {
+      data: { title: 'Workspace search example', content: '# From the list' },
+    })
+  ).json();
+
+  try {
+    await page.goto('/');
+    const table = page.getByRole('table');
+    const search = page.getByRole('textbox', { name: '搜索文档' });
+    await expect(table.getByText(note.title)).toBeVisible();
+    await search.fill('no matching document');
+    await expect(table.getByText('没有匹配的文档')).toBeVisible();
+    await search.fill('workspace search');
+    await table.getByRole('button', { name: note.title, exact: true }).click();
+    await expect(
+      page.getByRole('textbox', { name: 'Markdown 编辑器' }),
+    ).toHaveValue('# From the list');
+    await page.goBack();
+    await expect(table.getByText(note.title)).toBeVisible();
+  } finally {
+    await request.delete(`${api}/notes/${note.id}`);
+  }
+});

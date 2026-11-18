@@ -1,3 +1,4 @@
+import styles from './PresenceTextarea.module.css';
 import {
   forwardRef,
   useEffect,
@@ -147,10 +148,10 @@ export const PresenceTextarea = forwardRef<HTMLTextAreaElement, Props>(
       measure();
     }, [value, session]);
     return (
-      <div className="source-frame">
+      <div className={styles['source-frame']}>
         <textarea
           ref={input}
-          className="source"
+          className={styles['source']}
           aria-label="Markdown 编辑器"
           spellCheck={false}
           value={value}
@@ -184,7 +185,7 @@ export const PresenceTextarea = forwardRef<HTMLTextAreaElement, Props>(
               end = Math.max(selection.anchor, selection.head);
             const caret = (
               <span
-                className="remote-caret"
+                className={styles['remote-caret']}
                 style={{ borderColor: member.user.color }}
               >
                 <span
@@ -198,13 +199,13 @@ export const PresenceTextarea = forwardRef<HTMLTextAreaElement, Props>(
             return (
               <div
                 key={member.id}
-                className="presence-mirror"
+                className={styles['presence-mirror']}
                 role="img"
                 aria-label={`${member.user.name} 的光标，第 ${value.slice(0, selection.head).split('\n').length} 行`}
                 data-presence-id={member.id}
               >
                 <div
-                  className="presence-mirror-content"
+                  className={styles['presence-mirror-content']}
                   style={{
                     ...layout.style,
                     top: layout.top,

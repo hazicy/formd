@@ -1,5 +1,9 @@
+import { Button } from '@base-ui/react/button';
+import { Input } from '@base-ui/react/input';
+import { Popover } from '@base-ui/react/popover';
+import styles from './PresencePanel.module.css';
 import { useCallback, useState, useSyncExternalStore } from 'react';
-import { Users, Check } from 'lucide-react';
+import { Users, Check, X } from 'lucide-react';
 import {
   PRESENCE_COLORS,
   type NoteSession,
@@ -18,7 +22,6 @@ export function PresencePanel({
     useCallback((listener) => session.subscribePresence(listener), [session]),
     () => session.members,
   );
-  const [open, setOpen] = useState(false);
   const [name, setName] = useState(user.name);
   function rename() {
     const trimmed = name.trim().slice(0, 48);
@@ -28,14 +31,12 @@ export function PresencePanel({
     } else setName(user.name);
   }
   return (
-    <div className="presence-panel">
-      <button
-        className="presence-trigger"
+    <Popover.Root>
+      <Popover.Trigger
+        className={styles['presence-trigger']}
         aria-label={`在线成员 ${members.length} 人`}
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
       >
-        <span className="member-avatars">
+        <span className={styles['member-avatars']}>
           {members.slice(0, 3).map((member) => (
             <span
               key={member.id}
@@ -48,67 +49,75 @@ export function PresencePanel({
         </span>
         <Users size={14} />
         <span>{members.length} 在线</span>
-      </button>
-      {open && (
-        <>
-          <button
-            className="presence-dismiss"
-            aria-label="关闭在线成员"
-            onClick={() => setOpen(false)}
-          />
-          <section className="presence-popover" aria-label="在线成员列表">
-            <strong>正在此文档中 · {members.length}</strong>
-            <p>成员光标按颜色显示</p>
-            <ul>
-              {members.map((member) => (
-                <li key={member.id}>
-                  <span
-                    className="member-dot"
-                    style={{ background: member.user.color }}
-                  />
-                  <span>
-                    {member.user.name}
-                    {member.id === session.connectionId ? '（你）' : ''}
-                  </span>
-                  <small>
-                    {member.user.client === 'vscode'
-                      ? 'VS Code'
-                      : member.user.client === 'web'
-                        ? 'Web'
-                        : '其他端'}
-                  </small>
-                </li>
-              ))}
-            </ul>
-            <label>
-              我的显示名称
-              <input
-                aria-label="我的显示名称"
-                value={name}
-                maxLength={48}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={rename}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur();
-                }}
-              />
-            </label>
-            <div className="profile-colors">
-              {PRESENCE_COLORS.map((color) => (
-                <button
-                  key={color}
-                  aria-label={`光标颜色 ${color}`}
-                  aria-pressed={user.color === color}
-                  style={{ background: color }}
-                  onClick={() => onUserChange({ ...user, color })}
-                >
-                  {user.color === color ? <Check size={13} /> : null}
-                </button>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
-    </div>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner
+          className={styles.positioner}
+          align="end"
+          sideOffset={8}
+        >
+          <Popover.Popup
+            className={styles['presence-popover']}
+            aria-label="在线成员"
+          >
+            <section aria-label="在线成员列表">
+              <div className={styles.heading}>
+                <strong>在线成员 · {members.length}</strong>
+                <Popover.Close aria-label="关闭在线成员">
+                  <X size={15} />
+                </Popover.Close>
+              </div>
+              <ul>
+                {members.map((member) => (
+                  <li key={member.id}>
+                    <span
+                      className={styles['member-dot']}
+                      style={{ background: member.user.color }}
+                    />
+                    <span>
+                      {member.user.name}
+                      {member.id === session.connectionId ? '（你）' : ''}
+                    </span>
+                    <small>
+                      {member.user.client === 'vscode'
+                        ? 'VS Code'
+                        : member.user.client === 'web'
+                          ? 'Web'
+                          : '其他端'}
+                    </small>
+                  </li>
+                ))}
+              </ul>
+              <label>
+                我的显示名称
+                <Input
+                  aria-label="我的显示名称"
+                  value={name}
+                  maxLength={48}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={rename}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                  }}
+                />
+              </label>
+              <div className={styles['profile-colors']}>
+                {PRESENCE_COLORS.map((color) => (
+                  <Button
+                    key={color}
+                    aria-label={`光标颜色 ${color}`}
+                    aria-pressed={user.color === color}
+                    style={{ background: color }}
+                    onClick={() => onUserChange({ ...user, color })}
+                  >
+                    {user.color === color ? <Check size={13} /> : null}
+                  </Button>
+                ))}
+              </div>
+            </section>
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

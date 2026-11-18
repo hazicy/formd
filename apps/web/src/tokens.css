@@ -1,0 +1,49 @@
+:root {
+  --font-sans: system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-lg: 15px;
+  --text-brand: 21px;
+  --text-title: 30px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-xs: 4px;
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 50%;
+  --sidebar-width: 210px;
+  --control-height: 32px;
+  --row-height: 44px;
+  --page-gutter: var(--space-8);
+
+  --color-canvas: #f3f2ef;
+  --color-surface: #fff;
+  --color-subtle: #f7f6f4;
+  --color-hover: #efeeeb;
+  --color-selected: #e9e7e3;
+  --color-border: #e9e7e3;
+  --color-control-border: #dedbd6;
+  --color-text: #2b2926;
+  --color-secondary: #56524d;
+  --color-muted: #706b65;
+  --color-accent: #a14f3b;
+  --color-accent-hover: #873e2d;
+  --color-on-accent: #fff;
+  --color-link: #913f2d;
+  --color-success: #44835f;
+  --color-warning: #a7752c;
+  --color-warning-surface: #fff4e3;
+  --color-warning-text: #775019;
+  --color-transparent: transparent;
+  --shadow-control: 0 1px 4px #30251b15;
+  --shadow-overlay: 0 12px 40px #30251b24;
+}
