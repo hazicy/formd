@@ -218,13 +218,14 @@
   },
   "dependencies": {
     "@typo/client": "workspace:*",
-    "ws": "^8.18.3",
     "@typo/y-vscode": "workspace:*",
+    "ws": "^8.18.3",
     "yjs": "^13.6.27"
   },
   "devDependencies": {
     "@types/vscode": "^1.95.0",
     "@types/ws": "^8.18.1",
+    "@typo/core": "workspace:*",
     "@vscode/vsce": "^3.6.0",
     "esbuild": "^0.25.0"
   }

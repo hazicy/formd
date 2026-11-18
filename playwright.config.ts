@@ -11,13 +11,8 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'pnpm run dev:server',
+      command: 'pnpm exec tsx apps/server/test/e2e-server.ts',
       url: 'http://127.0.0.1:3002/api/health',
-      env: {
-        PORT: '3002',
-        DATA_DIR: '../../.tmp/e2e-data',
-        ALLOWED_ORIGINS: 'http://127.0.0.1:5174',
-      },
       reuseExistingServer: false,
     },
     {

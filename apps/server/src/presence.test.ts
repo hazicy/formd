@@ -1,8 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import WebSocket from 'ws';
 import {
   TypoClient,
@@ -11,6 +8,7 @@ import {
   type NoteSession,
 } from '@typo/client';
 import { createTypoServer } from './server.js';
+import { createMemoryNoteStore } from '../test/memory-store.js';
 Object.defineProperty(globalThis, 'WebSocket', {
   value: WebSocket,
   configurable: true,
@@ -22,7 +20,10 @@ async function until(predicate: () => boolean) {
     await new Promise((r) => setTimeout(r, 20));
   }
 }
-async function listen(instance: ReturnType<typeof createTypoServer>, port = 0) {
+async function listen(
+  instance: Awaited<ReturnType<typeof createTypoServer>>,
+  port = 0,
+) {
   await new Promise<void>((resolve) =>
     instance.server.listen(port, '127.0.0.1', resolve),
   );
@@ -32,8 +33,8 @@ test(
   'presence is document-scoped, uses stable relative cursors and removes disconnected/reconnected peers',
   { timeout: 30000 },
   async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'typo-presence-'));
-    let instance = createTypoServer(dir);
+    const store = createMemoryNoteStore();
+    let instance = await createTypoServer(store);
     const sessions: NoteSession[] = [];
     try {
       const port = await listen(instance);
@@ -120,14 +121,14 @@ test(
           b.members.length === 0 &&
           c.members.length === 0,
       );
-      const disk = JSON.parse(readFileSync(join(dir, 'notes.json'), 'utf8'));
+      const stored = await store.load();
+      assert.ok(stored.length > 0);
       assert.ok(
-        disk.every(
-          (record: Record<string, unknown>) =>
-            !('members' in record) && !('presence' in record),
+        stored.every(
+          (record) => !('members' in record) && !('presence' in record),
         ),
       );
-      instance = createTypoServer(dir);
+      instance = await createTypoServer(store);
       await listen(instance, port);
       await until(
         () =>
@@ -140,7 +141,6 @@ test(
     } finally {
       for (const session of sessions) session.destroy();
       await instance.close();
-      rmSync(dir, { recursive: true, force: true });
     }
   },
 );

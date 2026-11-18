@@ -1,5 +1,6 @@
 import { runTests } from '@vscode/test-electron';
 import { createTypoServer } from '../../server/src/server.js';
+import { createMemoryNoteStore } from '../../server/test/memory-store.js';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
@@ -9,7 +10,7 @@ import { spawn } from 'node:child_process';
 const root = resolve(import.meta.dirname, '../../..');
 const temp = mkdtempSync(join(tmpdir(), 'typo-vscode-test-'));
 const webUrl = 'http://127.0.0.1:5175';
-const server = createTypoServer(join(temp, 'data'), [webUrl]);
+const server = await createTypoServer(createMemoryNoteStore(), [webUrl]);
 await new Promise<void>((resolve) =>
   server.server.listen(0, '127.0.0.1', resolve),
 );

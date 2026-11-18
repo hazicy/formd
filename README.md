@@ -2,17 +2,47 @@
 
 面向 Web、Expo / React Native 和 VS Code 的协作 Markdown 工作空间。使用 **pnpm workspace + TypeScript** 组织 monorepo。
 
+## 架构
+
+Formd 采用 **TypeScript + pnpm monorepo，三个客户端共用一个服务端**。Web、移动端和 VS Code 各自负责界面与平台交互，共用文档 API 和协作客户端，不直接访问数据库。
+
+- **HTTP**：Hono 提供文档列表、新建、重命名和删除。服务端校验请求，变更写入 PostgreSQL 后再返回成功。
+- **实时协作**：客户端通过 `/sync/:id` 连接服务端，使用 Yjs 的 `Y.Text` 合并正文编辑。在线成员和光标通过同一个 WebSocket 广播，只存在内存中，不写数据库。
+- **持久化**：服务端通过 `NoteStore` 保存文档元数据和 Yjs 状态。运行时使用 Drizzle ORM + PostgreSQL，自动化测试使用独立的内存存储。服务端启动时从数据库恢复文档，正文更新合并后异步写入。
+- **部署边界**：当前每个数据库只运行一个服务端实例。PostgreSQL 负责持久化，不负责跨进程同步 Yjs 房间。
+
+### 目录结构
+
 ```text
 apps/
-  web/       Vite + React，Markdown 编辑、GFM 预览、搜索与导出
-  mobile/    Expo + React Native + Expo Router，编辑、预览与导出
-  vscode/    VS Code 扩展，文档侧栏、原生 Markdown 编辑器与实时协作
-  server/    Express + WebSocket，文档 API 与 Yjs 同步
+  web/src/                 Vite + React：编辑、预览、搜索与导出
+  mobile/src/              Expo + React Native：路由和移动端编辑界面
+  vscode/src/              扩展入口、文档视图、在线成员
+  vscode/test/             VS Code 扩展宿主集成测试
+  server/
+    drizzle.config.ts      Drizzle Kit 数据库结构配置
+    src/
+      index.ts             读取环境配置、启动与关闭服务
+      server.ts            组装 HTTP、协作和文档服务，协调关闭顺序
+      http.ts              Hono 路由、跨域、请求校验与错误响应
+      collaboration.ts     WebSocket 房间、心跳、在线成员与 Yjs 消息
+      notes.ts             文档操作、Yjs 文档生命周期与持久化写入队列
+      storage/
+        index.ts           文档存储接口
+        postgres.ts        Drizzle 存储实现
+        schema.ts          PostgreSQL 文档表定义
+    test/                  内存存储与浏览器测试服务入口
 packages/
-  core/      文档类型、校验、示例内容
-  client/    跨平台 API client、Yjs 会话、重连与文本差异更新
-  y-vscode/  VS Code 与 Y.Text 的双向增量绑定、异步竞态处理、协作撤销
+  core/src/                文档类型、输入校验、在线成员数据类型
+  client/src/              跨平台 HTTP API、Yjs 会话和断线重连
+  y-vscode/src/            VS Code 编辑器与 Y.Text 的增量绑定和撤销
+tests/
+  e2e/                     Playwright 浏览器端到端测试
 ```
+
+依赖方向：客户端应用依赖 `packages/client`，共享客户端和服务端均依赖 `packages/core`；VS Code 额外使用 `packages/y-vscode`。共享包不反向依赖应用。新增协议与校验放在共享层，新增平台交互放在对应客户端，数据库读写留在服务端。单元测试及服务端集成测试与源码同目录。
+
+服务端内部，HTTP 路由只调用文档服务，不直接读写数据库；协作层通过文档服务获取 Yjs 文档，并接收更新和删除通知。文档服务负责串行化持久化写入，存储层只负责读写。
 
 ## 快速开始
 
@@ -20,14 +50,15 @@ packages/
 
 ```bash
 pnpm install --frozen-lockfile
+export DATABASE_URL='postgresql://USER:PASSWORD@HOST:5432/formd'
 pnpm run dev
 ```
 
 - Web：<http://localhost:5173>
 - API：<http://localhost:3001/api/health>
-- 首次启动会创建欢迎文档，服务端数据保存在 `apps/server/data/notes.json`。
+- PostgreSQL：使用 DBCode 中 `testdog` 连接的主机、端口和账号，将数据库名设为 `formd`。该库已建好 `public.notes`；在其他数据库初始化表可运行 `pnpm --filter @typo/server run db:push`。
 
-在两个窗口中打开同一篇文档即可验证实时协作。标题离开输入框或按 Enter 时保存；正文编辑后立即发送 Yjs 更新，服务端以 100ms 防抖持久化，正常退出前会再次写盘。不要同时启动两个服务端进程使用相同数据目录。
+在两个窗口中打开同一篇文档即可验证实时协作。正文编辑后立即发送 Yjs 更新，服务端合并待写入的更新并保存到 PostgreSQL，正常退出前会写入剩余更新。实时协作仍由单个服务端进程维护，不要同时启动多个服务端进程连接同一个 Formd 数据库。
 
 ## Web
 
@@ -130,7 +161,7 @@ pnpm run test:e2e
 | `DELETE /api/notes/:id` | 删除文档并通知已连接客户端   |
 | `WS /sync/:id`          | Base64 编码的 Yjs 二进制更新 |
 
-后端从进程环境读取 `PORT`（3001）、`HOST`（127.0.0.1）、`DATA_DIR`（相对服务端工作目录的 `data`）、`ALLOWED_ORIGINS`（逗号分隔）。后端 `.env.example` 为配置说明，不会自动加载；可通过 shell 设置环境变量。不同 Web 地址需加入 `ALLOWED_ORIGINS`，例如局域网 Web 开发地址。生产环境前端和服务端需使用 HTTPS/WSS。
+后端从进程环境读取 `PORT`（3001）、`HOST`（127.0.0.1）、`DATABASE_URL`（PostgreSQL 连接串）、`ALLOWED_ORIGINS`（逗号分隔）。服务端命令从工作目录加载 `.env`（可参考配置示例），shell 中已设置的变量优先。不同 Web 地址需加入 `ALLOWED_ORIGINS`，例如局域网 Web 开发地址。生产环境前端和服务端需使用 HTTPS/WSS。
 
 ## 当前边界
 
@@ -140,4 +171,4 @@ pnpm run test:e2e
 
 依赖审计仍有 Expo 指纹工具及 VSIX 打包工具链的 moderate 告警。已将移动端 Markdown 解析器覆盖为修复版 `markdown-it >=14.3.3`，避免旧渲染库携带的高风险解析器；不要使用 `强制自动修复` 降级 Expo SDK。
 
-后续可在保留共享客户端协议的前提下，将存储替换为 PostgreSQL、加入身份鉴权与授权，再扩展版本记录和客户端持久离线缓存。
+后续可在保留共享客户端协议的前提下加入身份鉴权与授权，再扩展版本记录和客户端持久离线缓存。

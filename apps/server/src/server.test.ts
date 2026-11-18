@@ -1,11 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import WebSocket from 'ws';
 import { TypoClient, type NoteSession } from '@typo/client';
 import { createTypoServer } from './server.js';
+import { createMemoryNoteStore } from '../test/memory-store.js';
 Object.defineProperty(globalThis, 'WebSocket', {
   value: WebSocket,
   configurable: true,
@@ -20,23 +18,67 @@ async function until(
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
 }
-async function listen(instance: ReturnType<typeof createTypoServer>, port = 0) {
+async function listen(
+  instance: Awaited<ReturnType<typeof createTypoServer>>,
+  port = 0,
+) {
   await new Promise<void>((resolve) =>
     instance.server.listen(port, '127.0.0.1', resolve),
   );
   return (instance.server.address() as { port: number }).port;
 }
+test('HTTP API handles preflight, malformed JSON, and oversized bodies', async () => {
+  const store = createMemoryNoteStore();
+  const origin = 'http://localhost:5173';
+  const instance = await createTypoServer(store, [origin]);
+  try {
+    const port = await listen(instance);
+    const url = `http://127.0.0.1:${port}/api/notes`;
+    const preflight = await fetch(url, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: origin,
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'content-type',
+      },
+    });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get('access-control-allow-origin'), origin);
+    assert.equal(
+      preflight.headers.get('access-control-allow-headers'),
+      'content-type',
+    );
+
+    const malformed = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{',
+    });
+    assert.equal(malformed.status, 400);
+    assert.equal(typeof (await malformed.json()).error, 'string');
+
+    const oversized = await instance.app.request('/api/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: 'x'.repeat(2 * 1024 * 1024) }),
+    });
+    assert.equal(oversized.status, 413);
+    assert.equal(typeof (await oversized.json()).error, 'string');
+  } finally {
+    await instance.close();
+  }
+});
 test(
   'CRUD, concurrent edits, reconnect, durable recovery and deletion',
   { timeout: 30000 },
   async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'typo-test-'));
-    let instance = createTypoServer(dir);
+    const store = createMemoryNoteStore();
+    let instance = await createTypoServer(store);
     const sessions: NoteSession[] = [];
     try {
       const port = await listen(instance);
       const api = new TypoClient(`http://127.0.0.1:${port}`);
-      assert.equal((await api.list()).length, 1);
+      assert.equal((await api.list()).length, 0);
       const note = await api.create('  Team  ', 'Start');
       assert.equal(note.title, 'Team');
       assert.equal((await api.rename(note.id, ' Notes ')).title, 'Notes');
@@ -63,7 +105,7 @@ test(
         'clients did not detect offline',
       );
       a.replace(a.text.toString() + ' offline');
-      instance = createTypoServer(dir);
+      instance = await createTypoServer(store);
       await listen(instance, port);
       await until(
         () =>
@@ -71,7 +113,7 @@ test(
         'reconnect did not merge offline edits',
       );
       await instance.close();
-      instance = createTypoServer(dir);
+      instance = await createTypoServer(store);
       await listen(instance, port);
       const c = api.connect(note.id);
       sessions.push(c);
@@ -95,7 +137,7 @@ test(
       assert.equal(invalid.status, 400);
       for (const n of await api.list()) await api.delete(n.id);
       await instance.close();
-      instance = createTypoServer(dir);
+      instance = await createTypoServer(store);
       await listen(instance, port);
       await until(async () => {
         try {
@@ -107,7 +149,6 @@ test(
     } finally {
       for (const session of sessions) session.destroy();
       await instance.close();
-      rmSync(dir, { recursive: true, force: true });
     }
   },
 );
