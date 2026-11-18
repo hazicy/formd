@@ -35,10 +35,14 @@ export class RecentView
     item.id = note.id;
     item.contextValue = 'typoNote';
     item.iconPath = new vscode.ThemeIcon('markdown');
-    item.tooltip = `${note.title}\n访问于 ${new Date(note.visitedAt).toLocaleString()}`;
+    item.tooltip = vscode.l10n.t(
+      '{0}\nVisited {1}',
+      note.title,
+      new Date(note.visitedAt).toLocaleString(vscode.env.language),
+    );
     item.command = {
       command: 'typo.openNote',
-      title: '打开文档',
+      title: vscode.l10n.t('Open Document'),
       arguments: [note],
     };
     return item;
@@ -69,7 +73,7 @@ export class RecentView
   refresh() {
     this.view.message = this.getChildren().length
       ? undefined
-      : '打开协作文档后，会在这里显示最近访问记录。';
+      : vscode.l10n.t('Recently opened collaborative documents appear here.');
     this.changed.fire();
   }
 

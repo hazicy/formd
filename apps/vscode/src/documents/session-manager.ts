@@ -54,7 +54,11 @@ export class DocumentSessions implements vscode.Disposable {
     try {
       hasDraft = this.drafts.restore(client.baseUrl, session);
     } catch (error) {
-      this.report(new Error('无法恢复 Formd 本地草稿', { cause: error }));
+      this.report(
+        new Error(vscode.l10n.t('Could not restore the Formd local draft.'), {
+          cause: error,
+        }),
+      );
     }
     let saveFailed = false;
     const saveDraft = (_update: Uint8Array, origin: unknown) => {
@@ -67,7 +71,13 @@ export class DocumentSessions implements vscode.Disposable {
         if (!saveFailed) {
           saveFailed = true;
           this.output.appendLine(String(error));
-          this.report(new Error('无法保存 Formd 本地草稿，请复制当前正文备份'));
+          this.report(
+            new Error(
+              vscode.l10n.t(
+                'Could not save the Formd local draft. Copy the current text as a backup.',
+              ),
+            ),
+          );
         }
       }
     };
@@ -102,11 +112,17 @@ export class DocumentSessions implements vscode.Disposable {
   async ready(session: NoteSession) {
     if (session.status === 'connected') return;
     if (session.status === 'deleted' || session.status === 'error')
-      throw vscode.FileSystemError.Unavailable('文档不存在或同步失败');
+      throw vscode.FileSystemError.Unavailable(
+        vscode.l10n.t('The document does not exist or could not be synced.'),
+      );
     await new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         stop();
-        reject(new Error('连接超时，请检查 Formd 服务地址'));
+        reject(
+          new Error(
+            vscode.l10n.t('Connection timed out. Check the Formd server URL.'),
+          ),
+        );
       }, 10000);
       const stop = session.subscribe(() => {
         if (session.status === 'connected') {
@@ -117,7 +133,13 @@ export class DocumentSessions implements vscode.Disposable {
         if (session.status === 'deleted' || session.status === 'error') {
           clearTimeout(timer);
           stop();
-          reject(new Error('文档不存在或同步失败'));
+          reject(
+            new Error(
+              vscode.l10n.t(
+                'The document does not exist or could not be synced.',
+              ),
+            ),
+          );
         }
       });
     });
@@ -133,7 +155,10 @@ export class DocumentSessions implements vscode.Disposable {
         (error) => {
           this.output.appendLine(error.stack || error.message);
           void vscode.window.showErrorMessage(
-            `Formd 实时绑定已暂停：${error.message}。请先导出当前正文，再重新打开文档。`,
+            vscode.l10n.t(
+              'Formd live editing paused: {0}. Export your text, then reopen the document.',
+              error.message,
+            ),
           );
         },
         entry.initialState,

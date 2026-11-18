@@ -60,6 +60,8 @@ try {
       '--disable-workspace-trust',
       '--skip-welcome',
       '--skip-release-notes',
+      '--locale',
+      process.env.VSCODE_TEST_LOCALE || 'en',
       '--no-sandbox',
     ],
   });

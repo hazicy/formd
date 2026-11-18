@@ -62,10 +62,15 @@ export class NotesView
     item.id = note.id;
     item.contextValue = 'typoNote';
     item.iconPath = new vscode.ThemeIcon('markdown');
-    item.tooltip = `${note.title}\n更新于 ${new Date(note.updatedAt).toLocaleString()}\n${note.id}`;
+    item.tooltip = vscode.l10n.t(
+      '{0}\nUpdated {1}\n{2}',
+      note.title,
+      new Date(note.updatedAt).toLocaleString(vscode.env.language),
+      note.id,
+    );
     item.command = {
       command: 'typo.openNote',
-      title: '打开文档',
+      title: vscode.l10n.t('Open Document'),
       arguments: [note],
     };
     return item;
@@ -86,11 +91,14 @@ export class NotesView
       this.view.message =
         notes.length || folders.length
           ? undefined
-          : '还没有文档，点击上方 + 创建第一篇。';
+          : vscode.l10n.t('No documents yet. Click + to create one.');
       this.changes.fire(undefined);
     } catch (error) {
       if (!this.disposed && generation === this.generation) {
-        this.view.message = `无法连接服务器：${String(error)}。启动后端或点击齿轮配置地址，再刷新重试。`;
+        this.view.message = vscode.l10n.t(
+          'Could not connect to the server: {0}. Start the backend or configure its URL, then refresh.',
+          String(error),
+        );
       }
     }
     return this.notes;

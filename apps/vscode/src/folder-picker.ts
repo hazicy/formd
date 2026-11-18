@@ -25,7 +25,8 @@ export async function pickDestination(
   const folders = await client.listFolders();
   const byId = new Map(folders.map((folder) => [folder.id, folder]));
   const options: { label: string; id: string | null }[] = [];
-  if (current !== null) options.push({ label: '根目录', id: null });
+  if (current !== null)
+    options.push({ label: vscode.l10n.t('Root'), id: null });
   for (const folder of folders) {
     const path = folderPath(byId, folder.id);
     if (folder.id === current || path.some((part) => part.id === movingFolder))
@@ -37,11 +38,11 @@ export async function pickDestination(
   }
   if (!options.length) {
     void vscode.window.showInformationMessage(
-      'Formd：没有其他可移动到的文件夹。',
+      vscode.l10n.t('Formd: No other destination folders are available.'),
     );
     return undefined;
   }
   return vscode.window.showQuickPick(options, {
-    placeHolder: '选择目标文件夹',
+    placeHolder: vscode.l10n.t('Choose a destination folder'),
   });
 }

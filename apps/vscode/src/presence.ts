@@ -31,7 +31,7 @@ export class PresenceController implements vscode.Disposable {
   private renderPending = false;
   private selectionTimer?: ReturnType<typeof setTimeout>;
   constructor(private readonly entries: () => Iterable<Entry>) {
-    this.status.name = 'Formd 在线成员';
+    this.status.name = vscode.l10n.t('Formd Online Members');
     this.status.command = 'typo.showMembers';
     this.subscriptions.push(
       this.status,
@@ -123,16 +123,20 @@ export class PresenceController implements vscode.Disposable {
       const self = member.id === entry.session.connectionId;
       const location = this.location(member.id);
       return {
-        label: member.user.name + (self ? '（你）' : ''),
-        description: `${member.user.client === 'vscode' ? 'VS Code' : member.user.client === 'web' ? 'Web' : '其他端'}${this.following === member.id ? ' · 正在跟随' : ''}`,
+        label: member.user.name + (self ? vscode.l10n.t(' (you)') : ''),
+        description: `${member.user.client === 'vscode' ? 'VS Code' : member.user.client === 'web' ? 'Web' : vscode.l10n.t('Other client')}${this.following === member.id ? vscode.l10n.t(' · Following') : ''}`,
         detail: location
-          ? `第 ${location.head.line + 1} 行，第 ${location.head.character + 1} 列`
-          : '正在阅读',
+          ? vscode.l10n.t(
+              'Line {0}, column {1}',
+              location.head.line + 1,
+              location.head.character + 1,
+            )
+          : vscode.l10n.t('Reading'),
         member,
       };
     });
     const stopItem = {
-      label: '$(debug-stop) 停止跟随',
+      label: vscode.l10n.t('$(debug-stop) Stop Following'),
       description: '',
       detail: '',
       member: undefined,
@@ -140,8 +144,11 @@ export class PresenceController implements vscode.Disposable {
     const picked = await vscode.window.showQuickPick(
       this.following ? [stopItem, ...items] : items,
       {
-        title: `在线成员 · ${items.length} 人（含你）`,
-        placeHolder: '选择成员以定位光标或跟随',
+        title: vscode.l10n.t(
+          'Online members · {0} (including you)',
+          items.length,
+        ),
+        placeHolder: vscode.l10n.t('Select a member to jump to or follow'),
         matchOnDescription: true,
       },
     );
@@ -151,12 +158,18 @@ export class PresenceController implements vscode.Disposable {
       return;
     }
     if (picked.member.id === entry.session.connectionId) return;
-    const action = await vscode.window.showQuickPick(['定位光标', '跟随成员'], {
-      title: picked.member.user.name,
-      placeHolder: '选择操作',
-    });
+    const action = await vscode.window.showQuickPick(
+      [vscode.l10n.t('Jump to Cursor'), vscode.l10n.t('Follow Member')],
+      {
+        title: picked.member.user.name,
+        placeHolder: vscode.l10n.t('Choose an action'),
+      },
+    );
     if (!action || this.selected !== entry) return;
-    await this.jumpToMember(picked.member, action === '跟随成员');
+    await this.jumpToMember(
+      picked.member,
+      action === vscode.l10n.t('Follow Member'),
+    );
   }
   location(id: string) {
     const entry = this.selected,
@@ -315,9 +328,20 @@ export class PresenceController implements vscode.Disposable {
     if (this.selected) {
       const members = this.getChildren();
       const followed = members.find((member) => member.id === this.following);
-      this.status.text = `$(organization) ${members.length} 在线${followed ? ` · 跟随 ${followed.user.name}` : ''}`;
+      this.status.text = followed
+        ? vscode.l10n.t(
+            '$(organization) {0} online · Following {1}',
+            members.length,
+            followed.user.name,
+          )
+        : vscode.l10n.t('$(organization) {0} online', members.length);
       this.status.tooltip = new vscode.MarkdownString().appendText(
-        `当前文档在线成员（含你）：${members.map((member) => member.user.name).join('、') || '暂无'}\n点击查看成员、定位光标或管理跟随。`,
+        vscode.l10n.t(
+          'Online in this document (including you): {0}\nClick to view members, jump to a cursor, or manage following.',
+          new Intl.ListFormat(vscode.env.language).format(
+            members.map((member) => member.user.name),
+          ) || vscode.l10n.t('None'),
+        ),
       );
       this.status.show();
     } else {

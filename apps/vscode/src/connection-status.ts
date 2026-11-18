@@ -1,16 +1,31 @@
 import * as vscode from 'vscode';
 import { DocumentSessions, documentId } from './documents/session-manager.js';
 
-const connectionLabels = {
-  connecting: ['$(sync) Formd 连接中', '正在连接协作服务器。'],
-  connected: ['$(plug) Formd 已连接', '实时协作连接正常。'],
-  offline: [
-    '$(cloud-offline) Formd 离线',
-    '等待重连。本地草稿会在重新打开时恢复；服务器尚未确认保存。',
-  ],
-  deleted: ['$(trash) Formd 文档已删除', '此协作文档已被删除。'],
-  error: ['$(warning) Formd 同步异常', '请备份当前正文，然后重新打开文档。'],
-} as const;
+const connectionLabels = () =>
+  ({
+    connecting: [
+      vscode.l10n.t('$(sync) Formd Connecting'),
+      vscode.l10n.t('Connecting to the collaboration server.'),
+    ],
+    connected: [
+      vscode.l10n.t('$(plug) Formd Connected'),
+      vscode.l10n.t('The live collaboration connection is active.'),
+    ],
+    offline: [
+      vscode.l10n.t('$(cloud-offline) Formd Offline'),
+      vscode.l10n.t(
+        'Waiting to reconnect. Local drafts are restored on reopening. The server has not confirmed a save.',
+      ),
+    ],
+    deleted: [
+      vscode.l10n.t('$(trash) Formd Document Deleted'),
+      vscode.l10n.t('This collaborative document has been deleted.'),
+    ],
+    error: [
+      vscode.l10n.t('$(warning) Formd Sync Error'),
+      vscode.l10n.t('Back up the current text and reopen the document.'),
+    ],
+  }) as const;
 
 export function createConnectionStatus(sessions: DocumentSessions) {
   const item = vscode.window.createStatusBarItem(
@@ -18,7 +33,7 @@ export function createConnectionStatus(sessions: DocumentSessions) {
     vscode.StatusBarAlignment.Left,
     100,
   );
-  item.name = 'Formd 协作连接';
+  item.name = vscode.l10n.t('Formd Collaboration Connection');
   function update() {
     const uri = vscode.window.activeTextEditor?.document.uri;
     const entry =
@@ -27,7 +42,7 @@ export function createConnectionStatus(sessions: DocumentSessions) {
       item.hide();
       return;
     }
-    [item.text, item.tooltip] = connectionLabels[entry.session.status];
+    [item.text, item.tooltip] = connectionLabels()[entry.session.status];
     item.show();
   }
   const subscription = vscode.Disposable.from(

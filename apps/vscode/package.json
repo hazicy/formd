@@ -1,8 +1,8 @@
 {
   "name": "typo-vscode",
   "displayName": "Formd — Collaborative Markdown",
-  "description": "在 VS Code 中编辑和协作 Formd Markdown 文档",
-  "version": "0.3.2",
+  "description": "%extension.description%",
+  "version": "0.3.3",
   "publisher": "typo-local",
   "license": "MIT",
   "engines": {
@@ -27,92 +27,92 @@
     "commands": [
       {
         "command": "typo.openNote",
-        "title": "Formd: 打开协作文档"
+        "title": "%typo.openNote%"
       },
       {
         "command": "typo.createNote",
-        "title": "Formd: 新建协作文档",
+        "title": "%typo.createNote%",
         "icon": "$(add)"
       },
       {
         "command": "typo.createFolder",
-        "title": "Formd: 新建文件夹",
+        "title": "%typo.createFolder%",
         "icon": "$(new-folder)"
       },
       {
         "command": "typo.deleteNote",
-        "title": "Formd: 删除协作文档",
+        "title": "%typo.deleteNote%",
         "icon": "$(trash)"
       },
       {
         "command": "typo.refreshNotes",
-        "title": "Formd: 刷新文档",
+        "title": "%typo.refreshNotes%",
         "icon": "$(refresh)"
       },
       {
         "command": "typo.renameNote",
-        "title": "Formd: 重命名文档",
+        "title": "%typo.renameNote%",
         "icon": "$(edit)"
       },
       {
         "command": "typo.openInBrowser",
-        "title": "Formd: 在 Web 中打开",
+        "title": "%typo.openInBrowser%",
         "icon": "$(globe)"
       },
       {
         "command": "typo.configureServer",
-        "title": "Formd: 配置服务器",
+        "title": "%typo.configureServer%",
         "icon": "$(gear)"
       },
       {
         "command": "typo.undo",
-        "title": "Formd: 撤销自己的修改",
+        "title": "%typo.undo%",
         "icon": "$(discard)"
       },
       {
         "command": "typo.redo",
-        "title": "Formd: 重做自己的修改",
+        "title": "%typo.redo%",
         "icon": "$(redo)"
       },
       {
         "command": "typo.jumpToMember",
-        "title": "Formd: 定位成员光标",
+        "title": "%typo.jumpToMember%",
         "icon": "$(go-to-file)"
       },
       {
         "command": "typo.followMember",
-        "title": "Formd: 跟随成员",
+        "title": "%typo.followMember%",
         "icon": "$(pin)"
       },
       {
         "command": "typo.stopFollowing",
-        "title": "Formd: 停止跟随",
+        "title": "%typo.stopFollowing%",
         "icon": "$(debug-stop)"
       },
       {
         "command": "typo.showMembers",
-        "title": "Formd: 查看在线成员"
+        "title": "%typo.showMembers%"
       },
       {
         "command": "typo.clearRecent",
-        "title": "Formd: 清空最近访问",
+        "title": "%typo.clearRecent%",
         "icon": "$(clear-all)"
       },
       {
         "command": "typo.moveNote",
-        "title": "Formd: 移动文档"
+        "title": "%typo.moveNote%"
       },
       {
         "command": "typo.renameFolder",
-        "title": "Formd: 重命名文件夹"
+        "title": "%typo.renameFolder%"
       },
       {
         "command": "typo.moveFolder",
-        "title": "Formd: 移动文件夹"
+        "title": "%typo.moveFolder%"
       },
       {
         "command": "typo.deleteFolder",
-        "title": "Formd: 删除空文件夹"
+        "title": "%typo.deleteFolder%"
       }
     ],
     "configuration": {
@@ -121,24 +121,24 @@
         "typo.serverUrl": {
           "type": "string",
           "default": "http://localhost:3001",
-          "description": "Formd API 服务地址"
+          "description": "%typo.serverUrl.description%"
         },
         "typo.webUrl": {
           "type": "string",
           "default": "http://localhost:5173",
-          "description": "Formd Web 客户端地址，用于在浏览器中打开文档"
+          "description": "%typo.webUrl.description%"
         },
         "typo.displayName": {
           "type": "string",
           "default": "",
           "maxLength": 48,
-          "description": "协作中显示的名称，留空使用访客名称"
+          "description": "%typo.displayName.description%"
         },
         "typo.cursorColor": {
           "type": "string",
           "default": "",
           "pattern": "^$|^#[0-9a-fA-F]{6}$",
-          "description": "协作光标颜色（十六进制），留空自动分配"
+          "description": "%typo.cursorColor.description%"
         }
       }
     },
@@ -155,14 +155,14 @@
       "typo": [
         {
           "id": "typo.notes",
-          "name": "协作文档",
+          "name": "%view.notes%",
           "icon": "media/typo.svg",
           "contextualTitle": "Formd"
         },
         {
           "id": "typo.recent",
-          "name": "最近访问",
-          "contextualTitle": "Formd 最近访问"
+          "name": "%view.recent%",
+          "contextualTitle": "%view.recent.context%"
         }
       ]
     },
@@ -296,5 +296,6 @@
     "@typo/core": "workspace:*",
     "@vscode/vsce": "^3.6.0",
     "esbuild": "^0.25.0"
-  }
+  },
+  "l10n": "./l10n"
 }

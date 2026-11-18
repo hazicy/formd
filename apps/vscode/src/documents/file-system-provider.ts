@@ -43,7 +43,9 @@ export function createFileSystemProvider(
       const entry = sessions.getOrCreate(uri);
       if (!entry.binding)
         throw vscode.FileSystemError.Unavailable(
-          '文档未绑定到协作会话，请重新打开',
+          vscode.l10n.t(
+            'This document is not bound to a collaboration session. Reopen it.',
+          ),
         );
       await entry.binding.flush();
       // Local content changes already reached Yjs. A save must never replace
@@ -51,10 +53,14 @@ export function createFileSystemProvider(
       entry.mtime = Math.max(Date.now(), entry.mtime + 1);
     },
     delete: () => {
-      throw vscode.FileSystemError.NoPermissions('请使用 Formd: 删除协作文档');
+      throw vscode.FileSystemError.NoPermissions(
+        vscode.l10n.t('Use Formd: Delete Collaborative Document.'),
+      );
     },
     rename: () => {
-      throw vscode.FileSystemError.NoPermissions('请使用 Formd: 重命名文档');
+      throw vscode.FileSystemError.NoPermissions(
+        vscode.l10n.t('Use Formd: Rename Document.'),
+      );
     },
   };
 }

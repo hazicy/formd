@@ -99,6 +99,12 @@ export async function run() {
     const item = api.notes.getTreeItem(note);
     assert.equal(item.contextValue, 'typoNote');
     assert.equal(item.command?.command, 'typo.openNote');
+    assert.equal(
+      item.command?.title,
+      vscode.env.language.toLowerCase() === 'zh-cn'
+        ? '打开文档'
+        : 'Open Document',
+    );
     const root = await request<Folder>('/api/folders', 'POST', {
       name: 'Projects',
     });

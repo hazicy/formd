@@ -133,11 +133,13 @@ export function activate(context: vscode.ExtensionContext) {
         description:
           folderPath(byId, note.folderId)
             .map((folder) => folder.name)
-            .join(' / ') || '根目录',
+            .join(' / ') || vscode.l10n.t('Root'),
         note,
       })),
       {
-        placeHolder: '按标题或文件夹路径搜索 Formd 文档',
+        placeHolder: vscode.l10n.t(
+          'Search Formd documents by title or folder path',
+        ),
         matchOnDescription: true,
       },
     );
@@ -165,8 +167,10 @@ export function activate(context: vscode.ExtensionContext) {
   register<Folder>('typo.createNote', async (folder) => {
     const target = client();
     const title = await vscode.window.showInputBox({
-      prompt: folder?.id ? `在「${folder.name}」中新建文档` : '文档标题',
-      value: '未命名文档',
+      prompt: folder?.id
+        ? vscode.l10n.t('Create document in “{0}”', folder.name)
+        : vscode.l10n.t('Document title'),
+      value: vscode.l10n.t('Untitled document'),
     });
     if (title === undefined) return;
     const note = await target.create(title, undefined, folder?.id);
@@ -177,10 +181,11 @@ export function activate(context: vscode.ExtensionContext) {
     const target = client();
     const name = await vscode.window.showInputBox({
       prompt: folder?.id
-        ? `在「${folder.name}」中新建文件夹`
-        : '新建根目录文件夹',
-      placeHolder: '文件夹名称',
-      validateInput: (value) => (value.trim() ? undefined : '请输入文件夹名称'),
+        ? vscode.l10n.t('Create folder in “{0}”', folder.name)
+        : vscode.l10n.t('Create a folder at the root'),
+      placeHolder: vscode.l10n.t('Folder name'),
+      validateInput: (value) =>
+        value.trim() ? undefined : vscode.l10n.t('Enter a folder name'),
     });
     if (!name?.trim()) return;
     await target.createFolder(name.trim(), folder?.id);
@@ -200,10 +205,10 @@ export function activate(context: vscode.ExtensionContext) {
     const target = client();
     const name = (
       await vscode.window.showInputBox({
-        prompt: '重命名 Formd 文件夹',
+        prompt: vscode.l10n.t('Rename Formd folder'),
         value: folder.name,
         validateInput: (value) =>
-          value.trim() ? undefined : '请输入文件夹名称',
+          value.trim() ? undefined : vscode.l10n.t('Enter a folder name'),
       })
     )?.trim();
     if (!name || name === folder.name) return;
@@ -227,10 +232,13 @@ export function activate(context: vscode.ExtensionContext) {
     const target = client();
     if (
       (await vscode.window.showWarningMessage(
-        `永久删除空文件夹「${folder.name}」？`,
+        vscode.l10n.t(
+          'Permanently delete the empty folder “{0}”?',
+          folder.name,
+        ),
         { modal: true },
-        '删除',
-      )) !== '删除'
+        vscode.l10n.t('Delete'),
+      )) !== vscode.l10n.t('Delete')
     )
       return;
     await target.deleteFolder(folder.id);
@@ -242,7 +250,7 @@ export function activate(context: vscode.ExtensionContext) {
     const selected = await choose(note);
     if (!selected) return;
     const title = await vscode.window.showInputBox({
-      prompt: '文档标题',
+      prompt: vscode.l10n.t('Document title'),
       value: selected.title,
     });
     if (title === undefined) return;
@@ -254,10 +262,10 @@ export function activate(context: vscode.ExtensionContext) {
     if (!selected) return;
     if (
       (await vscode.window.showWarningMessage(
-        `永久删除「${selected.title}」？`,
+        vscode.l10n.t('Permanently delete “{0}”?', selected.title),
         { modal: true },
-        '删除',
-      )) === '删除'
+        vscode.l10n.t('Delete'),
+      )) === vscode.l10n.t('Delete')
     ) {
       await client().delete(selected.id);
       await tree.refresh();
@@ -276,16 +284,16 @@ export function activate(context: vscode.ExtensionContext) {
   register('typo.configureServer', async () => {
     const config = vscode.workspace.getConfiguration('typo');
     const server = await vscode.window.showInputBox({
-      prompt: 'Formd 服务器地址',
+      prompt: vscode.l10n.t('Formd server URL'),
       value: config.get('serverUrl', 'http://localhost:3001'),
       validateInput: (value) => {
         try {
           const url = new URL(value);
           return ['http:', 'https:'].includes(url.protocol)
             ? undefined
-            : '请使用 http:// 或 https:// 地址';
+            : vscode.l10n.t('Use an http:// or https:// URL');
         } catch {
-          return '请输入有效的服务器地址';
+          return vscode.l10n.t('Enter a valid server URL');
         }
       },
     });
@@ -311,7 +319,9 @@ export function activate(context: vscode.ExtensionContext) {
         void tree.refresh();
         if (sessions.size)
           void vscode.window.showInformationMessage(
-            'Formd 服务器已切换。现有文档继续连接原服务器，请关闭协作文档后再打开其他服务器的文档。',
+            vscode.l10n.t(
+              'Formd server changed. Open documents stay connected to the previous server. Close them before opening documents from another server.',
+            ),
           );
       }
     }),
