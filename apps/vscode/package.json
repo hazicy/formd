@@ -15,7 +15,7 @@
   "activationEvents": [
     "onFileSystem:typo",
     "onView:typo.notes",
-    "onView:typo.members"
+    "onView:typo.recent"
   ],
   "scripts": {
     "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs",
@@ -83,6 +83,15 @@
         "command": "typo.stopFollowing",
         "title": "Typo: 停止跟随",
         "icon": "$(debug-stop)"
+      },
+      {
+        "command": "typo.showMembers",
+        "title": "Typo: 查看在线成员"
+      },
+      {
+        "command": "typo.clearRecent",
+        "title": "Typo: 清空最近访问",
+        "icon": "$(clear-all)"
       }
     ],
     "configuration": {
@@ -130,9 +139,9 @@
           "contextualTitle": "Typo"
         },
         {
-          "id": "typo.members",
-          "name": "在线成员",
-          "contextualTitle": "Typo 在线成员"
+          "id": "typo.recent",
+          "name": "最近访问",
+          "contextualTitle": "Typo 最近访问"
         }
       ]
     },
@@ -154,31 +163,26 @@
           "group": "navigation@3"
         },
         {
-          "command": "typo.stopFollowing",
-          "when": "view == typo.members",
-          "group": "navigation@1"
+          "command": "typo.clearRecent",
+          "when": "view == typo.recent",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
         {
           "command": "typo.openInBrowser",
-          "when": "view == typo.notes && viewItem == typoNote",
+          "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
           "group": "inline@1"
         },
         {
           "command": "typo.renameNote",
-          "when": "view == typo.notes && viewItem == typoNote",
+          "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
           "group": "1_modify@1"
         },
         {
           "command": "typo.deleteNote",
-          "when": "view == typo.notes && viewItem == typoNote",
+          "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
           "group": "1_modify@2"
-        },
-        {
-          "command": "typo.followMember",
-          "when": "view == typo.members && viewItem == typoMember",
-          "group": "inline@1"
         }
       ],
       "commandPalette": [

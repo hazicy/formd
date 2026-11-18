@@ -16,14 +16,12 @@ interface Decorations {
   cursor: vscode.TextEditorDecorationType;
   range: vscode.TextEditorDecorationType;
 }
-export class PresenceController
-  implements vscode.TreeDataProvider<PresenceMember>, vscode.Disposable
-{
-  private readonly changed = new vscode.EventEmitter<
-    PresenceMember | undefined
-  >();
-  readonly onDidChangeTreeData = this.changed.event;
-  readonly view: vscode.TreeView<PresenceMember>;
+export class PresenceController implements vscode.Disposable {
+  private readonly status = vscode.window.createStatusBarItem(
+    'typo.members',
+    vscode.StatusBarAlignment.Left,
+    99,
+  );
   private subscriptions: vscode.Disposable[] = [];
   private attached = new Map<Entry, () => void>();
   private decorations = new Map<string, Decorations>();
@@ -32,17 +30,11 @@ export class PresenceController
   private disposed = false;
   private renderPending = false;
   private selectionTimer?: ReturnType<typeof setTimeout>;
-  constructor(
-    private readonly entries: () => Iterable<Entry>,
-    private readonly onChange: () => void,
-  ) {
-    this.view = vscode.window.createTreeView('typo.members', {
-      treeDataProvider: this,
-      showCollapseAll: false,
-    });
+  constructor(private readonly entries: () => Iterable<Entry>) {
+    this.status.name = 'Typo 在线成员';
+    this.status.command = 'typo.showMembers';
     this.subscriptions.push(
-      this.view,
-      this.changed,
+      this.status,
       vscode.window.onDidChangeActiveTextEditor(() => this.activateEditor()),
       vscode.window.onDidChangeVisibleTextEditors(() => this.schedule()),
       vscode.window.onDidChangeTextEditorSelection((event) => {
@@ -63,7 +55,6 @@ export class PresenceController
   attach(entry: Entry) {
     if (this.attached.has(entry)) return;
     const offPresence = entry.session.subscribePresence(() => {
-      this.onChange();
       this.schedule();
     });
     const offContent = entry.session.subscribe(() => this.schedule());
@@ -125,29 +116,47 @@ export class PresenceController
   getChildren(): PresenceMember[] {
     return [...(this.selected?.session.members || [])];
   }
-  getTreeItem(member: PresenceMember): vscode.TreeItem {
-    const self = member.id === this.selected?.session.connectionId;
-    const item = new vscode.TreeItem(
-      member.user.name + (self ? '（你）' : ''),
-      vscode.TreeItemCollapsibleState.None,
-    );
-    item.id = member.id;
-    item.contextValue = self ? 'typoSelf' : 'typoMember';
-    item.description = `${member.user.client === 'vscode' ? 'VS Code' : member.user.client === 'web' ? 'Web' : '其他端'}${this.following === member.id ? ' · 正在跟随' : ''}`;
-    const location = this.location(member.id);
-    item.tooltip = `${member.user.name} · ${location ? `第 ${location.head.line + 1} 行，第 ${location.head.character + 1} 列` : '正在阅读'}`;
-    // Per-member SVG keeps sidebar color consistent with the remote caret.
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="5" fill="${member.user.color}"/></svg>`;
-    item.iconPath = vscode.Uri.parse(
-      'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64'),
-    );
-    if (!self)
-      item.command = {
-        command: 'typo.jumpToMember',
-        title: '定位成员光标',
-        arguments: [member],
+  async showMembers() {
+    const entry = this.selected;
+    if (!entry) return;
+    const items = this.getChildren().map((member) => {
+      const self = member.id === entry.session.connectionId;
+      const location = this.location(member.id);
+      return {
+        label: member.user.name + (self ? '（你）' : ''),
+        description: `${member.user.client === 'vscode' ? 'VS Code' : member.user.client === 'web' ? 'Web' : '其他端'}${this.following === member.id ? ' · 正在跟随' : ''}`,
+        detail: location
+          ? `第 ${location.head.line + 1} 行，第 ${location.head.character + 1} 列`
+          : '正在阅读',
+        member,
       };
-    return item;
+    });
+    const stopItem = {
+      label: '$(debug-stop) 停止跟随',
+      description: '',
+      detail: '',
+      member: undefined,
+    };
+    const picked = await vscode.window.showQuickPick(
+      this.following ? [stopItem, ...items] : items,
+      {
+        title: `在线成员 · ${items.length} 人（含你）`,
+        placeHolder: '选择成员以定位光标或跟随',
+        matchOnDescription: true,
+      },
+    );
+    if (!picked || this.selected !== entry) return;
+    if (!picked.member) {
+      this.stopFollowing();
+      return;
+    }
+    if (picked.member.id === entry.session.connectionId) return;
+    const action = await vscode.window.showQuickPick(['定位光标', '跟随成员'], {
+      title: picked.member.user.name,
+      placeHolder: '选择操作',
+    });
+    if (!action || this.selected !== entry) return;
+    await this.jumpToMember(picked.member, action === '跟随成员');
   }
   location(id: string) {
     const entry = this.selected,
@@ -303,13 +312,17 @@ export class PresenceController
       )
         this.following = undefined;
     }
-    this.view.description = this.selected
-      ? `${this.getChildren().length} 在线`
-      : undefined;
-    this.view.message = this.selected
-      ? undefined
-      : '打开一篇 Typo 文档，查看当前在线成员。';
-    this.changed.fire(undefined);
+    if (this.selected) {
+      const members = this.getChildren();
+      const followed = members.find((member) => member.id === this.following);
+      this.status.text = `$(organization) ${members.length} 在线${followed ? ` · 跟随 ${followed.user.name}` : ''}`;
+      this.status.tooltip = new vscode.MarkdownString().appendText(
+        `当前文档在线成员（含你）：${members.map((member) => member.user.name).join('、') || '暂无'}\n点击查看成员、定位光标或管理跟随。`,
+      );
+      this.status.show();
+    } else {
+      this.status.hide();
+    }
   }
   dispose() {
     this.disposed = true;

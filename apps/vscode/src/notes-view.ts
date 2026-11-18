@@ -12,7 +12,10 @@ export class NotesView
   private readonly timer: ReturnType<typeof setInterval>;
   readonly view: vscode.TreeView<Note>;
 
-  constructor(private readonly client: () => TypoClient) {
+  constructor(
+    private readonly client: () => TypoClient,
+    private readonly onRefresh?: (server: string, notes: Note[]) => void,
+  ) {
     this.view = vscode.window.createTreeView('typo.notes', {
       treeDataProvider: this,
       showCollapseAll: false,
@@ -52,6 +55,7 @@ export class NotesView
       const notes = await client.list();
       if (this.disposed || generation !== this.generation) return this.notes;
       this.notes = notes;
+      this.onRefresh?.(client.baseUrl, notes);
       this.view.message = notes.length
         ? undefined
         : '还没有文档，点击上方 + 创建第一篇。';

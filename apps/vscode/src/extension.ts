@@ -12,6 +12,7 @@ import {
   type PresenceUser,
   type PresenceMember,
 } from '@typo/client';
+import { RecentView } from './recent-view.js';
 import { NotesView } from './notes-view.js';
 import { PresenceController } from './presence.js';
 Object.defineProperty(globalThis, 'WebSocket', {
@@ -27,21 +28,10 @@ interface Entry {
   binding?: VscodeBinding;
   unsubscribe: () => void;
 }
-const labels = {
-  connecting: '正在连接',
-  connected: '实时协作',
-  offline: '离线 · 等待重连',
-  deleted: '文档已删除',
-  error: '同步失败',
-};
 export function activate(context: vscode.ExtensionContext) {
   const changes = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   const entries = new Map<string, Entry>();
   const output = vscode.window.createOutputChannel('Typo');
-  const status = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Left,
-  );
-  status.command = 'typo.notes.focus';
   const stored = context.globalState.get<PresenceUser>('typo.profile');
   const profile = validPresenceUser(stored)
     ? stored
@@ -66,33 +56,16 @@ export function activate(context: vscode.ExtensionContext) {
         .get('serverUrl', 'http://localhost:3001'),
       getProfile(),
     );
-  const tree = new NotesView(client);
-  const presence = new PresenceController(
-    () => entries.values(),
-    () => updateStatus(),
+  const recent = new RecentView(context.globalState, () => client().baseUrl);
+  const tree = new NotesView(client, (server, notes) =>
+    recent.reconcile(server, notes),
   );
+  const presence = new PresenceController(() => entries.values());
   const idOf = (uri: vscode.Uri) => uri.path.split('/')[1];
-  context.subscriptions.push(changes, status, output, tree, presence);
+  context.subscriptions.push(changes, output, tree, presence, recent);
   function report(error: unknown) {
     output.appendLine(String(error));
     void vscode.window.showErrorMessage(`Typo: ${String(error)}`);
-  }
-  function updateStatus() {
-    const document = vscode.window.activeTextEditor?.document;
-    const entry =
-      document?.uri.scheme === 'typo'
-        ? entries.get(idOf(document.uri))
-        : undefined;
-    if (!entry) {
-      status.hide();
-      return;
-    }
-    status.text = entry.binding?.isFailed
-      ? '$(warning) Typo · 绑定暂停'
-      : `$(sync) Typo · ${labels[entry.session.status]} · ${entry.session.members.length} 在线`;
-    status.tooltip =
-      '正文逐次编辑自动同步；无需保存。断线草稿保存在当前会话内存中。';
-    status.show();
   }
   function getEntry(uri: vscode.Uri): Entry {
     const id = idOf(uri);
@@ -107,7 +80,6 @@ export function activate(context: vscode.ExtensionContext) {
     };
     entries.set(id, entry);
     entry.unsubscribe = session.subscribe(() => {
-      updateStatus();
       if (session.status === 'deleted') {
         entry.binding?.dispose();
         entry.binding = undefined;
@@ -152,7 +124,6 @@ export function activate(context: vscode.ExtensionContext) {
         document,
         (error) => {
           output.appendLine(error.stack || error.message);
-          updateStatus();
           void vscode.window.showErrorMessage(
             `Typo 实时绑定已暂停：${error.message}。请先导出当前正文，再重新打开文档。`,
           );
@@ -160,7 +131,6 @@ export function activate(context: vscode.ExtensionContext) {
         entry.initialState,
       );
       presence.attach(entry);
-      updateStatus();
     } catch (error) {
       report(error);
     }
@@ -218,6 +188,15 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
   context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(bind));
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      if (editor?.document.uri.scheme !== 'typo') return;
+      const note = tree
+        .getChildren()
+        .find((note) => note.id === idOf(editor.document.uri));
+      if (note) recent.visit(note);
+    }),
+  );
   for (const document of vscode.workspace.textDocuments) bind(document);
   const register = (name: string, fn: (note?: Note) => Promise<unknown>) => {
     context.subscriptions.push(
@@ -247,6 +226,7 @@ export function activate(context: vscode.ExtensionContext) {
     const document = await vscode.workspace.openTextDocument(uri);
     bind(document);
     await vscode.window.showTextDocument(document);
+    recent.visit(note);
     return uri;
   }
   register('typo.openNote', async (note) => {
@@ -263,6 +243,7 @@ export function activate(context: vscode.ExtensionContext) {
     await tree.refresh();
     return open(note);
   });
+  register('typo.clearRecent', async () => recent.clear());
   register('typo.refreshNotes', () => tree.refresh());
   register('typo.renameNote', async (note) => {
     const selected = await choose(note);
@@ -325,9 +306,6 @@ export function activate(context: vscode.ExtensionContext) {
         await entries.get(idOf(document.uri))?.binding?.[command]();
     });
   context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor(updateStatus),
-  );
-  context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (
         event.affectsConfiguration('typo.displayName') ||
@@ -336,6 +314,7 @@ export function activate(context: vscode.ExtensionContext) {
         for (const entry of entries.values())
           entry.session.setUser(getProfile());
       if (event.affectsConfiguration('typo.serverUrl')) {
+        recent.refresh();
         void tree.refresh();
         if (entries.size)
           void vscode.window.showInformationMessage(
@@ -362,7 +341,6 @@ export function activate(context: vscode.ExtensionContext) {
         entry.unsubscribe();
         entry.session.destroy();
         entries.delete(id);
-        updateStatus();
       })();
     }),
   );
@@ -377,6 +355,9 @@ export function activate(context: vscode.ExtensionContext) {
     },
   });
   context.subscriptions.push(
+    vscode.commands.registerCommand('typo.showMembers', () =>
+      presence.showMembers(),
+    ),
     vscode.commands.registerCommand(
       'typo.jumpToMember',
       (member: PresenceMember) => presence.jumpToMember(member),
