@@ -1,6 +1,6 @@
 import * as Y from 'yjs';
 import { fromByteArray, toByteArray } from 'base64-js';
-import type { RelativeSelection } from '@typo/core';
+import type { RelativeSelection } from '@formd/core';
 export function captureSelection(
   text: Y.Text,
   anchor: number,

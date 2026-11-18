@@ -1,7 +1,7 @@
-import { createTypoServer } from '../src/server.js';
+import { createFormdServer } from '../src/server.js';
 import { createMemoryNoteStore } from './memory-store.js';
 
-const instance = await createTypoServer(createMemoryNoteStore(), [
+const instance = await createFormdServer(createMemoryNoteStore(), [
   'http://127.0.0.1:5174',
 ]);
 instance.server.listen(3002, '127.0.0.1');

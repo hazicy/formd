@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { Folder, TypoClient } from '@typo/client';
+import type { Folder, FormdClient } from '@formd/client';
 
 export function folderPath(
   folders: ReadonlyMap<string, Folder>,
@@ -18,7 +18,7 @@ export function folderPath(
 }
 
 export async function pickDestination(
-  client: TypoClient,
+  client: FormdClient,
   current: string | null,
   movingFolder?: string,
 ) {

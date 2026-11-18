@@ -8,26 +8,30 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import * as Y from 'yjs';
-import type { NoteSession } from '@typo/client';
+import type { NoteSession } from '@formd/client';
 
 export class DraftStore {
   // Separate writers prevent two extension hosts from overwriting each other.
   private readonly writer = randomUUID();
 
-  constructor(private readonly root: string) {}
+  constructor(
+    private readonly root: string,
+    private readonly legacyRoot?: string,
+  ) {}
 
   restore(server: string, session: Pick<NoteSession, 'doc' | 'id'>) {
-    const directory = this.directory(server, session.id);
-    let files: string[];
-    try {
-      files = readdirSync(directory);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
-      throw error;
-    }
-    const updates = files
-      .filter((file) => file.endsWith('.yjs'))
-      .map((file) => readFileSync(join(directory, file)));
+    const roots = this.legacyRoot ? [this.root, this.legacyRoot] : [this.root];
+    const updates = roots.flatMap((root) => {
+      const directory = this.directory(server, session.id, root);
+      try {
+        return readdirSync(directory)
+          .filter((file) => file.endsWith('.yjs'))
+          .map((file) => readFileSync(join(directory, file)));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+        throw error;
+      }
+    });
     if (!updates.length) return false;
     Y.applyUpdate(session.doc, Y.mergeUpdates(updates));
     return true;
@@ -43,10 +47,10 @@ export class DraftStore {
     renameSync(path + '.tmp', path);
   }
 
-  private directory(server: string, id: string) {
+  private directory(server: string, id: string, root = this.root) {
     const key = createHash('sha256')
       .update(JSON.stringify([server, id]))
       .digest('hex');
-    return join(this.root, key);
+    return join(root, key);
   }
 }

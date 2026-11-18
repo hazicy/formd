@@ -8,18 +8,18 @@
   },
   "scripts": {
     "dev": "concurrently -k -n server,web \"pnpm run dev:server\" \"pnpm run dev:web\"",
-    "dev:web": "pnpm --filter @typo/web run dev",
-    "dev:server": "pnpm --filter @typo/server run dev",
-    "dev:mobile": "pnpm --filter @typo/mobile run start",
-    "build": "pnpm --filter @typo/web run build && pnpm --filter @typo/server run build && pnpm --filter typo-vscode run build",
+    "dev:web": "pnpm --filter @formd/web run dev",
+    "dev:server": "pnpm --filter @formd/server run dev",
+    "dev:mobile": "pnpm --filter @formd/mobile run start",
+    "build": "pnpm --filter @formd/web run build && pnpm --filter @formd/server run build && pnpm --filter formd-vscode run build",
     "typecheck": "pnpm -r --filter \"./apps/**\" --filter \"./packages/**\" --if-present run typecheck",
     "test": "tsx --test packages/core/src/*.test.ts packages/y-vscode/src/*.test.ts apps/server/src/*.test.ts",
-    "package:vscode": "pnpm --filter typo-vscode run package",
+    "package:vscode": "pnpm --filter formd-vscode run package",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "pnpm -r --filter \"./apps/**\" --filter \"./packages/**\" --if-present run lint",
-    "test:vscode": "pnpm --filter typo-vscode run build && pnpm --filter typo-vscode run build:test && tsx apps/vscode/test/run.mts"
+    "test:vscode": "pnpm --filter formd-vscode run build && pnpm --filter formd-vscode run build:test && tsx apps/vscode/test/run.mts"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",

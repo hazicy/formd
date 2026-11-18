@@ -5,7 +5,7 @@ import { createHttpApp } from './http.js';
 import { createNoteService } from './notes.js';
 import type { NoteStore } from './storage/index.js';
 
-export async function createTypoServer(
+export async function createFormdServer(
   store: NoteStore,
   allowedOrigins = ['http://localhost:5173'],
 ) {

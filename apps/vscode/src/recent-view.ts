@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { Note } from '@typo/client';
+import type { Note } from '@formd/client';
 
 type RecentNote = Note & { visitedAt: number };
 
@@ -15,8 +15,8 @@ export class RecentView
     private readonly state: vscode.Memento,
     private readonly server: () => string,
   ) {
-    this.records = state.get('typo.recentNotes', {});
-    this.view = vscode.window.createTreeView('typo.recent', {
+    this.records = state.get('formd.recentNotes', {});
+    this.view = vscode.window.createTreeView('formd.recent', {
       treeDataProvider: this,
     });
     this.refresh();
@@ -33,7 +33,7 @@ export class RecentView
   getTreeItem(note: RecentNote): vscode.TreeItem {
     const item = new vscode.TreeItem(note.title);
     item.id = note.id;
-    item.contextValue = 'typoNote';
+    item.contextValue = 'formdNote';
     item.iconPath = new vscode.ThemeIcon('markdown');
     item.tooltip = vscode.l10n.t(
       '{0}\nVisited {1}',
@@ -41,7 +41,7 @@ export class RecentView
       new Date(note.visitedAt).toLocaleString(vscode.env.language),
     );
     item.command = {
-      command: 'typo.openNote',
+      command: 'formd.openNote',
       title: vscode.l10n.t('Open Document'),
       arguments: [note],
     };
@@ -80,7 +80,7 @@ export class RecentView
   private save() {
     this.refresh();
     void this.state
-      .update('typo.recentNotes', this.records)
+      .update('formd.recentNotes', this.records)
       .then(undefined, (error) => console.error('Formd recent notes:', error));
   }
 

@@ -1,5 +1,5 @@
 {
-  "name": "@typo/client",
+  "name": "@formd/client",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@typo/core": "workspace:*",
+    "@formd/core": "workspace:*",
     "yjs": "^13.6.27",
     "base64-js": "^1.5.1"
   }

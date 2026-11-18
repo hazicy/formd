@@ -29,7 +29,7 @@ const connectionLabels = () =>
 
 export function createConnectionStatus(sessions: DocumentSessions) {
   const item = vscode.window.createStatusBarItem(
-    'typo.connection',
+    'formd.connection',
     vscode.StatusBarAlignment.Left,
     100,
   );
@@ -37,7 +37,7 @@ export function createConnectionStatus(sessions: DocumentSessions) {
   function update() {
     const uri = vscode.window.activeTextEditor?.document.uri;
     const entry =
-      uri?.scheme === 'typo' ? sessions.get(documentId(uri)) : undefined;
+      uri?.scheme === 'formd' ? sessions.get(documentId(uri)) : undefined;
     if (!entry) {
       item.hide();
       return;

@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import WebSocket from 'ws';
-import { TypoClient, type NoteSession } from '@typo/client';
-import { createTypoServer } from './server.js';
+import { FormdClient, type NoteSession } from '@formd/client';
+import { createFormdServer } from './server.js';
 import { createMemoryNoteStore } from '../test/memory-store.js';
 Object.defineProperty(globalThis, 'WebSocket', {
   value: WebSocket,
@@ -19,7 +19,7 @@ async function until(
   }
 }
 async function listen(
-  instance: Awaited<ReturnType<typeof createTypoServer>>,
+  instance: Awaited<ReturnType<typeof createFormdServer>>,
   port = 0,
 ) {
   await new Promise<void>((resolve) =>
@@ -30,7 +30,7 @@ async function listen(
 test('HTTP API handles preflight, malformed JSON, and oversized bodies', async () => {
   const store = createMemoryNoteStore();
   const origin = 'http://localhost:5173';
-  const instance = await createTypoServer(store, [origin]);
+  const instance = await createFormdServer(store, [origin]);
   try {
     const port = await listen(instance);
     const url = `http://127.0.0.1:${port}/api/notes`;
@@ -73,11 +73,11 @@ test(
   { timeout: 30000 },
   async () => {
     const store = createMemoryNoteStore();
-    let instance = await createTypoServer(store);
+    let instance = await createFormdServer(store);
     const sessions: NoteSession[] = [];
     try {
       const port = await listen(instance);
-      const api = new TypoClient(`http://127.0.0.1:${port}`);
+      const api = new FormdClient(`http://127.0.0.1:${port}`);
       assert.equal((await api.list()).length, 0);
       const note = await api.create('  Team  ', 'Start');
       assert.equal(note.title, 'Team');
@@ -105,7 +105,7 @@ test(
         'clients did not detect offline',
       );
       a.replace(a.text.toString() + ' offline');
-      instance = await createTypoServer(store);
+      instance = await createFormdServer(store);
       await listen(instance, port);
       await until(
         () =>
@@ -113,7 +113,7 @@ test(
         'reconnect did not merge offline edits',
       );
       await instance.close();
-      instance = await createTypoServer(store);
+      instance = await createFormdServer(store);
       await listen(instance, port);
       const c = api.connect(note.id);
       sessions.push(c);
@@ -137,7 +137,7 @@ test(
       assert.equal(invalid.status, 400);
       for (const n of await api.list()) await api.delete(n.id);
       await instance.close();
-      instance = await createTypoServer(store);
+      instance = await createFormdServer(store);
       await listen(instance, port);
       await until(async () => {
         try {

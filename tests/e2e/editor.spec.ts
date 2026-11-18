@@ -72,7 +72,7 @@ test('online members, names, colored selections and wrapped/scrolled remote curs
   const note = await response.json();
   await page.addInitScript(() =>
     localStorage.setItem(
-      'typo.profile',
+      'formd.profile',
       JSON.stringify({ name: 'Alice', color: '#537fba', client: 'web' }),
     ),
   );
@@ -83,7 +83,7 @@ test('online members, names, colored selections and wrapped/scrolled remote curs
   const second = await context.newPage();
   await second.addInitScript(() =>
     localStorage.setItem(
-      'typo.profile',
+      'formd.profile',
       JSON.stringify({ name: 'Bob', color: '#b45e46', client: 'web' }),
     ),
   );

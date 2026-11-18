@@ -13,7 +13,7 @@ import {
   type NoteSession,
   type PresenceMember,
   type RelativeSelection,
-} from '@typo/client';
+} from '@formd/client';
 interface Props {
   session: NoteSession;
   value: string;

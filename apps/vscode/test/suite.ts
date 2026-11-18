@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import * as Y from 'yjs';
 import { DraftStore } from '../src/documents/draft-store.js';
 import { chromium } from '@playwright/test';
-import type { Folder, Note } from '@typo/core';
+import type { Folder, Note } from '@formd/core';
 import type { NotesView } from '../src/notes-view.js';
 import type { PresenceController } from '../src/presence.js';
 async function until(
@@ -30,9 +30,10 @@ function verifyDraftRecovery() {
     original.getText('content').insert(0, 'base');
     Y.applyUpdate(remote, Y.encodeStateAsUpdate(original));
     original.getText('content').insert(4, ' local');
-    new DraftStore(path).save(server, { id, doc: original });
+    const legacyPath = join(path, 'legacy');
+    new DraftStore(legacyPath).save(server, { id, doc: original });
 
-    const store = new DraftStore(path);
+    const store = new DraftStore(join(path, 'current'), legacyPath);
     assert.equal(store.restore(server + ':8080', { id, doc: reopened }), false);
     assert.equal(store.restore(server, { id, doc: reopened }), true);
     assert.equal(reopened.getText('content').toString(), 'base local');
@@ -50,8 +51,8 @@ function verifyDraftRecovery() {
 }
 export async function run() {
   verifyDraftRecovery();
-  const apiUrl = process.env.TYPO_TEST_API_URL!;
-  const config = vscode.workspace.getConfiguration('typo');
+  const apiUrl = process.env.FORMD_TEST_API_URL!;
+  const config = vscode.workspace.getConfiguration('formd');
   await config.update('serverUrl', apiUrl, vscode.ConfigurationTarget.Global);
   await config.update(
     'displayName',
@@ -61,7 +62,7 @@ export async function run() {
   const extension = vscode.extensions.getExtension<{
     notes: NotesView;
     presence: PresenceController;
-  }>('typo-local.typo-vscode');
+  }>('formd-local.formd-vscode');
   assert.ok(extension);
   const api = await extension.activate();
   async function request<T>(
@@ -90,15 +91,15 @@ export async function run() {
     headless: true,
   });
   try {
-    await vscode.commands.executeCommand('workbench.view.extension.typo');
-    await vscode.commands.executeCommand('typo.refreshNotes');
+    await vscode.commands.executeCommand('workbench.view.extension.formd');
+    await vscode.commands.executeCommand('formd.refreshNotes');
     await until(
       () => api.notes.getChildren().some((n) => n.id === note.id),
       'Sidebar did not load the fixture note',
     );
     const item = api.notes.getTreeItem(note);
-    assert.equal(item.contextValue, 'typoNote');
-    assert.equal(item.command?.command, 'typo.openNote');
+    assert.equal(item.contextValue, 'formdNote');
+    assert.equal(item.command?.command, 'formd.openNote');
     assert.equal(
       item.command?.title,
       vscode.env.language.toLowerCase() === 'zh-cn'
@@ -116,8 +117,8 @@ export async function run() {
       title: 'Nested note',
       folderId: child.id,
     });
-    await vscode.commands.executeCommand('typo.refreshNotes');
-    assert.equal(api.notes.getTreeItem(root).contextValue, 'typoFolder');
+    await vscode.commands.executeCommand('formd.refreshNotes');
+    assert.equal(api.notes.getTreeItem(root).contextValue, 'formdFolder');
     assert.ok(api.notes.getChildren().some((entry) => entry.id === root.id));
     assert.deepEqual(
       api.notes.getChildren(root).map((entry) => entry.id),
@@ -132,7 +133,7 @@ export async function run() {
     );
     console.log('PASS Formd sidebar view and note item command');
     const uri = await vscode.commands.executeCommand<vscode.Uri>(
-      'typo.openNote',
+      'formd.openNote',
       note,
     );
     assert.ok(uri);
@@ -141,11 +142,11 @@ export async function run() {
     const page = await browser.newPage();
     await page.addInitScript(() =>
       localStorage.setItem(
-        'typo.profile',
+        'formd.profile',
         JSON.stringify({ name: 'Web Bob', color: '#b45e46', client: 'web' }),
       ),
     );
-    await page.goto(`${process.env.TYPO_TEST_WEB_URL}/#${note.id}`);
+    await page.goto(`${process.env.FORMD_TEST_WEB_URL}/#${note.id}`);
     const webEditor = page.getByRole('textbox', { name: 'Markdown 编辑器' });
     await webEditor.waitFor();
     await until(() => webEditor.isEnabled(), 'Web editor not enabled');
@@ -244,9 +245,9 @@ export async function run() {
     const bob = api.presence
       .getChildren()
       .find((member) => member.user.name === 'Web Bob')!;
-    await vscode.commands.executeCommand('typo.followMember', bob);
+    await vscode.commands.executeCommand('formd.followMember', bob);
     assert.equal(api.presence.followingId, bob.id);
-    await vscode.commands.executeCommand('typo.stopFollowing');
+    await vscode.commands.executeCommand('formd.stopFollowing');
     assert.equal(api.presence.followingId, undefined);
     await editor.edit((edit) => edit.insert(new vscode.Position(0, 0), 'XY'));
     await until(
@@ -305,7 +306,7 @@ export async function run() {
       async () => (await webEditor.inputValue()).endsWith('OWN_UNDO'),
       'Local undo test edit not synced',
     );
-    await vscode.commands.executeCommand('typo.undo');
+    await vscode.commands.executeCommand('formd.undo');
     await until(
       async () =>
         !document.getText().includes('OWN_UNDO') &&
@@ -317,7 +318,7 @@ export async function run() {
       remotePrefix,
       'Undo must keep remote edits',
     );
-    await vscode.commands.executeCommand('typo.redo');
+    await vscode.commands.executeCommand('formd.redo');
     await until(
       async () =>
         document.getText().endsWith('OWN_UNDO') &&
@@ -328,22 +329,22 @@ export async function run() {
     const moved = await request<Note>(`/api/notes/${note.id}`, 'PATCH', {
       folderId: child.id,
     });
-    await vscode.commands.executeCommand('typo.refreshNotes');
+    await vscode.commands.executeCommand('formd.refreshNotes');
     assert.ok(
       api.notes.getChildren(child).some((entry) => entry.id === moved.id),
     );
     assert.equal(
       (
-        await vscode.commands.executeCommand<vscode.Uri>('typo.openNote', moved)
+        await vscode.commands.executeCommand<vscode.Uri>('formd.openNote', moved)
       )?.toString(),
       uri.toString(),
     );
     console.log('PASS move preserves the open editor URI');
     await client.rename(note.id, 'Renamed remotely');
-    await vscode.commands.executeCommand('typo.refreshNotes');
+    await vscode.commands.executeCommand('formd.refreshNotes');
     assert.equal(api.notes.findNote(note.id)?.title, 'Renamed remotely');
     const sameUri = await vscode.commands.executeCommand<vscode.Uri>(
-      'typo.openNote',
+      'formd.openNote',
       { ...note, title: 'Renamed remotely' },
     );
     assert.equal(
@@ -364,7 +365,7 @@ export async function run() {
     await document.save();
     await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     await client.delete(note.id);
-    await vscode.commands.executeCommand('typo.refreshNotes');
+    await vscode.commands.executeCommand('formd.refreshNotes');
     assert.ok(!api.notes.getChildren().some((n) => n.id === note.id));
     console.log('PASS close/dispose and sidebar deletion');
   } finally {

@@ -4,7 +4,7 @@
     {
       "label": "build-extension",
       "type": "shell",
-      "command": "pnpm --filter typo-vscode run build",
+      "command": "pnpm --filter formd-vscode run build",
       "problemMatcher": []
     }
   ]

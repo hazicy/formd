@@ -8,7 +8,7 @@ import {
   isNoteId,
   MAX_CONTENT_LENGTH,
   MAX_TITLE_LENGTH,
-} from '@typo/core';
+} from '@formd/core';
 import { StorageConflict, type NoteStore } from './storage/index.js';
 import type { NoteService } from './notes.js';
 

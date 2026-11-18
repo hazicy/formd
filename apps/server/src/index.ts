@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import { createPostgresNoteStore } from './storage/postgres.js';
-import { createTypoServer } from './server.js';
+import { createFormdServer } from './server.js';
 
 if (existsSync('.env')) loadEnvFile('.env');
 const { DATABASE_URL } = process.env;
@@ -11,7 +11,7 @@ const port = Number(process.env.PORT || 3001);
 const origins = (
   process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173'
 ).split(',');
-const instance = await createTypoServer(postgres, origins).catch(
+const instance = await createFormdServer(postgres, origins).catch(
   async (error) => {
     await postgres.close();
     throw error;

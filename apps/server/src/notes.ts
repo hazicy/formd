@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import * as Y from 'yjs';
-import { normalizeTitle, type Note } from '@typo/core';
+import { normalizeTitle, type Note } from '@formd/core';
 import type { NoteStore } from './storage/index.js';
 
 interface NoteEvents {

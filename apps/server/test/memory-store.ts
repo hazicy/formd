@@ -1,4 +1,4 @@
-import type { Folder } from '@typo/core';
+import type { Folder } from '@formd/core';
 import {
   StorageConflict,
   validateFolder,

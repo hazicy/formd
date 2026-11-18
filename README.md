@@ -56,7 +56,7 @@ pnpm run dev
 
 - Web：<http://localhost:5173>
 - API：<http://localhost:3001/api/health>
-- PostgreSQL 15+：使用 DBCode 中 `testdog` 连接的主机、端口和账号，将数据库名设为 `formd`。该库已建好 `public.folders` 和 `public.documents`；在其他数据库初始化表可运行 `pnpm --filter @typo/server run db:push`。旧 `notes` 表不再读取，也不会自动迁移或删除。
+- PostgreSQL 15+：使用 DBCode 中 `testdog` 连接的主机、端口和账号，将数据库名设为 `formd`。该库已建好 `public.folders` 和 `public.documents`；在其他数据库初始化表可运行 `pnpm --filter @formd/server run db:push`。旧 `notes` 表不再读取，也不会自动迁移或删除。
 
 在两个窗口中打开同一篇文档即可验证实时协作。正文编辑后立即发送 Yjs 更新，服务端合并待写入的更新并保存到 PostgreSQL，正常退出前会写入剩余更新。实时协作仍由单个服务端进程维护，不要同时启动多个服务端进程连接同一个 Formd 数据库。
 
@@ -68,14 +68,14 @@ pnpm run dev
 
 ```bash
 pnpm run dev:web
-pnpm --filter @typo/web run build
+pnpm --filter @formd/web run build
 ```
 
 可将 `apps/web/.env.example` 复制为 `.env.local` 配置 `VITE_API_URL`。支持新建、重命名、删除、标题搜索、编辑/分屏/预览、Markdown 格式快捷操作、分享当前文档链接、下载 `.md` 与窄屏侧栏。Markdown 原始 HTML 不执行。
 
 ## Expo / React Native
 
-由官方 `create-expo-app` TypeScript 模板创建，目前使用 Expo SDK 58，原生 iOS/Android 使用 Expo Router 路由。共享 `@typo/client` 与 `@typo/core`，原生界面独立实现。
+由官方 `create-expo-app` TypeScript 模板创建，目前使用 Expo SDK 58，原生 iOS/Android 使用 Expo Router 路由。共享 `@formd/client` 与 `@formd/core`，原生界面独立实现。
 
 ```bash
 # 在一个终端启动后端，并允许局域网设备连接
@@ -106,14 +106,14 @@ pnpm exec expo export --platform ios --platform android --output-dir dist
 - `Formd: 新建协作文档`
 - `Formd: 删除协作文档`
 
-设置 `typo.serverUrl` 指向与 Web 相同的后端，`typo.webUrl` 指向 Web 客户端地址。文档使用 `typo:` 虚拟文件系统，保留 VS Code 原生 Markdown 编辑体验；预览使用 VS Code 的「打开侧边预览」。
+设置 `formd.serverUrl` 指向与 Web 相同的后端，`formd.webUrl` 指向 Web 客户端地址。文档使用 `formd:` 虚拟文件系统，保留 VS Code 原生 Markdown 编辑体验；预览使用 VS Code 的「打开侧边预览」。
 
 **正文逐次编辑实时同步，无需 Ctrl/Cmd+S 或 Auto Save**。实现位于 [`packages/y-vscode`](packages/y-vscode/README.md)，参考 y-monaco 的增量绑定方式，并处理 VS Code 编辑 API 的异步版本冲突。远端修改以局部 TextEdit 应用，多光标编辑按 offset 写入 Y.Text。Cmd/Ctrl+Z 和协作重做命令只撤销当前绑定的本地修改。保存仅确认缓冲区状态，不会用旧的全文快照覆盖合并结果。支持远端成员/光标/选区显示，以及当前文档内的成员定位与跟随。
 
 ```bash
 pnpm run package:vscode
-# 得到 apps/vscode/typo-vscode-0.3.0.vsix
-code --install-extension apps/vscode/typo-vscode-0.3.0.vsix
+# 得到 apps/vscode/formd-vscode-0.4.0.vsix
+code --install-extension apps/vscode/formd-vscode-0.4.0.vsix
 ```
 
 ## 在线成员与光标
@@ -122,7 +122,7 @@ Web 顶部显示在线成员头像与人数，点击可展开成员列表，编�
 
 VS Code 的 Formd 活动栏新增「在线成员」，显示当前文档的成员、客户端和所在行列。点击成员定位光标，行内图钉开始跟随，顶部停止按钮结束跟随；切换文档或使用键盘/鼠标移动选区也会结束跟随。跟随只滚动定位当前文档的成员光标，不自动跨文件切换。编辑器中显示成员颜色、姓名和选区，概览标尺标记位置。参考 [Live Share 的协作交互](https://learn.microsoft.com/en-us/visualstudio/liveshare/use/coedit-follow-focus-visual-studio-code)。
 
-扩展设置 `typo.displayName` 修改名称，`typo.cursorColor` 设置十六进制颜色，留空使用自动分配的访客资料。Web 资料保存在当前浏览器，VS Code 默认访客资料保存在扩展状态中。当前没有登录身份，列表按连接会话统计，同一个人打开多个窗口会显示多个会话，展示的是当前文档的在线状态。
+扩展设置 `formd.displayName` 修改名称，`formd.cursorColor` 设置十六进制颜色，留空使用自动分配的访客资料。Web 资料保存在当前浏览器，VS Code 默认访客资料保存在扩展状态中。当前没有登录身份，列表按连接会话统计，同一个人打开多个窗口会显示多个会话，展示的是当前文档的在线状态。
 
 协议使用独立的 `presence` 消息传递 `{ user, selection }`，服务端为每条连接分配身份；选区端点编码为 Yjs RelativePosition。状态仅保存在内存中，不写入文档或修改文档更新时间。正常离开立即移除，异常断网由 WebSocket 心跳在约 30 秒内清理；重连重新注册，客户端断线时先清空远端成员。设计参考 [Yjs Awareness 与 Presence](https://docs.yjs.dev/getting-started/adding-awareness)，并使用服务端管理的文档级成员快照。当前只广播主选区；移动端尚未提供成员/光标界面。
 
@@ -134,8 +134,8 @@ VS Code 的 Formd 活动栏新增「在线成员」，显示当前文档的成�
 pnpm run typecheck
 pnpm run build
 pnpm test
-pnpm --filter @typo/mobile run lint
-pnpm --filter @typo/web run lint
+pnpm --filter @formd/mobile run lint
+pnpm --filter @formd/web run lint
 
 # 真实 VS Code 扩展宿主 + Chrome/Chromium 联测
 pnpm run test:vscode

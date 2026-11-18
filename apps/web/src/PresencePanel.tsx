@@ -8,7 +8,7 @@ import {
   PRESENCE_COLORS,
   type NoteSession,
   type PresenceUser,
-} from '@typo/client';
+} from '@formd/client';
 export function PresencePanel({
   session,
   user,

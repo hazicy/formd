@@ -1,5 +1,5 @@
 {
-  "name": "@typo/server",
+  "name": "@formd/server",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.9",
-    "@typo/core": "workspace:*",
+    "@formd/core": "workspace:*",
     "base64-js": "^1.5.1",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.19",
@@ -23,7 +23,7 @@
   "devDependencies": {
     "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.1",
-    "@typo/client": "workspace:*",
+    "@formd/client": "workspace:*",
     "drizzle-kit": "^0.31.11",
     "esbuild": "^0.25.0"
   }

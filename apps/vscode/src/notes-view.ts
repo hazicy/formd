@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TypoClient, type Folder, type Note } from '@typo/client';
+import { FormdClient, type Folder, type Note } from '@formd/client';
 
 type TreeEntry = Folder | Note;
 
@@ -16,10 +16,10 @@ export class NotesView
   readonly view: vscode.TreeView<TreeEntry>;
 
   constructor(
-    private readonly client: () => TypoClient,
+    private readonly client: () => FormdClient,
     private readonly onRefresh?: (server: string, notes: Note[]) => void,
   ) {
-    this.view = vscode.window.createTreeView('typo.notes', {
+    this.view = vscode.window.createTreeView('formd.notes', {
       treeDataProvider: this,
       showCollapseAll: true,
     });
@@ -51,7 +51,7 @@ export class NotesView
         vscode.TreeItemCollapsibleState.Collapsed,
       );
       item.id = `folder:${note.id}`;
-      item.contextValue = 'typoFolder';
+      item.contextValue = 'formdFolder';
       item.iconPath = vscode.ThemeIcon.Folder;
       return item;
     }
@@ -60,7 +60,7 @@ export class NotesView
       vscode.TreeItemCollapsibleState.None,
     );
     item.id = note.id;
-    item.contextValue = 'typoNote';
+    item.contextValue = 'formdNote';
     item.iconPath = new vscode.ThemeIcon('markdown');
     item.tooltip = vscode.l10n.t(
       '{0}\nUpdated {1}\n{2}',
@@ -69,7 +69,7 @@ export class NotesView
       note.id,
     );
     item.command = {
-      command: 'typo.openNote',
+      command: 'formd.openNote',
       title: vscode.l10n.t('Open Document'),
       arguments: [note],
     };

@@ -9,12 +9,12 @@ import {
   type PresenceUser,
   type PresenceMember,
   type RelativeSelection,
-} from '@typo/core';
+} from '@formd/core';
 export * from './presence';
-export * from '@typo/core';
+export * from '@formd/core';
 export type ConnectionStatus =
   'connecting' | 'connected' | 'offline' | 'deleted' | 'error';
-export class TypoClient {
+export class FormdClient {
   readonly baseUrl: string;
   user?: PresenceUser;
   constructor(baseUrl: string, user?: PresenceUser) {

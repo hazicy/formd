@@ -16,9 +16,9 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { TypoClient, type Note, type NoteSession } from '@typo/client';
+import { FormdClient, type Note, type NoteSession } from '@formd/client';
 const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
-const client = new TypoClient(apiUrl);
+const client = new FormdClient(apiUrl);
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const { id } = useLocalSearchParams<{ id?: string }>();

@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import WebSocket from 'ws';
 import {
-  TypoClient,
+  FormdClient,
   captureSelection,
   resolveSelection,
   type NoteSession,
-} from '@typo/client';
-import { createTypoServer } from './server.js';
+} from '@formd/client';
+import { createFormdServer } from './server.js';
 import { createMemoryNoteStore } from '../test/memory-store.js';
 Object.defineProperty(globalThis, 'WebSocket', {
   value: WebSocket,
@@ -21,7 +21,7 @@ async function until(predicate: () => boolean) {
   }
 }
 async function listen(
-  instance: Awaited<ReturnType<typeof createTypoServer>>,
+  instance: Awaited<ReturnType<typeof createFormdServer>>,
   port = 0,
 ) {
   await new Promise<void>((resolve) =>
@@ -34,11 +34,11 @@ test(
   { timeout: 30000 },
   async () => {
     const store = createMemoryNoteStore();
-    let instance = await createTypoServer(store);
+    let instance = await createFormdServer(store);
     const sessions: NoteSession[] = [];
     try {
       const port = await listen(instance);
-      const api = new TypoClient(`http://127.0.0.1:${port}`);
+      const api = new FormdClient(`http://127.0.0.1:${port}`);
       const note = await api.create('Presence', 'hello');
       const other = await api.create('Other', 'other');
       const a = api.connect(note.id, {
@@ -128,7 +128,7 @@ test(
           (record) => !('members' in record) && !('presence' in record),
         ),
       );
-      instance = await createTypoServer(store);
+      instance = await createFormdServer(store);
       await listen(instance, port);
       await until(
         () =>

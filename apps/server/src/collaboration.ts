@@ -8,7 +8,7 @@ import {
   validPresenceUser,
   validRelativeSelection,
   type PresenceMember,
-} from '@typo/core';
+} from '@formd/core';
 
 export function createCollaboration() {
   const peers = new Map<string, Set<WebSocket>>();

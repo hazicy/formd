@@ -1,9 +1,9 @@
-# @typo/y-vscode
+# @formd/y-vscode
 
-将 VS Code 原生 `TextDocument` 与已有 `Y.Text` 绑定，正文编辑无需保存即可同步。传输和存储由调用方负责，本项目复用 `@typo/client` 的协作会话。
+将 VS Code 原生 `TextDocument` 与已有 `Y.Text` 绑定，正文编辑无需保存即可同步。传输和存储由调用方负责，本项目复用 `@formd/client` 的协作会话。
 
 ```ts
-import { VscodeBinding } from '@typo/y-vscode';
+import { VscodeBinding } from '@formd/y-vscode';
 
 const binding = new VscodeBinding(
   session.text,
@@ -25,6 +25,6 @@ VS Code 的编辑接口跨扩展宿主异步执行，不能直接复用 Monaco �
 3. 提交期间缓存编辑器事件。确认成功后接收远端事件，再处理随后发生的本地输入；若版本过期被拒绝，则先合并本地输入，重新计算远端增量。
 4. 由 transaction origin 区分本地/远端，防止回传。单独的 Y.UndoManager 只追踪当前绑定的本地 origin，避免撤销其他客户端的更新。
 
-WorkspaceEdit 的版本校验参考 [VS Code 的扩展宿主实现](https://github.com/microsoft/vscode/blob/main/src/vs/workbench/api/common/extHostBulkEdits.ts)。纯绑定核心导出在 `@typo/y-vscode/binding`，通过 EditorAdapter 接口测试异步竞态，不需要模拟整个 vscode 模块。
+WorkspaceEdit 的版本校验参考 [VS Code 的扩展宿主实现](https://github.com/microsoft/vscode/blob/main/src/vs/workbench/api/common/extHostBulkEdits.ts)。纯绑定核心导出在 `@formd/y-vscode/binding`，通过 EditorAdapter 接口测试异步竞态，不需要模拟整个 vscode 模块。
 
 目前只支持顶层命名的纯文本 Y.Text（默认 `content`）。绑定核心不负责网络 presence 或磁盘离线缓存。`viewText` 暴露与编辑器当前版本一致的只读副本供光标相对位置映射；在线成员、远端光标/选区装饰及跟随由 `apps/vscode/src/presence.ts` 提供。扩展的键盘撤销/重做使用协作命令；正文会显示 VS Code 的 dirty 标记，但实时同步不依赖保存。

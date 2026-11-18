@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import type { VscodeBinding } from '@typo/y-vscode';
+import type { VscodeBinding } from '@formd/y-vscode';
 import {
   captureSelection,
   resolveSelection,
   type NoteSession,
   type PresenceMember,
-} from '@typo/client';
+} from '@formd/client';
 interface Entry {
   uri: vscode.Uri;
   session: NoteSession;
@@ -18,7 +18,7 @@ interface Decorations {
 }
 export class PresenceController implements vscode.Disposable {
   private readonly status = vscode.window.createStatusBarItem(
-    'typo.members',
+    'formd.members',
     vscode.StatusBarAlignment.Left,
     99,
   );
@@ -32,13 +32,13 @@ export class PresenceController implements vscode.Disposable {
   private selectionTimer?: ReturnType<typeof setTimeout>;
   constructor(private readonly entries: () => Iterable<Entry>) {
     this.status.name = vscode.l10n.t('Formd Online Members');
-    this.status.command = 'typo.showMembers';
+    this.status.command = 'formd.showMembers';
     this.subscriptions.push(
       this.status,
       vscode.window.onDidChangeActiveTextEditor(() => this.activateEditor()),
       vscode.window.onDidChangeVisibleTextEditors(() => this.schedule()),
       vscode.window.onDidChangeTextEditorSelection((event) => {
-        if (event.textEditor.document.uri.scheme !== 'typo') return;
+        if (event.textEditor.document.uri.scheme !== 'formd') return;
         if (
           event.kind === vscode.TextEditorSelectionChangeKind.Keyboard ||
           event.kind === vscode.TextEditorSelectionChangeKind.Mouse

@@ -1,5 +1,5 @@
 import { runTests } from '@vscode/test-electron';
-import { createTypoServer } from '../../server/src/server.js';
+import { createFormdServer } from '../../server/src/server.js';
 import { createMemoryNoteStore } from '../../server/test/memory-store.js';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -8,9 +8,9 @@ import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 
 const root = resolve(import.meta.dirname, '../../..');
-const temp = mkdtempSync(join(tmpdir(), 'typo-vscode-test-'));
+const temp = mkdtempSync(join(tmpdir(), 'formd-vscode-test-'));
 const webUrl = 'http://127.0.0.1:5175';
-const server = await createTypoServer(createMemoryNoteStore(), [webUrl]);
+const server = await createFormdServer(createMemoryNoteStore(), [webUrl]);
 await new Promise<void>((resolve) =>
   server.server.listen(0, '127.0.0.1', resolve),
 );
@@ -47,8 +47,8 @@ try {
     extensionDevelopmentPath: join(root, 'apps/vscode'),
     extensionTestsPath: join(root, 'apps/vscode/dist/test.cjs'),
     extensionTestsEnv: {
-      TYPO_TEST_API_URL: apiUrl,
-      TYPO_TEST_WEB_URL: webUrl,
+      FORMD_TEST_API_URL: apiUrl,
+      FORMD_TEST_WEB_URL: webUrl,
       PLAYWRIGHT_CHANNEL: process.env.PLAYWRIGHT_CHANNEL || '',
     },
     launchArgs: [

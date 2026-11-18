@@ -1,9 +1,9 @@
 {
-  "name": "typo-vscode",
+  "name": "formd-vscode",
   "displayName": "Formd — Collaborative Markdown",
   "description": "%extension.description%",
-  "version": "0.3.3",
-  "publisher": "typo-local",
+  "version": "0.4.0",
+  "publisher": "formd-local",
   "license": "MIT",
   "engines": {
     "vscode": "^1.95.0"
@@ -13,9 +13,9 @@
   ],
   "main": "./dist/extension.cjs",
   "activationEvents": [
-    "onFileSystem:typo",
-    "onView:typo.notes",
-    "onView:typo.recent"
+    "onFileSystem:formd",
+    "onView:formd.notes",
+    "onView:formd.recent"
   ],
   "scripts": {
     "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs",
@@ -26,141 +26,141 @@
   "contributes": {
     "commands": [
       {
-        "command": "typo.openNote",
-        "title": "%typo.openNote%"
+        "command": "formd.openNote",
+        "title": "%formd.openNote%"
       },
       {
-        "command": "typo.createNote",
-        "title": "%typo.createNote%",
+        "command": "formd.createNote",
+        "title": "%formd.createNote%",
         "icon": "$(add)"
       },
       {
-        "command": "typo.createFolder",
-        "title": "%typo.createFolder%",
+        "command": "formd.createFolder",
+        "title": "%formd.createFolder%",
         "icon": "$(new-folder)"
       },
       {
-        "command": "typo.deleteNote",
-        "title": "%typo.deleteNote%",
+        "command": "formd.deleteNote",
+        "title": "%formd.deleteNote%",
         "icon": "$(trash)"
       },
       {
-        "command": "typo.refreshNotes",
-        "title": "%typo.refreshNotes%",
+        "command": "formd.refreshNotes",
+        "title": "%formd.refreshNotes%",
         "icon": "$(refresh)"
       },
       {
-        "command": "typo.renameNote",
-        "title": "%typo.renameNote%",
+        "command": "formd.renameNote",
+        "title": "%formd.renameNote%",
         "icon": "$(edit)"
       },
       {
-        "command": "typo.openInBrowser",
-        "title": "%typo.openInBrowser%",
+        "command": "formd.openInBrowser",
+        "title": "%formd.openInBrowser%",
         "icon": "$(globe)"
       },
       {
-        "command": "typo.configureServer",
-        "title": "%typo.configureServer%",
+        "command": "formd.configureServer",
+        "title": "%formd.configureServer%",
         "icon": "$(gear)"
       },
       {
-        "command": "typo.undo",
-        "title": "%typo.undo%",
+        "command": "formd.undo",
+        "title": "%formd.undo%",
         "icon": "$(discard)"
       },
       {
-        "command": "typo.redo",
-        "title": "%typo.redo%",
+        "command": "formd.redo",
+        "title": "%formd.redo%",
         "icon": "$(redo)"
       },
       {
-        "command": "typo.jumpToMember",
-        "title": "%typo.jumpToMember%",
+        "command": "formd.jumpToMember",
+        "title": "%formd.jumpToMember%",
         "icon": "$(go-to-file)"
       },
       {
-        "command": "typo.followMember",
-        "title": "%typo.followMember%",
+        "command": "formd.followMember",
+        "title": "%formd.followMember%",
         "icon": "$(pin)"
       },
       {
-        "command": "typo.stopFollowing",
-        "title": "%typo.stopFollowing%",
+        "command": "formd.stopFollowing",
+        "title": "%formd.stopFollowing%",
         "icon": "$(debug-stop)"
       },
       {
-        "command": "typo.showMembers",
-        "title": "%typo.showMembers%"
+        "command": "formd.showMembers",
+        "title": "%formd.showMembers%"
       },
       {
-        "command": "typo.clearRecent",
-        "title": "%typo.clearRecent%",
+        "command": "formd.clearRecent",
+        "title": "%formd.clearRecent%",
         "icon": "$(clear-all)"
       },
       {
-        "command": "typo.moveNote",
-        "title": "%typo.moveNote%"
+        "command": "formd.moveNote",
+        "title": "%formd.moveNote%"
       },
       {
-        "command": "typo.renameFolder",
-        "title": "%typo.renameFolder%"
+        "command": "formd.renameFolder",
+        "title": "%formd.renameFolder%"
       },
       {
-        "command": "typo.moveFolder",
-        "title": "%typo.moveFolder%"
+        "command": "formd.moveFolder",
+        "title": "%formd.moveFolder%"
       },
       {
-        "command": "typo.deleteFolder",
-        "title": "%typo.deleteFolder%"
+        "command": "formd.deleteFolder",
+        "title": "%formd.deleteFolder%"
       }
     ],
     "configuration": {
       "title": "Formd",
       "properties": {
-        "typo.serverUrl": {
+        "formd.serverUrl": {
           "type": "string",
           "default": "http://localhost:3001",
-          "description": "%typo.serverUrl.description%"
+          "description": "%formd.serverUrl.description%"
         },
-        "typo.webUrl": {
+        "formd.webUrl": {
           "type": "string",
           "default": "http://localhost:5173",
-          "description": "%typo.webUrl.description%"
+          "description": "%formd.webUrl.description%"
         },
-        "typo.displayName": {
+        "formd.displayName": {
           "type": "string",
           "default": "",
           "maxLength": 48,
-          "description": "%typo.displayName.description%"
+          "description": "%formd.displayName.description%"
         },
-        "typo.cursorColor": {
+        "formd.cursorColor": {
           "type": "string",
           "default": "",
           "pattern": "^$|^#[0-9a-fA-F]{6}$",
-          "description": "%typo.cursorColor.description%"
+          "description": "%formd.cursorColor.description%"
         }
       }
     },
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "typo",
+          "id": "formd",
           "title": "Formd",
-          "icon": "media/typo.svg"
+          "icon": "media/formd.svg"
         }
       ]
     },
     "views": {
-      "typo": [
+      "formd": [
         {
-          "id": "typo.notes",
+          "id": "formd.notes",
           "name": "%view.notes%",
-          "icon": "media/typo.svg",
+          "icon": "media/formd.svg",
           "contextualTitle": "Formd"
         },
         {
-          "id": "typo.recent",
+          "id": "formd.recent",
           "name": "%view.recent%",
           "contextualTitle": "%view.recent.context%"
         }
@@ -169,131 +169,131 @@
     "menus": {
       "view/title": [
         {
-          "command": "typo.createNote",
-          "when": "view == typo.notes",
+          "command": "formd.createNote",
+          "when": "view == formd.notes",
           "group": "navigation@1"
         },
         {
-          "command": "typo.createFolder",
-          "when": "view == typo.notes",
+          "command": "formd.createFolder",
+          "when": "view == formd.notes",
           "group": "navigation@2"
         },
         {
-          "command": "typo.refreshNotes",
-          "when": "view == typo.notes",
+          "command": "formd.refreshNotes",
+          "when": "view == formd.notes",
           "group": "navigation@3"
         },
         {
-          "command": "typo.configureServer",
-          "when": "view == typo.notes",
+          "command": "formd.configureServer",
+          "when": "view == formd.notes",
           "group": "navigation@4"
         },
         {
-          "command": "typo.clearRecent",
-          "when": "view == typo.recent",
+          "command": "formd.clearRecent",
+          "when": "view == formd.recent",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "typo.createNote",
-          "when": "view == typo.notes && viewItem == typoFolder",
+          "command": "formd.createNote",
+          "when": "view == formd.notes && viewItem == formdFolder",
           "group": "1_create@1"
         },
         {
-          "command": "typo.createFolder",
-          "when": "view == typo.notes && viewItem == typoFolder",
+          "command": "formd.createFolder",
+          "when": "view == formd.notes && viewItem == formdFolder",
           "group": "1_create@2"
         },
         {
-          "command": "typo.openInBrowser",
-          "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
+          "command": "formd.openInBrowser",
+          "when": "(view == formd.notes || view == formd.recent) && viewItem == formdNote",
           "group": "inline@1"
         },
         {
-          "command": "typo.renameNote",
-          "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
+          "command": "formd.renameNote",
+          "when": "(view == formd.notes || view == formd.recent) && viewItem == formdNote",
           "group": "1_modify@1"
         },
         {
-          "command": "typo.deleteNote",
-          "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
+          "command": "formd.deleteNote",
+          "when": "(view == formd.notes || view == formd.recent) && viewItem == formdNote",
           "group": "1_modify@2"
         },
         {
-          "command": "typo.moveNote",
-          "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
+          "command": "formd.moveNote",
+          "when": "(view == formd.notes || view == formd.recent) && viewItem == formdNote",
           "group": "1_modify@3"
         },
         {
-          "command": "typo.renameFolder",
-          "when": "view == typo.notes && viewItem == typoFolder",
+          "command": "formd.renameFolder",
+          "when": "view == formd.notes && viewItem == formdFolder",
           "group": "1_modify@4"
         },
         {
-          "command": "typo.moveFolder",
-          "when": "view == typo.notes && viewItem == typoFolder",
+          "command": "formd.moveFolder",
+          "when": "view == formd.notes && viewItem == formdFolder",
           "group": "1_modify@5"
         },
         {
-          "command": "typo.deleteFolder",
-          "when": "view == typo.notes && viewItem == typoFolder",
+          "command": "formd.deleteFolder",
+          "when": "view == formd.notes && viewItem == formdFolder",
           "group": "1_modify@6"
         }
       ],
       "commandPalette": [
         {
-          "command": "typo.undo",
-          "when": "resourceScheme == typo"
+          "command": "formd.undo",
+          "when": "resourceScheme == formd"
         },
         {
-          "command": "typo.redo",
-          "when": "resourceScheme == typo"
+          "command": "formd.redo",
+          "when": "resourceScheme == formd"
         },
         {
-          "command": "typo.renameFolder",
+          "command": "formd.renameFolder",
           "when": "false"
         },
         {
-          "command": "typo.moveFolder",
+          "command": "formd.moveFolder",
           "when": "false"
         },
         {
-          "command": "typo.deleteFolder",
+          "command": "formd.deleteFolder",
           "when": "false"
         }
       ]
     },
     "keybindings": [
       {
-        "command": "typo.undo",
+        "command": "formd.undo",
         "key": "ctrl+z",
         "mac": "cmd+z",
-        "when": "editorTextFocus && resourceScheme == typo"
+        "when": "editorTextFocus && resourceScheme == formd"
       },
       {
-        "command": "typo.redo",
+        "command": "formd.redo",
         "key": "ctrl+y",
         "mac": "cmd+shift+z",
-        "when": "editorTextFocus && resourceScheme == typo"
+        "when": "editorTextFocus && resourceScheme == formd"
       },
       {
-        "command": "typo.redo",
+        "command": "formd.redo",
         "key": "ctrl+shift+z",
-        "when": "editorTextFocus && resourceScheme == typo"
+        "when": "editorTextFocus && resourceScheme == formd"
       }
     ]
   },
   "dependencies": {
-    "@typo/client": "workspace:*",
-    "@typo/y-vscode": "workspace:*",
+    "@formd/client": "workspace:*",
+    "@formd/y-vscode": "workspace:*",
     "ws": "^8.18.3",
     "yjs": "^13.6.27"
   },
   "devDependencies": {
     "@types/vscode": "^1.95.0",
     "@types/ws": "^8.18.1",
-    "@typo/core": "workspace:*",
+    "@formd/core": "workspace:*",
     "@vscode/vsce": "^3.6.0",
     "esbuild": "^0.25.0"
   },

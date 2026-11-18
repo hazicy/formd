@@ -194,7 +194,7 @@ importers:
 
   apps/mobile:
     dependencies:
-      '@typo/client':
+      '@formd/client':
         specifier: workspace:*
         version: link:../../packages/client
       expo:
@@ -249,7 +249,7 @@ importers:
       '@hono/node-server':
         specifier: ^2.1.9
         version: 2.1.9(hono@4.13.19)
-      '@typo/core':
+      '@formd/core':
         specifier: workspace:*
         version: link:../../packages/core
       base64-js:
@@ -277,7 +277,7 @@ importers:
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.2
-      '@typo/client':
+      '@formd/client':
         specifier: workspace:*
         version: link:../../packages/client
       drizzle-kit:
@@ -289,10 +289,10 @@ importers:
 
   apps/vscode:
     dependencies:
-      '@typo/client':
+      '@formd/client':
         specifier: workspace:*
         version: link:../../packages/client
-      '@typo/y-vscode':
+      '@formd/y-vscode':
         specifier: workspace:*
         version: link:../../packages/y-vscode
       ws:
@@ -308,7 +308,7 @@ importers:
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.2
-      '@typo/core':
+      '@formd/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@vscode/vsce':
@@ -323,7 +323,7 @@ importers:
       '@base-ui/react':
         specifier: ^1.9.0
         version: 1.9.0(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@typo/client':
+      '@formd/client':
         specifier: workspace:*
         version: link:../../packages/client
       lucide-react:
@@ -366,7 +366,7 @@ importers:
 
   packages/client:
     dependencies:
-      '@typo/core':
+      '@formd/core':
         specifier: workspace:*
         version: link:../core
       base64-js:

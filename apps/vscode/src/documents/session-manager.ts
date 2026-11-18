@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { VscodeBinding } from '@typo/y-vscode';
-import type { NoteSession, TypoClient } from '@typo/client';
+import { VscodeBinding } from '@formd/y-vscode';
+import type { NoteSession, FormdClient } from '@formd/client';
 import type { DraftStore } from './draft-store.js';
 
 export function documentId(uri: vscode.Uri) {
@@ -24,7 +24,7 @@ export class DocumentSessions implements vscode.Disposable {
   readonly onDidDelete = this.deleted.event;
 
   constructor(
-    private readonly client: () => TypoClient,
+    private readonly client: () => FormdClient,
     private readonly drafts: DraftStore,
     private readonly output: vscode.OutputChannel,
     private readonly report: (error: unknown) => void,
@@ -145,7 +145,7 @@ export class DocumentSessions implements vscode.Disposable {
     });
   }
   bind(document: vscode.TextDocument) {
-    if (document.uri.scheme !== 'typo') return;
+    if (document.uri.scheme !== 'formd') return;
     const entry = this.getOrCreate(document.uri);
     if (entry.binding || entry.session.status === 'deleted') return;
     try {
@@ -171,7 +171,7 @@ export class DocumentSessions implements vscode.Disposable {
   }
 
   async close(document: vscode.TextDocument) {
-    if (document.uri.scheme !== 'typo') return;
+    if (document.uri.scheme !== 'formd') return;
     const id = documentId(document.uri);
     const entry = this.entries.get(id);
     if (!entry) return;

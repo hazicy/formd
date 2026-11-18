@@ -2,7 +2,7 @@ import { folderPath, pickDestination } from './folder-picker.js';
 import * as vscode from 'vscode';
 import WebSocket from 'ws';
 import {
-  TypoClient,
+  FormdClient,
   markdownFilename,
   type Note,
   type Folder,
@@ -10,7 +10,7 @@ import {
   validPresenceUser,
   type PresenceUser,
   type PresenceMember,
-} from '@typo/client';
+} from '@formd/client';
 import { RecentView } from './recent-view.js';
 import { NotesView } from './notes-view.js';
 import { PresenceController } from './presence.js';
@@ -25,13 +25,13 @@ Object.defineProperty(globalThis, 'WebSocket', {
 export function activate(context: vscode.ExtensionContext) {
   const changes = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
   const output = vscode.window.createOutputChannel('Formd');
-  const stored = context.globalState.get<PresenceUser>('typo.profile');
+  const stored = context.globalState.get<PresenceUser>('formd.profile');
   const profile = validPresenceUser(stored)
     ? stored
     : createGuestUser('vscode');
-  void context.globalState.update('typo.profile', profile);
+  void context.globalState.update('formd.profile', profile);
   function getProfile(): PresenceUser {
-    const config = vscode.workspace.getConfiguration('typo');
+    const config = vscode.workspace.getConfiguration('formd');
     return {
       ...profile,
       name:
@@ -43,9 +43,9 @@ export function activate(context: vscode.ExtensionContext) {
     };
   }
   const client = () =>
-    new TypoClient(
+    new FormdClient(
       vscode.workspace
-        .getConfiguration('typo')
+        .getConfiguration('formd')
         .get('serverUrl', 'http://localhost:3001'),
       getProfile(),
     );
@@ -61,6 +61,12 @@ export function activate(context: vscode.ExtensionContext) {
     client,
     new DraftStore(
       vscode.Uri.joinPath(context.globalStorageUri, 'drafts').fsPath,
+      vscode.Uri.joinPath(
+        context.globalStorageUri,
+        '..',
+        'typo-local.typo-vscode',
+        'drafts',
+      ).fsPath,
     ),
     output,
     report,
@@ -83,7 +89,7 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
   context.subscriptions.push(
-    vscode.workspace.registerFileSystemProvider('typo', provider, {
+    vscode.workspace.registerFileSystemProvider('formd', provider, {
       isCaseSensitive: true,
     }),
   );
@@ -94,7 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor((editor) => {
-      if (editor?.document.uri.scheme !== 'typo') return;
+      if (editor?.document.uri.scheme !== 'formd') return;
       const note = tree.findNote(documentId(editor.document.uri));
       if (note) recent.visit(note);
     }),
@@ -151,7 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
     const uri =
       sessions.get(note.id)?.uri ??
       vscode.Uri.from({
-        scheme: 'typo',
+        scheme: 'formd',
         path: `/${note.id}/${markdownFilename(note.title)}`,
       });
     const document = await vscode.workspace.openTextDocument(uri);
@@ -160,11 +166,11 @@ export function activate(context: vscode.ExtensionContext) {
     recent.visit(note);
     return uri;
   }
-  register('typo.openNote', async (note) => {
+  register('formd.openNote', async (note) => {
     const selected = await choose(note);
     if (selected) return open(selected);
   });
-  register<Folder>('typo.createNote', async (folder) => {
+  register<Folder>('formd.createNote', async (folder) => {
     const target = client();
     const title = await vscode.window.showInputBox({
       prompt: folder?.id
@@ -177,7 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
     await tree.refresh();
     return open(note);
   });
-  register<Folder>('typo.createFolder', async (folder) => {
+  register<Folder>('formd.createFolder', async (folder) => {
     const target = client();
     const name = await vscode.window.showInputBox({
       prompt: folder?.id
@@ -191,7 +197,7 @@ export function activate(context: vscode.ExtensionContext) {
     await target.createFolder(name.trim(), folder?.id);
     await tree.refresh();
   });
-  register('typo.moveNote', async (note) => {
+  register('formd.moveNote', async (note) => {
     const target = client();
     const selected = await choose(note);
     if (!selected) return;
@@ -200,7 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
     await target.move(selected.id, destination.id);
     await tree.refresh();
   });
-  register<Folder>('typo.renameFolder', async (folder) => {
+  register<Folder>('formd.renameFolder', async (folder) => {
     if (!folder?.id) return;
     const target = client();
     const name = (
@@ -215,7 +221,7 @@ export function activate(context: vscode.ExtensionContext) {
     await target.updateFolder(folder.id, { name });
     await tree.refresh();
   });
-  register<Folder>('typo.moveFolder', async (folder) => {
+  register<Folder>('formd.moveFolder', async (folder) => {
     if (!folder?.id) return;
     const target = client();
     const destination = await pickDestination(
@@ -227,7 +233,7 @@ export function activate(context: vscode.ExtensionContext) {
     await target.updateFolder(folder.id, { parentId: destination.id });
     await tree.refresh();
   });
-  register<Folder>('typo.deleteFolder', async (folder) => {
+  register<Folder>('formd.deleteFolder', async (folder) => {
     if (!folder?.id) return;
     const target = client();
     if (
@@ -244,9 +250,9 @@ export function activate(context: vscode.ExtensionContext) {
     await target.deleteFolder(folder.id);
     await tree.refresh();
   });
-  register('typo.clearRecent', async () => recent.clear());
-  register('typo.refreshNotes', () => tree.refresh());
-  register('typo.renameNote', async (note) => {
+  register('formd.clearRecent', async () => recent.clear());
+  register('formd.refreshNotes', () => tree.refresh());
+  register('formd.renameNote', async (note) => {
     const selected = await choose(note);
     if (!selected) return;
     const title = await vscode.window.showInputBox({
@@ -257,7 +263,7 @@ export function activate(context: vscode.ExtensionContext) {
     await client().rename(selected.id, title);
     await tree.refresh();
   });
-  register('typo.deleteNote', async (note) => {
+  register('formd.deleteNote', async (note) => {
     const selected = await choose(note);
     if (!selected) return;
     if (
@@ -271,18 +277,18 @@ export function activate(context: vscode.ExtensionContext) {
       await tree.refresh();
     }
   });
-  register('typo.openInBrowser', async (note) => {
+  register('formd.openInBrowser', async (note) => {
     const selected = await choose(note);
     if (!selected) return;
     const base = vscode.workspace
-      .getConfiguration('typo')
+      .getConfiguration('formd')
       .get('webUrl', 'http://localhost:5173');
     const url = new URL(base);
     url.hash = selected.id;
     await vscode.env.openExternal(vscode.Uri.parse(url.toString()));
   });
-  register('typo.configureServer', async () => {
-    const config = vscode.workspace.getConfiguration('typo');
+  register('formd.configureServer', async () => {
+    const config = vscode.workspace.getConfiguration('formd');
     const server = await vscode.window.showInputBox({
       prompt: vscode.l10n.t('Formd server URL'),
       value: config.get('serverUrl', 'http://localhost:3001'),
@@ -301,20 +307,20 @@ export function activate(context: vscode.ExtensionContext) {
     await config.update('serverUrl', server, vscode.ConfigurationTarget.Global);
   });
   for (const command of ['undo', 'redo'] as const)
-    register(`typo.${command}`, async () => {
+    register(`formd.${command}`, async () => {
       const document = vscode.window.activeTextEditor?.document;
-      if (document?.uri.scheme === 'typo')
+      if (document?.uri.scheme === 'formd')
         await sessions.get(documentId(document.uri))?.binding?.[command]();
     });
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (
-        event.affectsConfiguration('typo.displayName') ||
-        event.affectsConfiguration('typo.cursorColor')
+        event.affectsConfiguration('formd.displayName') ||
+        event.affectsConfiguration('formd.cursorColor')
       )
         for (const entry of sessions.values())
           entry.session.setUser(getProfile());
-      if (event.affectsConfiguration('typo.serverUrl')) {
+      if (event.affectsConfiguration('formd.serverUrl')) {
         recent.refresh();
         void tree.refresh();
         if (sessions.size)
@@ -332,18 +338,18 @@ export function activate(context: vscode.ExtensionContext) {
     ),
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand('typo.showMembers', () =>
+    vscode.commands.registerCommand('formd.showMembers', () =>
       presence.showMembers(),
     ),
     vscode.commands.registerCommand(
-      'typo.jumpToMember',
+      'formd.jumpToMember',
       (member: PresenceMember) => presence.jumpToMember(member),
     ),
     vscode.commands.registerCommand(
-      'typo.followMember',
+      'formd.followMember',
       (member: PresenceMember) => presence.jumpToMember(member, true),
     ),
-    vscode.commands.registerCommand('typo.stopFollowing', () =>
+    vscode.commands.registerCommand('formd.stopFollowing', () =>
       presence.stopFollowing(),
     ),
   );

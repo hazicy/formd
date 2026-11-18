@@ -1,4 +1,4 @@
-import type { Folder, Note } from '@typo/core';
+import type { Folder, Note } from '@formd/core';
 
 export interface StoredNote extends Note {
   state: Uint8Array;
