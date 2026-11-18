@@ -1,7 +1,12 @@
 import * as vscode from 'vscode';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import * as Y from 'yjs';
+import { DraftStore } from '../src/documents/draft-store.js';
 import { chromium } from '@playwright/test';
-import type { Note } from '@typo/core';
+import type { Folder, Note } from '@typo/core';
 import type { NotesView } from '../src/notes-view.js';
 import type { PresenceController } from '../src/presence.js';
 async function until(
@@ -14,7 +19,37 @@ async function until(
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
 }
+function verifyDraftRecovery() {
+  const path = mkdtempSync(join(tmpdir(), 'formd-drafts-'));
+  const original = new Y.Doc();
+  const remote = new Y.Doc();
+  const reopened = new Y.Doc();
+  const server = 'http://example.test';
+  const id = 'note';
+  try {
+    original.getText('content').insert(0, 'base');
+    Y.applyUpdate(remote, Y.encodeStateAsUpdate(original));
+    original.getText('content').insert(4, ' local');
+    new DraftStore(path).save(server, { id, doc: original });
+
+    const store = new DraftStore(path);
+    assert.equal(store.restore(server + ':8080', { id, doc: reopened }), false);
+    assert.equal(store.restore(server, { id, doc: reopened }), true);
+    assert.equal(reopened.getText('content').toString(), 'base local');
+
+    remote.getText('content').insert(0, 'remote ');
+    Y.applyUpdate(reopened, Y.encodeStateAsUpdate(remote));
+    assert.equal(reopened.getText('content').toString(), 'remote base local');
+    console.log('PASS persisted draft recovery and concurrent remote merge');
+  } finally {
+    original.destroy();
+    remote.destroy();
+    reopened.destroy();
+    rmSync(path, { recursive: true, force: true });
+  }
+}
 export async function run() {
+  verifyDraftRecovery();
   const apiUrl = process.env.TYPO_TEST_API_URL!;
   const config = vscode.workspace.getConfiguration('typo');
   await config.update('serverUrl', apiUrl, vscode.ConfigurationTarget.Global);
@@ -64,6 +99,31 @@ export async function run() {
     const item = api.notes.getTreeItem(note);
     assert.equal(item.contextValue, 'typoNote');
     assert.equal(item.command?.command, 'typo.openNote');
+    const root = await request<Folder>('/api/folders', 'POST', {
+      name: 'Projects',
+    });
+    const child = await request<Folder>('/api/folders', 'POST', {
+      name: 'Drafts',
+      parentId: root.id,
+    });
+    const nestedNote = await request<Note>('/api/notes', 'POST', {
+      title: 'Nested note',
+      folderId: child.id,
+    });
+    await vscode.commands.executeCommand('typo.refreshNotes');
+    assert.equal(api.notes.getTreeItem(root).contextValue, 'typoFolder');
+    assert.ok(api.notes.getChildren().some((entry) => entry.id === root.id));
+    assert.deepEqual(
+      api.notes.getChildren(root).map((entry) => entry.id),
+      [child.id],
+    );
+    assert.deepEqual(
+      api.notes.getChildren(child).map((entry) => entry.id),
+      [nestedNote.id],
+    );
+    assert.ok(
+      !api.notes.getChildren().some((entry) => entry.id === nestedNote.id),
+    );
     console.log('PASS Formd sidebar view and note item command');
     const uri = await vscode.commands.executeCommand<vscode.Uri>(
       'typo.openNote',
@@ -261,10 +321,7 @@ export async function run() {
     console.log('PASS local-only Yjs undo and redo');
     await client.rename(note.id, 'Renamed remotely');
     await vscode.commands.executeCommand('typo.refreshNotes');
-    assert.equal(
-      api.notes.getChildren().find((n) => n.id === note.id)?.title,
-      'Renamed remotely',
-    );
+    assert.equal(api.notes.findNote(note.id)?.title, 'Renamed remotely');
     const sameUri = await vscode.commands.executeCommand<vscode.Uri>(
       'typo.openNote',
       { ...note, title: 'Renamed remotely' },

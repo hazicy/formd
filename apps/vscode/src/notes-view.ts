@@ -1,16 +1,19 @@
 import * as vscode from 'vscode';
-import { TypoClient, type Note } from '@typo/client';
+import { TypoClient, type Folder, type Note } from '@typo/client';
+
+type TreeEntry = Folder | Note;
 
 export class NotesView
-  implements vscode.TreeDataProvider<Note>, vscode.Disposable
+  implements vscode.TreeDataProvider<TreeEntry>, vscode.Disposable
 {
-  private readonly changes = new vscode.EventEmitter<Note | undefined>();
+  private readonly changes = new vscode.EventEmitter<TreeEntry | undefined>();
   readonly onDidChangeTreeData = this.changes.event;
   private notes: Note[] = [];
+  private folders: Folder[] = [];
   private generation = 0;
   private disposed = false;
   private readonly timer: ReturnType<typeof setInterval>;
-  readonly view: vscode.TreeView<Note>;
+  readonly view: vscode.TreeView<TreeEntry>;
 
   constructor(
     private readonly client: () => TypoClient,
@@ -18,7 +21,7 @@ export class NotesView
   ) {
     this.view = vscode.window.createTreeView('typo.notes', {
       treeDataProvider: this,
-      showCollapseAll: false,
+      showCollapseAll: true,
     });
     this.timer = setInterval(() => {
       if (this.view.visible) void this.refresh();
@@ -28,10 +31,30 @@ export class NotesView
     });
     void this.refresh();
   }
-  getChildren(): Note[] {
-    return this.notes;
+  findNote(id: string) {
+    return this.notes.find((note) => note.id === id);
   }
-  getTreeItem(note: Note): vscode.TreeItem {
+
+  getChildren(entry?: TreeEntry): TreeEntry[] {
+    if (entry && !('parentId' in entry)) return [];
+    const parentId = entry?.id ?? null;
+    return [
+      ...this.folders.filter((folder) => folder.parentId === parentId),
+      ...this.notes.filter((note) => note.folderId === parentId),
+    ];
+  }
+
+  getTreeItem(note: TreeEntry): vscode.TreeItem {
+    if ('parentId' in note) {
+      const item = new vscode.TreeItem(
+        note.name,
+        vscode.TreeItemCollapsibleState.Collapsed,
+      );
+      item.id = `folder:${note.id}`;
+      item.contextValue = 'typoFolder';
+      item.iconPath = vscode.ThemeIcon.Folder;
+      return item;
+    }
     const item = new vscode.TreeItem(
       note.title,
       vscode.TreeItemCollapsibleState.None,
@@ -52,13 +75,18 @@ export class NotesView
     const client = this.client();
     try {
       this.view.description = new URL(client.baseUrl).host;
-      const notes = await client.list();
+      const [notes, folders] = await Promise.all([
+        client.list(),
+        client.listFolders(),
+      ]);
       if (this.disposed || generation !== this.generation) return this.notes;
       this.notes = notes;
+      this.folders = folders;
       this.onRefresh?.(client.baseUrl, notes);
-      this.view.message = notes.length
-        ? undefined
-        : '还没有文档，点击上方 + 创建第一篇。';
+      this.view.message =
+        notes.length || folders.length
+          ? undefined
+          : '还没有文档，点击上方 + 创建第一篇。';
       this.changes.fire(undefined);
     } catch (error) {
       if (!this.disposed && generation === this.generation) {

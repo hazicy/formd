@@ -2,7 +2,7 @@
   "name": "typo-vscode",
   "displayName": "Formd — Collaborative Markdown",
   "description": "在 VS Code 中编辑和协作 Formd Markdown 文档",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "typo-local",
   "license": "MIT",
   "engines": {
@@ -33,6 +33,11 @@
         "command": "typo.createNote",
         "title": "Formd: 新建协作文档",
         "icon": "$(add)"
+      },
+      {
+        "command": "typo.createFolder",
+        "title": "Formd: 新建文件夹",
+        "icon": "$(new-folder)"
       },
       {
         "command": "typo.deleteNote",
@@ -153,14 +158,19 @@
           "group": "navigation@1"
         },
         {
-          "command": "typo.refreshNotes",
+          "command": "typo.createFolder",
           "when": "view == typo.notes",
           "group": "navigation@2"
         },
         {
-          "command": "typo.configureServer",
+          "command": "typo.refreshNotes",
           "when": "view == typo.notes",
           "group": "navigation@3"
+        },
+        {
+          "command": "typo.configureServer",
+          "when": "view == typo.notes",
+          "group": "navigation@4"
         },
         {
           "command": "typo.clearRecent",
@@ -169,6 +179,16 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "typo.createNote",
+          "when": "view == typo.notes && viewItem == typoFolder",
+          "group": "1_create@1"
+        },
+        {
+          "command": "typo.createFolder",
+          "when": "view == typo.notes && viewItem == typoFolder",
+          "group": "1_create@2"
+        },
         {
           "command": "typo.openInBrowser",
           "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
