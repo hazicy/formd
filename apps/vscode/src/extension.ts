@@ -1,3 +1,4 @@
+import { folderPath, pickDestination } from './folder-picker.js';
 import * as vscode from 'vscode';
 import WebSocket from 'ws';
 import {
@@ -112,10 +113,33 @@ export function activate(context: vscode.ExtensionContext) {
   };
   async function choose(note?: Note): Promise<Note | undefined> {
     if (note?.id) return note;
-    const notes = await client().list();
+    const target = client();
+    const recentOrder = new Map(
+      recent.getChildren().map((entry, index) => [entry.id, index]),
+    );
+    const [notes, folders] = await Promise.all([
+      target.list(),
+      target.listFolders(),
+    ]);
+    const byId = new Map(folders.map((folder) => [folder.id, folder]));
+    notes.sort(
+      (a, b) =>
+        (recentOrder.get(a.id) ?? recentOrder.size) -
+        (recentOrder.get(b.id) ?? recentOrder.size),
+    );
     const picked = await vscode.window.showQuickPick(
-      notes.map((note) => ({ label: note.title, description: note.id, note })),
-      { placeHolder: '选择 Formd 文档' },
+      notes.map((note) => ({
+        label: note.title,
+        description:
+          folderPath(byId, note.folderId)
+            .map((folder) => folder.name)
+            .join(' / ') || '根目录',
+        note,
+      })),
+      {
+        placeHolder: '按标题或文件夹路径搜索 Formd 文档',
+        matchOnDescription: true,
+      },
     );
     return picked?.note;
   }
@@ -160,6 +184,56 @@ export function activate(context: vscode.ExtensionContext) {
     });
     if (!name?.trim()) return;
     await target.createFolder(name.trim(), folder?.id);
+    await tree.refresh();
+  });
+  register('typo.moveNote', async (note) => {
+    const target = client();
+    const selected = await choose(note);
+    if (!selected) return;
+    const destination = await pickDestination(target, selected.folderId);
+    if (!destination) return;
+    await target.move(selected.id, destination.id);
+    await tree.refresh();
+  });
+  register<Folder>('typo.renameFolder', async (folder) => {
+    if (!folder?.id) return;
+    const target = client();
+    const name = (
+      await vscode.window.showInputBox({
+        prompt: '重命名 Formd 文件夹',
+        value: folder.name,
+        validateInput: (value) =>
+          value.trim() ? undefined : '请输入文件夹名称',
+      })
+    )?.trim();
+    if (!name || name === folder.name) return;
+    await target.updateFolder(folder.id, { name });
+    await tree.refresh();
+  });
+  register<Folder>('typo.moveFolder', async (folder) => {
+    if (!folder?.id) return;
+    const target = client();
+    const destination = await pickDestination(
+      target,
+      folder.parentId,
+      folder.id,
+    );
+    if (!destination) return;
+    await target.updateFolder(folder.id, { parentId: destination.id });
+    await tree.refresh();
+  });
+  register<Folder>('typo.deleteFolder', async (folder) => {
+    if (!folder?.id) return;
+    const target = client();
+    if (
+      (await vscode.window.showWarningMessage(
+        `永久删除空文件夹「${folder.name}」？`,
+        { modal: true },
+        '删除',
+      )) !== '删除'
+    )
+      return;
+    await target.deleteFolder(folder.id);
     await tree.refresh();
   });
   register('typo.clearRecent', async () => recent.clear());

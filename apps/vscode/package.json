@@ -2,7 +2,7 @@
   "name": "typo-vscode",
   "displayName": "Formd — Collaborative Markdown",
   "description": "在 VS Code 中编辑和协作 Formd Markdown 文档",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "typo-local",
   "license": "MIT",
   "engines": {
@@ -97,6 +97,22 @@
         "command": "typo.clearRecent",
         "title": "Formd: 清空最近访问",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "typo.moveNote",
+        "title": "Formd: 移动文档"
+      },
+      {
+        "command": "typo.renameFolder",
+        "title": "Formd: 重命名文件夹"
+      },
+      {
+        "command": "typo.moveFolder",
+        "title": "Formd: 移动文件夹"
+      },
+      {
+        "command": "typo.deleteFolder",
+        "title": "Formd: 删除空文件夹"
       }
     ],
     "configuration": {
@@ -203,6 +219,26 @@
           "command": "typo.deleteNote",
           "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
           "group": "1_modify@2"
+        },
+        {
+          "command": "typo.moveNote",
+          "when": "(view == typo.notes || view == typo.recent) && viewItem == typoNote",
+          "group": "1_modify@3"
+        },
+        {
+          "command": "typo.renameFolder",
+          "when": "view == typo.notes && viewItem == typoFolder",
+          "group": "1_modify@4"
+        },
+        {
+          "command": "typo.moveFolder",
+          "when": "view == typo.notes && viewItem == typoFolder",
+          "group": "1_modify@5"
+        },
+        {
+          "command": "typo.deleteFolder",
+          "when": "view == typo.notes && viewItem == typoFolder",
+          "group": "1_modify@6"
         }
       ],
       "commandPalette": [
@@ -213,6 +249,18 @@
         {
           "command": "typo.redo",
           "when": "resourceScheme == typo"
+        },
+        {
+          "command": "typo.renameFolder",
+          "when": "false"
+        },
+        {
+          "command": "typo.moveFolder",
+          "when": "false"
+        },
+        {
+          "command": "typo.deleteFolder",
+          "when": "false"
         }
       ]
     },

@@ -319,6 +319,20 @@ export async function run() {
       'Local CRDT redo failed',
     );
     console.log('PASS local-only Yjs undo and redo');
+    const moved = await request<Note>(`/api/notes/${note.id}`, 'PATCH', {
+      folderId: child.id,
+    });
+    await vscode.commands.executeCommand('typo.refreshNotes');
+    assert.ok(
+      api.notes.getChildren(child).some((entry) => entry.id === moved.id),
+    );
+    assert.equal(
+      (
+        await vscode.commands.executeCommand<vscode.Uri>('typo.openNote', moved)
+      )?.toString(),
+      uri.toString(),
+    );
+    console.log('PASS move preserves the open editor URI');
     await client.rename(note.id, 'Renamed remotely');
     await vscode.commands.executeCommand('typo.refreshNotes');
     assert.equal(api.notes.findNote(note.id)?.title, 'Renamed remotely');
