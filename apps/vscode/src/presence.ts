@@ -124,7 +124,7 @@ export class PresenceController implements vscode.Disposable {
       const location = this.location(member.id);
       return {
         label: member.user.name + (self ? vscode.l10n.t(' (you)') : ''),
-        description: `${member.user.client === 'vscode' ? 'VS Code' : member.user.client === 'web' ? 'Web' : vscode.l10n.t('Other client')}${this.following === member.id ? vscode.l10n.t(' · Following') : ''}`,
+        description: `${member.user.client === 'vscode' ? 'VS Code' : member.user.client === 'web' ? 'Web' : member.user.client === 'agent' ? 'Agent' : vscode.l10n.t('Other client')}${this.following === member.id ? vscode.l10n.t(' · Following') : ''}`,
         detail: location
           ? vscode.l10n.t(
               'Line {0}, column {1}',

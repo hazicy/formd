@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import WebSocket from 'ws';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { fileURLToPath } from 'node:url';
 import { FormdClient, type NoteSession } from '@formd/client';
 import { createFormdServer } from './server.js';
 import { createMemoryNoteStore } from '../test/memory-store.js';
@@ -152,3 +155,88 @@ test(
     }
   },
 );
+
+test('MCP edits the live document without overwriting human changes', async () => {
+  const instance = await createFormdServer(createMemoryNoteStore());
+  const port = await listen(instance);
+  const apiUrl = `http://127.0.0.1:${port}`;
+  const client = new FormdClient(apiUrl);
+  const mcp = new Client({ name: 'test', version: '1' });
+  let human: NoteSession | undefined;
+  try {
+    const note = await client.create(
+      'Agent editing',
+      'Old sentence.\nHuman draft.',
+    );
+    human = client.connect(note.id);
+    const live = human;
+    await until(() => live.status === 'connected', 'Editor did not connect');
+    await mcp.connect(
+      new StdioClientTransport({
+        command: process.execPath,
+        args: [
+          '--import',
+          'tsx',
+          fileURLToPath(new URL('./mcp.ts', import.meta.url)),
+        ],
+        env: { FORMD_API_URL: apiUrl, FORMD_AGENT_NAME: 'Draft Agent' },
+      }),
+    );
+    const listed = await mcp.callTool({
+      name: 'list_documents',
+      arguments: { query: 'agent editing' },
+    });
+    assert.deepEqual(listed.structuredContent, { documents: [note] });
+    const read = await mcp.callTool({
+      name: 'read_document',
+      arguments: { id: note.id },
+    });
+    assert.deepEqual(read.structuredContent, {
+      id: note.id,
+      markdown: 'Old sentence.\nHuman draft.',
+    });
+    await until(
+      () =>
+        live.members.some(
+          (member) =>
+            member.user.name === 'Draft Agent' &&
+            member.user.client === 'agent',
+        ),
+      'Agent did not appear in the online members',
+    );
+
+    live.replace('Old sentence.\nHuman draft, updated.');
+    const edited = await mcp.callTool({
+      name: 'edit_document',
+      arguments: {
+        id: note.id,
+        expected: 'Old sentence.',
+        replacement: 'New sentence.',
+      },
+    });
+    assert.equal(edited.isError, undefined);
+    await until(
+      () => live.text.toString() === 'New sentence.\nHuman draft, updated.',
+      'Agent or human edit was lost',
+    );
+    const conflict = await mcp.callTool({
+      name: 'edit_document',
+      arguments: {
+        id: note.id,
+        expected: 'Old sentence.',
+        replacement: 'Do not apply.',
+      },
+    });
+    assert.equal(conflict.isError, true);
+    assert.equal(live.text.toString(), 'New sentence.\nHuman draft, updated.');
+    await mcp.callTool({ name: 'close_document', arguments: { id: note.id } });
+    await until(
+      () => !live.members.some((member) => member.user.client === 'agent'),
+      'Agent did not leave',
+    );
+  } finally {
+    human?.destroy();
+    await mcp.close();
+    await instance.close();
+  }
+});

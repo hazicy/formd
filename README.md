@@ -174,3 +174,20 @@ pnpm run test:e2e
 依赖审计仍有 Expo 指纹工具及 VSIX 打包工具链的 moderate 告警。已将移动端 Markdown 解析器覆盖为修复版 `markdown-it >=14.3.3`，避免旧渲染库携带的高风险解析器；不要使用 `强制自动修复` 降级 Expo SDK。
 
 后续可在保留共享客户端协议的前提下加入身份鉴权与授权，再扩展版本记录和客户端持久离线缓存。
+
+## Agent 直接编辑（MCP）
+
+启动 Formd 后端后，在支持 stdio 的 MCP 宿主中添加名为 `formd` 的服务器：
+
+```json
+{
+  "command": "pnpm",
+  "args": ["--dir", "/absolute/path/to/formd", "exec", "tsx", "apps/server/src/mcp.ts"],
+  "env": {
+    "FORMD_API_URL": "http://localhost:3001",
+    "FORMD_AGENT_NAME": "My Agent"
+  }
+}
+```
+
+工具依次为 `list_documents`、`read_document`、`edit_document` 和 `close_document`。Agent 在在线成员中单独显示，局部修改实时同步到 Web 和 VS Code。编辑时提供唯一的原文片段及替换内容；原文已变或有多处匹配时，先重新读取再编辑。工具返回成功表示修改已应用到共享会话，不代表数据库已确认持久化。当前仍使用现有的无鉴权开发后端。

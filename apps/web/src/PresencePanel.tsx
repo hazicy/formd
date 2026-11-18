@@ -83,7 +83,9 @@ export function PresencePanel({
                         ? 'VS Code'
                         : member.user.client === 'web'
                           ? 'Web'
-                          : '其他端'}
+                          : member.user.client === 'agent'
+                            ? 'Agent'
+                            : '其他端'}
                     </small>
                   </li>
                 ))}

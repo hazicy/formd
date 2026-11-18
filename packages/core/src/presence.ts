@@ -9,7 +9,7 @@ export const PRESENCE_COLORS = [
 export interface PresenceUser {
   name: string;
   color: string;
-  client: 'web' | 'vscode' | 'mobile' | 'unknown';
+  client: 'web' | 'vscode' | 'mobile' | 'agent' | 'unknown';
 }
 export interface RelativeSelection {
   anchor: string;
@@ -39,7 +39,9 @@ export function validPresenceUser(value: unknown): value is PresenceUser {
     user.name.length <= 48 &&
     typeof user.color === 'string' &&
     /^#[0-9a-fA-F]{6}$/.test(user.color) &&
-    ['web', 'vscode', 'mobile', 'unknown'].includes(String(user.client))
+    ['web', 'vscode', 'mobile', 'agent', 'unknown'].includes(
+      String(user.client),
+    )
   );
 }
 export function validRelativeSelection(

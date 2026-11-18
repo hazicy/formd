@@ -103,6 +103,45 @@ export function createCollaboration() {
               broadcastPresence(id);
               return;
             }
+            if (message.type === 'agent.edit') {
+              const { requestId, expected, replacement } = message;
+              if (
+                typeof requestId !== 'string' ||
+                requestId.length > 80 ||
+                typeof expected !== 'string' ||
+                typeof replacement !== 'string' ||
+                presence.get(ws)?.user.client !== 'agent'
+              )
+                throw new Error('Invalid agent edit');
+              const text = doc.getText('content');
+              const current = text.toString();
+              const start = current.indexOf(expected);
+              let error: string | undefined;
+              if (
+                start < 0 ||
+                (expected === ''
+                  ? current !== ''
+                  : current.indexOf(expected, start + 1) >= 0)
+              ) {
+                error =
+                  'The original text is missing or ambiguous. Read the latest document and use a unique excerpt.';
+              } else if (
+                current.length - expected.length + replacement.length >
+                MAX_CONTENT_LENGTH
+              ) {
+                error = 'The edit would exceed the document size limit.';
+              } else if (expected !== replacement) {
+                // Check and mutate in one synchronous turn, against the live Y.Doc.
+                doc.transact(() => {
+                  text.delete(start, expected.length);
+                  text.insert(start, replacement);
+                });
+              }
+              ws.send(
+                JSON.stringify({ type: 'agent.result', requestId, error }),
+              );
+              return;
+            }
             if (message.type !== 'update' || typeof message.data !== 'string')
               throw new Error('Invalid update');
             // Validate on a temporary document before mutating the shared document.
