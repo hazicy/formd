@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import WebSocket from 'ws';
+import { once } from 'node:events';
+import * as Y from 'yjs';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { fileURLToPath } from 'node:url';
@@ -30,6 +32,146 @@ async function listen(
   );
   return (instance.server.address() as { port: number }).port;
 }
+test('sync confirms only persisted updates and retries failed saves', async () => {
+  const store = createMemoryNoteStore();
+  const upsert = store.upsert;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let blocked = false;
+  let writes = 0;
+  let fail = false;
+  store.upsert = async (note) => {
+    writes++;
+    if (blocked) await gate;
+    if (fail) {
+      fail = false;
+      throw new Error('Storage unavailable');
+    }
+    await upsert(note);
+  };
+  const instance = await createFormdServer(store);
+  let session: NoteSession | undefined;
+  try {
+    const port = await listen(instance);
+    const client = new FormdClient(`http://127.0.0.1:${port}`);
+    const note = await client.create('Persistence', 'start');
+    session = client.connect(note.id);
+    const editor = session;
+    await until(
+      () => editor.persistenceStatus === 'saved',
+      'Initial sync was not confirmed',
+    );
+
+    blocked = true;
+    const before = writes;
+    editor.replace('first');
+    await until(() => writes > before, 'First write did not start');
+    assert.equal(editor.persistenceStatus, 'saving');
+    editor.replace('latest');
+    assert.equal(editor.persistenceStatus, 'saving');
+    release();
+    await until(
+      () => editor.persistenceStatus === 'saved',
+      'Latest write was not confirmed',
+    );
+
+    fail = true;
+    editor.replace('retry this edit');
+    await until(
+      () => editor.persistenceStatus === 'failed',
+      'Write failure was not reported',
+    );
+    assert.equal(editor.status, 'connected');
+    editor.retryPersistence();
+    await until(
+      () => editor.persistenceStatus === 'saved',
+      'Retry was not confirmed',
+    );
+  } finally {
+    release();
+    session?.destroy();
+    await instance.close();
+  }
+});
+
+test('save batches acknowledge only the newest sequence per connection', async () => {
+  const store = createMemoryNoteStore();
+  const upsert = store.upsert;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let writing = false;
+  let block = false;
+  store.upsert = async (note) => {
+    if (block) {
+      writing = true;
+      await gate;
+    }
+    await upsert(note);
+  };
+  const instance = await createFormdServer(store);
+  const source = new Y.Doc();
+  const text = source.getText('content');
+  let socket: WebSocket | undefined;
+  let observer: NoteSession | undefined;
+  try {
+    const port = await listen(instance);
+    const client = new FormdClient(`http://127.0.0.1:${port}`);
+    const note = await client.create('Batch', '');
+    const peer = client.connect(note.id);
+    observer = peer;
+    await until(
+      () => peer.persistenceStatus === 'saved',
+      'Observer did not connect',
+    );
+
+    const sender = new WebSocket(`ws://127.0.0.1:${port}/sync/${note.id}`);
+    socket = sender;
+    const acknowledgements: number[] = [];
+    sender.on('message', (raw) => {
+      const message = JSON.parse(raw.toString());
+      if (message.type === 'saved') acknowledgements.push(message.sequence);
+    });
+    await once(sender, 'open');
+    let sequence = 0;
+    source.on('update', (update) => {
+      sender.send(
+        JSON.stringify({
+          type: 'update',
+          sequence: ++sequence,
+          data: Buffer.from(update).toString('base64'),
+        }),
+      );
+    });
+
+    block = true;
+    text.insert(0, 'a');
+    await until(() => writing, 'First batch did not start writing');
+    text.insert(1, 'b');
+    text.insert(2, 'c');
+    await until(
+      () => peer.text.toString() === 'abc',
+      'Server did not receive the queued batch',
+    );
+    assert.equal(acknowledgements.length, 0);
+    release();
+    await until(
+      () => acknowledgements.includes(3),
+      'Second batch was not acknowledged',
+    );
+    assert.deepEqual(acknowledgements, [1, 3]);
+  } finally {
+    release();
+    socket?.terminate();
+    observer?.destroy();
+    source.destroy();
+    await instance.close();
+  }
+});
+
 test('HTTP API handles preflight, malformed JSON, and oversized bodies', async () => {
   const store = createMemoryNoteStore();
   const origin = 'http://localhost:5173';

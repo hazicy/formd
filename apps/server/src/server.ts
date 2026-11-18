@@ -18,7 +18,12 @@ export async function createFormdServer(
   );
   const app = createHttpApp(notes, store, allowedOrigins);
   const server = createServer(getRequestListener(app.fetch));
-  collaboration.bind(server, notes.getDoc, allowedOrigins);
+  collaboration.bind(
+    server,
+    notes.getDoc,
+    allowedOrigins,
+    notes.confirmPersistence,
+  );
 
   async function shutdown() {
     try {

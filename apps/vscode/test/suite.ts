@@ -25,22 +25,29 @@ function verifyDraftRecovery() {
   const remote = new Y.Doc();
   const reopened = new Y.Doc();
   const server = 'http://example.test';
-  const id = 'note';
+  const key = { server, noteId: 'note' };
   try {
     original.getText('content').insert(0, 'base');
     Y.applyUpdate(remote, Y.encodeStateAsUpdate(original));
     original.getText('content').insert(4, ' local');
     const legacyPath = join(path, 'legacy');
-    new DraftStore(legacyPath).save(server, { id, doc: original });
+    new DraftStore(legacyPath).save(key, original);
 
     const store = new DraftStore(join(path, 'current'), legacyPath);
-    assert.equal(store.restore(server + ':8080', { id, doc: reopened }), false);
-    assert.equal(store.restore(server, { id, doc: reopened }), true);
+    assert.equal(
+      store.restore({ ...key, server: server + ':8080' }, reopened),
+      false,
+    );
+    assert.equal(store.restore(key, reopened), true);
     assert.equal(reopened.getText('content').toString(), 'base local');
 
     remote.getText('content').insert(0, 'remote ');
     Y.applyUpdate(reopened, Y.encodeStateAsUpdate(remote));
     assert.equal(reopened.getText('content').toString(), 'remote base local');
+    store.save(key, reopened, 'Draft.md');
+    assert.deepEqual(store.list(server), [{ key, filename: 'Draft.md' }]);
+    assert.deepEqual(store.list(server + ':8080'), []);
+    assert.equal(store.read(key), 'remote base local');
     console.log('PASS persisted draft recovery and concurrent remote merge');
   } finally {
     original.destroy();
@@ -148,6 +155,23 @@ export async function run() {
     );
     await page.goto(`${process.env.FORMD_TEST_WEB_URL}/#${note.id}`);
     const webEditor = page.getByRole('textbox', { name: 'Markdown 编辑器' });
+    const webText = () =>
+      webEditor.locator('.cm-line').evaluateAll((lines) =>
+        lines
+          .map((line) => {
+            const copy = line.cloneNode(true) as HTMLElement;
+            for (const widget of copy.querySelectorAll(
+              '[contenteditable="false"]',
+            ))
+              widget.remove();
+            return copy.textContent;
+          })
+          .join('\n'),
+      );
+    async function prefixWebText(text: string) {
+      await webEditor.press('ControlOrMeta+Home');
+      await page.keyboard.insertText(text);
+    }
     await webEditor.waitFor();
     await until(() => webEditor.isEnabled(), 'Web editor not enabled');
     const edited = await editor.edit((edit) =>
@@ -156,7 +180,7 @@ export async function run() {
     assert.ok(edited);
     assert.ok(document.isDirty, 'This must sync an unsaved edit');
     await until(
-      async () => (await webEditor.inputValue()) === 'VSCODE:start\nsecond',
+      async () => (await webText()) === 'VSCODE:start\nsecond',
       'Unsaved VS Code edit did not reach the actual Web editor',
     );
     console.log('PASS unsaved VS Code typing reaches the actual Web editor');
@@ -168,19 +192,11 @@ export async function run() {
           '\nlocal 😀',
         ),
       ),
-      webEditor.evaluate((element) => {
-        const input = element as HTMLTextAreaElement;
-        const setter = Object.getOwnPropertyDescriptor(
-          HTMLTextAreaElement.prototype,
-          'value',
-        )!.set!;
-        setter.call(input, 'WEB:' + input.value);
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-      }),
+      prefixWebText('WEB:'),
     ]);
     await until(
       async () =>
-        document.getText() === (await webEditor.inputValue()) &&
+        document.getText() === (await webText()) &&
         document.getText().includes('local 😀') &&
         document.getText().startsWith('WEB:'),
       'Concurrent Web/VS Code edits did not converge',
@@ -189,7 +205,7 @@ export async function run() {
         'Editor snapshots:',
         JSON.stringify({
           vscode: document.getText(),
-          web: await webEditor.inputValue(),
+          web: await webText(),
         }),
       );
       throw error;
@@ -213,9 +229,8 @@ export async function run() {
     editor.selection = new vscode.Selection(selectionStart, selectionEnd);
     await page.getByRole('img', { name: /VS Alice 的光标/ }).waitFor();
     await webEditor.focus();
-    await webEditor.evaluate((element) =>
-      (element as HTMLTextAreaElement).setSelectionRange(1, 1),
-    );
+    await webEditor.press('ControlOrMeta+Home');
+    await webEditor.press('ArrowRight');
     await webEditor.press('Shift+ArrowRight');
     await webEditor.press('Shift+ArrowRight');
     await webEditor.press('Shift+ArrowRight');
@@ -256,10 +271,8 @@ export async function run() {
     );
     await until(
       async () =>
-        webEditor.evaluate((element) => {
-          const input = element as HTMLTextAreaElement;
-          return input.selectionStart === 3 && input.selectionEnd === 7;
-        }),
+        (await page.evaluate(() => window.getSelection()?.toString())) ===
+        document.getText().slice(3, 7),
       'Web selection was not preserved through remote insertion',
     );
     console.log(
@@ -273,11 +286,11 @@ export async function run() {
       edit.insert(document.positionAt(before.length), '②');
     });
     await until(
-      async () => (await webEditor.inputValue()) === document.getText(),
+      async () => (await webText()) === document.getText(),
       'Multi-cursor edit did not sync',
     );
     await document.save();
-    await webEditor.fill('REMOTE\n' + (await webEditor.inputValue()));
+    await prefixWebText('REMOTE\n');
     await until(
       () => document.getText().startsWith('REMOTE\n'),
       'Remote update did not change saved editor',
@@ -288,7 +301,7 @@ export async function run() {
       document.positionAt(document.getText().length),
     );
     const oldOffset = document.offsetAt(editor.selection.active);
-    await webEditor.fill('prefix:' + (await webEditor.inputValue()));
+    await prefixWebText('prefix:');
     await until(
       () => document.getText().startsWith('prefix:'),
       'Remote prefix did not sync',
@@ -303,14 +316,14 @@ export async function run() {
       edit.insert(document.positionAt(document.getText().length), 'OWN_UNDO'),
     );
     await until(
-      async () => (await webEditor.inputValue()).endsWith('OWN_UNDO'),
+      async () => (await webText()).endsWith('OWN_UNDO'),
       'Local undo test edit not synced',
     );
     await vscode.commands.executeCommand('formd.undo');
     await until(
       async () =>
         !document.getText().includes('OWN_UNDO') &&
-        (await webEditor.inputValue()) === document.getText(),
+        (await webText()) === document.getText(),
       'Local CRDT undo failed',
     );
     assert.equal(
@@ -322,7 +335,7 @@ export async function run() {
     await until(
       async () =>
         document.getText().endsWith('OWN_UNDO') &&
-        (await webEditor.inputValue()) === document.getText(),
+        (await webText()) === document.getText(),
       'Local CRDT redo failed',
     );
     console.log('PASS local-only Yjs undo and redo');
@@ -335,7 +348,10 @@ export async function run() {
     );
     assert.equal(
       (
-        await vscode.commands.executeCommand<vscode.Uri>('formd.openNote', moved)
+        await vscode.commands.executeCommand<vscode.Uri>(
+          'formd.openNote',
+          moved,
+        )
       )?.toString(),
       uri.toString(),
     );
@@ -368,6 +384,29 @@ export async function run() {
     await vscode.commands.executeCommand('formd.refreshNotes');
     assert.ok(!api.notes.getChildren().some((n) => n.id === note.id));
     console.log('PASS close/dispose and sidebar deletion');
+
+    const sharedId = { ...note, id: 'same-note-id', title: 'Server identity' };
+    const firstUri = await vscode.commands.executeCommand<vscode.Uri>(
+      'formd.openNote',
+      sharedId,
+    );
+    const firstDocument = await vscode.workspace.openTextDocument(firstUri);
+    assert.equal(firstDocument.getText(), 'First server');
+    await config.update(
+      'serverUrl',
+      process.env.FORMD_TEST_SECOND_API_URL!,
+      vscode.ConfigurationTarget.Global,
+    );
+    const secondUri = await vscode.commands.executeCommand<vscode.Uri>(
+      'formd.openNote',
+      sharedId,
+    );
+    const secondDocument = await vscode.workspace.openTextDocument(secondUri);
+    assert.notEqual(firstUri.toString(), secondUri.toString());
+    assert.equal(secondDocument.getText(), 'Second server');
+    assert.equal(firstDocument.getText(), 'First server');
+    assert.equal(firstDocument.isClosed, false);
+    console.log('PASS same document ID stays isolated across servers');
   } finally {
     await browser.close();
   }

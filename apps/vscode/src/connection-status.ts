@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DocumentSessions, documentId } from './documents/session-manager.js';
+import { DocumentSessions } from './documents/session-manager.js';
 
 const connectionLabels = () =>
   ({
@@ -7,15 +7,9 @@ const connectionLabels = () =>
       vscode.l10n.t('$(sync) Formd Connecting'),
       vscode.l10n.t('Connecting to the collaboration server.'),
     ],
-    connected: [
-      vscode.l10n.t('$(plug) Formd Connected'),
-      vscode.l10n.t('The live collaboration connection is active.'),
-    ],
     offline: [
       vscode.l10n.t('$(cloud-offline) Formd Offline'),
-      vscode.l10n.t(
-        'Waiting to reconnect. Local drafts are restored on reopening. The server has not confirmed a save.',
-      ),
+      vscode.l10n.t('Waiting to reconnect to the collaboration server.'),
     ],
     deleted: [
       vscode.l10n.t('$(trash) Formd Document Deleted'),
@@ -24,6 +18,22 @@ const connectionLabels = () =>
     error: [
       vscode.l10n.t('$(warning) Formd Sync Error'),
       vscode.l10n.t('Back up the current text and reopen the document.'),
+    ],
+  }) as const;
+
+const persistenceLabels = () =>
+  ({
+    saving: [
+      vscode.l10n.t('$(sync) Formd Saving'),
+      vscode.l10n.t('Waiting for the server to confirm persistence.'),
+    ],
+    saved: [
+      vscode.l10n.t('$(check) Formd Synced'),
+      vscode.l10n.t('The server confirmed your latest changes.'),
+    ],
+    failed: [
+      vscode.l10n.t('$(warning) Formd Save Failed'),
+      vscode.l10n.t('Click to retry saving your changes to the server.'),
     ],
   }) as const;
 
@@ -36,13 +46,26 @@ export function createConnectionStatus(sessions: DocumentSessions) {
   item.name = vscode.l10n.t('Formd Collaboration Connection');
   function update() {
     const uri = vscode.window.activeTextEditor?.document.uri;
-    const entry =
-      uri?.scheme === 'formd' ? sessions.get(documentId(uri)) : undefined;
+    const entry = uri?.scheme === 'formd' ? sessions.getByUri(uri) : undefined;
     if (!entry) {
       item.hide();
       return;
     }
-    [item.text, item.tooltip] = connectionLabels()[entry.session.status];
+    const { status, persistenceStatus } = entry.session;
+    [item.text, item.tooltip] =
+      status === 'connected'
+        ? persistenceLabels()[persistenceStatus]
+        : connectionLabels()[status];
+    if (status === 'offline' && entry.draft.available) {
+      item.text = vscode.l10n.t('$(cloud-offline) Formd Offline Draft');
+      item.tooltip = vscode.l10n.t(
+        'A local draft is available while waiting to reconnect.',
+      );
+    }
+    item.command =
+      status === 'connected' && persistenceStatus === 'failed'
+        ? 'formd.retrySync'
+        : undefined;
     item.show();
   }
   const subscription = vscode.Disposable.from(

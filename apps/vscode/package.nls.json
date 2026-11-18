@@ -1,4 +1,7 @@
 {
+  "formd.recoverDraft": "Formd: Recover Local Draft",
+  "formd.exportMarkdown": "Formd: Export Current Markdown",
+  "formd.retrySync": "Formd: Retry Sync",
   "extension.description": "Edit and collaborate on Formd Markdown documents in VS Code",
   "formd.openNote": "Formd: Open Collaborative Document",
   "formd.createNote": "Formd: New Collaborative Document",

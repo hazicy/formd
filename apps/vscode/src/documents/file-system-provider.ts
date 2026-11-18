@@ -33,7 +33,7 @@ export function createFileSystemProvider(
       if (entry.binding) return encoder.encode(entry.binding.content);
       if (entry.session.status === 'deleted')
         throw vscode.FileSystemError.FileNotFound(uri);
-      if (!entry.hasDraft) await sessions.ready(entry.session);
+      if (!entry.draft.available) await sessions.ready(entry.session);
       // Preserve the exact state returned to VS Code; a remote update may arrive
       // before onDidOpenTextDocument. The binding rebases from this snapshot.
       entry.initialState = Y.encodeStateAsUpdate(entry.session.doc);
@@ -48,6 +48,7 @@ export function createFileSystemProvider(
           ),
         );
       await entry.binding.flush();
+      entry.draft.flush();
       // Local content changes already reached Yjs. A save must never replace
       // merged CRDT content using an older, in-flight editor snapshot.
       entry.mtime = Math.max(Date.now(), entry.mtime + 1);

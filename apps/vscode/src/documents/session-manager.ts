@@ -1,17 +1,20 @@
 import * as vscode from 'vscode';
 import { VscodeBinding } from '@formd/y-vscode';
 import type { NoteSession, FormdClient } from '@formd/client';
-import type { DraftStore } from './draft-store.js';
+import { SessionDraft, type DraftStore } from './draft-store.js';
 
-export function documentId(uri: vscode.Uri) {
-  return uri.path.split('/')[1];
-}
+import {
+  documentKeyString,
+  keyFromUri,
+  type DocumentKey,
+} from './document-key.js';
 
 interface Entry {
+  key: DocumentKey;
   session: NoteSession;
   uri: vscode.Uri;
   mtime: number;
-  hasDraft: boolean;
+  draft: SessionDraft;
   initialState?: Uint8Array;
   binding?: VscodeBinding;
   unsubscribe: () => void;
@@ -24,7 +27,7 @@ export class DocumentSessions implements vscode.Disposable {
   readonly onDidDelete = this.deleted.event;
 
   constructor(
-    private readonly client: () => FormdClient,
+    private readonly client: (server: string) => FormdClient,
     private readonly drafts: DraftStore,
     private readonly output: vscode.OutputChannel,
     private readonly report: (error: unknown) => void,
@@ -32,12 +35,13 @@ export class DocumentSessions implements vscode.Disposable {
     private readonly onDetach: (entry: Entry) => void,
   ) {}
 
-  get size() {
-    return this.entries.size;
+  get(key: DocumentKey) {
+    return this.entries.get(documentKeyString(key));
   }
 
-  get(id: string) {
-    return this.entries.get(id);
+  getByUri(uri: vscode.Uri) {
+    const key = keyFromUri(uri);
+    return key && this.get(key);
   }
 
   values() {
@@ -45,55 +49,54 @@ export class DocumentSessions implements vscode.Disposable {
   }
 
   getOrCreate(uri: vscode.Uri): Entry {
-    const id = documentId(uri);
-    const existing = this.entries.get(id);
-    if (existing) return existing;
-    const client = this.client();
-    const session = client.connect(id);
-    let hasDraft = false;
-    try {
-      hasDraft = this.drafts.restore(client.baseUrl, session);
-    } catch (error) {
-      this.report(
-        new Error(vscode.l10n.t('Could not restore the Formd local draft.'), {
-          cause: error,
-        }),
-      );
+    const key = keyFromUri(uri);
+    if (!key) throw vscode.FileSystemError.FileNotFound(uri);
+    const existing = this.get(key);
+    if (existing) {
+      if (existing.uri.toString() !== uri.toString())
+        throw vscode.FileSystemError.FileExists(existing.uri);
+      return existing;
     }
-    let saveFailed = false;
-    const saveDraft = (_update: Uint8Array, origin: unknown) => {
-      if (session.isRemoteOrigin(origin)) return;
-      try {
-        this.drafts.save(client.baseUrl, session);
-        entry.hasDraft = true;
-        saveFailed = false;
-      } catch (error) {
-        if (!saveFailed) {
-          saveFailed = true;
-          this.output.appendLine(String(error));
-          this.report(
-            new Error(
-              vscode.l10n.t(
-                'Could not save the Formd local draft. Copy the current text as a backup.',
-              ),
-            ),
-          );
-        }
-      }
-    };
+    const session = this.client(key.server).connect(key.noteId);
+    const draft = new SessionDraft(
+      this.drafts,
+      key,
+      session,
+      uri.path.split('/').at(-1) ?? '',
+      () => this.changed.fire(),
+      (error, operation) =>
+        this.report(
+          new Error(
+            operation === 'restore'
+              ? vscode.l10n.t('Could not restore the Formd local draft.')
+              : vscode.l10n.t(
+                  'Could not save the Formd local draft. Copy the current text as a backup.',
+                ),
+            { cause: error },
+          ),
+        ),
+    );
     const entry: Entry = {
+      key,
       session,
       uri,
       mtime: Date.now(),
-      hasDraft,
+      draft,
       unsubscribe: () => {},
     };
-    this.entries.set(id, entry);
+    this.entries.set(documentKeyString(key), entry);
     let status = session.status;
+    let persistence = session.persistenceStatus;
     const unsubscribeStatus = session.subscribe(() => {
-      if (session.status === status) return;
+      if (
+        session.status === status &&
+        session.persistenceStatus === persistence
+      )
+        return;
       status = session.status;
+      persistence = session.persistenceStatus;
       if (status === 'deleted') {
+        entry.draft.flush();
         entry.binding?.dispose();
         entry.binding = undefined;
         this.deleted.fire(entry.uri);
@@ -102,11 +105,7 @@ export class DocumentSessions implements vscode.Disposable {
       // Bound editors consume Y.Text deltas directly. File-change notifications
       // here would invoke VS Code's disk-conflict path for unsaved live input.
     });
-    session.doc.on('update', saveDraft);
-    entry.unsubscribe = () => {
-      unsubscribeStatus();
-      session.doc.off('update', saveDraft);
-    };
+    entry.unsubscribe = unsubscribeStatus;
     return entry;
   }
   async ready(session: NoteSession) {
@@ -145,7 +144,7 @@ export class DocumentSessions implements vscode.Disposable {
     });
   }
   bind(document: vscode.TextDocument) {
-    if (document.uri.scheme !== 'formd') return;
+    if (!keyFromUri(document.uri)) return;
     const entry = this.getOrCreate(document.uri);
     if (entry.binding || entry.session.status === 'deleted') return;
     try {
@@ -172,16 +171,15 @@ export class DocumentSessions implements vscode.Disposable {
 
   async close(document: vscode.TextDocument) {
     if (document.uri.scheme !== 'formd') return;
-    const id = documentId(document.uri);
-    const entry = this.entries.get(id);
-    if (!entry) return;
+    const entry = this.getByUri(document.uri);
+    if (!entry || entry.uri.toString() !== document.uri.toString()) return;
     try {
       await entry.binding?.flush();
     } catch (error) {
       this.output.appendLine(String(error));
     }
     if (
-      this.entries.get(id) !== entry ||
+      this.get(entry.key) !== entry ||
       vscode.workspace.textDocuments.some(
         (open) =>
           !open.isClosed && open.uri.toString() === entry.uri.toString(),
@@ -193,7 +191,8 @@ export class DocumentSessions implements vscode.Disposable {
   }
 
   private release(entry: Entry) {
-    this.entries.delete(entry.session.id);
+    entry.draft.dispose();
+    this.entries.delete(documentKeyString(entry.key));
     this.onDetach(entry);
     entry.binding?.dispose();
     entry.unsubscribe();

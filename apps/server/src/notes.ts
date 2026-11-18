@@ -12,7 +12,7 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
   const stored = await store.load();
   const notes = new Map<string, Note>();
   const docs = new Map<string, Y.Doc>();
-  const dirty = new Set<string>();
+  const pendingSaves = new Map<string, Map<object, (saved: boolean) => void>>();
   let flushTimer: ReturnType<typeof setTimeout> | undefined;
   let pendingWrite = Promise.resolve();
   let closing = false;
@@ -32,15 +32,22 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
     });
   }
   async function flushDirty() {
-    for (const id of [...dirty]) {
-      dirty.delete(id);
+    const failures: unknown[] = [];
+    for (const id of [...pendingSaves.keys()]) {
+      const acknowledgements = pendingSaves.get(id)!;
+      // Edits received during this write belong to a new snapshot.
+      pendingSaves.delete(id);
+      let saved = false;
       try {
         await save(notes.get(id)!, docs.get(id)!);
+        saved = true;
       } catch (error) {
-        dirty.add(id);
-        throw error;
+        queueSave(id);
+        failures.push(error);
       }
+      for (const reply of acknowledgements.values()) reply(saved);
     }
+    if (failures.length) throw new AggregateError(failures);
   }
   function scheduleFlush(delay = 100) {
     if (closing || flushTimer) return;
@@ -48,7 +55,7 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
       void write(flushDirty).then(
         () => {
           flushTimer = undefined;
-          if (dirty.size) scheduleFlush();
+          if (pendingSaves.size) scheduleFlush();
         },
         (error) => {
           flushTimer = undefined;
@@ -58,6 +65,23 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
       );
     }, delay);
   }
+  function queueSave(id: string) {
+    let batch = pendingSaves.get(id);
+    if (!batch) {
+      batch = new Map();
+      pendingSaves.set(id, batch);
+    }
+    scheduleFlush();
+    return batch;
+  }
+  function confirmPersistence(
+    id: string,
+    connection: object,
+    reply: (saved: boolean) => void,
+  ) {
+    if (!notes.has(id)) return;
+    queueSave(id).set(connection, reply);
+  }
   function attach(id: string, doc: Y.Doc) {
     docs.set(id, doc);
     doc.on('update', (update: Uint8Array, origin: unknown) => {
@@ -65,8 +89,7 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
       if (!note) return;
       note.updatedAt = new Date().toISOString();
       events.onUpdate(id, update, origin);
-      dirty.add(id);
-      scheduleFlush();
+      queueSave(id);
     });
   }
   for (const { state, ...note } of stored) {
@@ -124,7 +147,7 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
     return write(async () => {
       if (!notes.has(id)) return false;
       await store.delete(id);
-      dirty.delete(id);
+      pendingSaves.delete(id);
       notes.delete(id);
       events.onDelete(id);
       docs.get(id)?.destroy();
@@ -143,6 +166,7 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
       write(() => add(title, content, folderId)),
     update,
     remove,
+    confirmPersistence,
     async close() {
       closing = true;
       clearTimeout(flushTimer);

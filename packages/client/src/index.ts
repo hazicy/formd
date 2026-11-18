@@ -92,6 +92,8 @@ export class FormdClient {
     return new NoteSession(this.baseUrl, id, user);
   }
 }
+export type PersistenceStatus = 'saving' | 'saved' | 'failed';
+
 export class NoteSession {
   readonly doc = new Y.Doc();
   readonly text = this.doc.getText('content');
@@ -107,6 +109,8 @@ export class NoteSession {
   private timer?: ReturnType<typeof setTimeout>;
   private disposed = false;
   private ready = false;
+  private sequence = 0;
+  persistenceStatus: PersistenceStatus = 'saving';
   private retry = 500;
   private remote = {};
   private baseUrl: string;
@@ -116,10 +120,11 @@ export class NoteSession {
     this.baseUrl = baseUrl;
     this.id = id;
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
-      if (origin !== this.remote && this.ready && this.socket?.readyState === 1)
-        this.socket.send(
-          JSON.stringify({ type: 'update', data: fromByteArray(update) }),
-        );
+      if (origin !== this.remote) {
+        this.persistenceStatus = 'saving';
+        if (this.ready && this.socket?.readyState === 1)
+          this.sendUpdate(this.socket, update);
+      }
       this.emit();
     });
     this.open();
@@ -163,6 +168,22 @@ export class NoteSession {
     this.selection = selection;
     this.sendPresence();
   }
+  private sendUpdate(socket: WebSocket, update: Uint8Array) {
+    this.persistenceStatus = 'saving';
+    socket.send(
+      JSON.stringify({
+        type: 'update',
+        sequence: ++this.sequence,
+        data: fromByteArray(update),
+      }),
+    );
+  }
+  retryPersistence() {
+    if (this.ready && this.socket?.readyState === 1) {
+      this.sendUpdate(this.socket, Y.encodeStateAsUpdate(this.doc));
+      this.emit();
+    }
+  }
   private sendPresence() {
     if (this.ready && this.socket?.readyState === 1)
       this.socket.send(
@@ -197,6 +218,14 @@ export class NoteSession {
     socket.onmessage = (event) => {
       try {
         const message = JSON.parse(String(event.data));
+        if (message.type === 'saved' || message.type === 'saveFailed') {
+          if (message.sequence === this.sequence) {
+            this.persistenceStatus =
+              message.type === 'saved' ? 'saved' : 'failed';
+            this.emit();
+          }
+          return;
+        }
         if (message.type === 'deleted') {
           this.clearPresence();
           this.setStatus('deleted');
@@ -239,12 +268,7 @@ export class NoteSession {
           if (message.type === 'sync') {
             this.connectionId =
               typeof message.selfId === 'string' ? message.selfId : '';
-            socket.send(
-              JSON.stringify({
-                type: 'update',
-                data: fromByteArray(Y.encodeStateAsUpdate(this.doc)),
-              }),
-            );
+            this.sendUpdate(socket, Y.encodeStateAsUpdate(this.doc));
             this.ready = true;
             this.sendPresence();
             this.retry = 500;

@@ -14,7 +14,8 @@ import {
 import { RecentView } from './recent-view.js';
 import { NotesView } from './notes-view.js';
 import { PresenceController } from './presence.js';
-import { DocumentSessions, documentId } from './documents/session-manager.js';
+import { DocumentSessions } from './documents/session-manager.js';
+import { documentUri, type DocumentKey } from './documents/document-key.js';
 import { createFileSystemProvider } from './documents/file-system-provider.js';
 import { DraftStore } from './documents/draft-store.js';
 import { createConnectionStatus } from './connection-status.js';
@@ -42,13 +43,11 @@ export function activate(context: vscode.ExtensionContext) {
       client: 'vscode',
     };
   }
-  const client = () =>
-    new FormdClient(
-      vscode.workspace
-        .getConfiguration('formd')
-        .get('serverUrl', 'http://localhost:3001'),
-      getProfile(),
-    );
+  const client = (
+    server = vscode.workspace
+      .getConfiguration('formd')
+      .get('serverUrl', 'http://localhost:3001'),
+  ) => new FormdClient(server, getProfile());
   const recent = new RecentView(context.globalState, () => client().baseUrl);
   const tree = new NotesView(client, (server, notes) =>
     recent.reconcile(server, notes),
@@ -57,17 +56,18 @@ export function activate(context: vscode.ExtensionContext) {
     output.appendLine(String(error));
     void vscode.window.showErrorMessage(`Formd: ${String(error)}`);
   }
+  const drafts = new DraftStore(
+    vscode.Uri.joinPath(context.globalStorageUri, 'drafts').fsPath,
+    vscode.Uri.joinPath(
+      context.globalStorageUri,
+      '..',
+      'typo-local.typo-vscode',
+      'drafts',
+    ).fsPath,
+  );
   const sessions: DocumentSessions = new DocumentSessions(
     client,
-    new DraftStore(
-      vscode.Uri.joinPath(context.globalStorageUri, 'drafts').fsPath,
-      vscode.Uri.joinPath(
-        context.globalStorageUri,
-        '..',
-        'typo-local.typo-vscode',
-        'drafts',
-      ).fsPath,
-    ),
+    drafts,
     output,
     report,
     (entry) => presence.attach(entry),
@@ -101,7 +101,9 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (editor?.document.uri.scheme !== 'formd') return;
-      const note = tree.findNote(documentId(editor.document.uri));
+      const key = sessions.getByUri(editor.document.uri)?.key;
+      if (!key || key.server !== client().baseUrl) return;
+      const note = tree.findNote(key.noteId);
       if (note) recent.visit(note);
     }),
   );
@@ -117,9 +119,11 @@ export function activate(context: vscode.ExtensionContext) {
       ),
     );
   };
-  async function choose(note?: Note): Promise<Note | undefined> {
+  async function choose(
+    note: Note | undefined,
+    target: FormdClient,
+  ): Promise<Note | undefined> {
     if (note?.id) return note;
-    const target = client();
     const recentOrder = new Map(
       recent.getChildren().map((entry, index) => [entry.id, index]),
     );
@@ -151,24 +155,82 @@ export function activate(context: vscode.ExtensionContext) {
     );
     return picked?.note;
   }
-  async function open(note: Note) {
-    // A renamed document keeps its existing editor URI so it cannot get a second
-    // binding, divergent dirty buffer or duplicate Y.UndoManager.
-    const uri =
-      sessions.get(note.id)?.uri ??
-      vscode.Uri.from({
-        scheme: 'formd',
-        path: `/${note.id}/${markdownFilename(note.title)}`,
-      });
+  async function openDocument(key: DocumentKey, filename: string) {
+    // Keep the displayed filename stable while a document is open.
+    const uri = sessions.get(key)?.uri ?? documentUri(key, filename);
     const document = await vscode.workspace.openTextDocument(uri);
     sessions.bind(document);
     await vscode.window.showTextDocument(document);
-    recent.visit(note);
     return uri;
   }
+  async function open(note: Note, server: string) {
+    const uri = await openDocument(
+      { server, noteId: note.id },
+      markdownFilename(note.title),
+    );
+    if (server === client().baseUrl) recent.visit(note);
+    return uri;
+  }
+  register('formd.recoverDraft', async () => {
+    const { baseUrl } = client();
+    const available = drafts.list(baseUrl);
+    if (!available.length) {
+      void vscode.window.showInformationMessage(
+        vscode.l10n.t('No local Formd drafts for this server.'),
+      );
+      return;
+    }
+    const picked = await vscode.window.showQuickPick(
+      available.map((draft) => ({ label: draft.filename, draft })),
+      { placeHolder: vscode.l10n.t('Choose a local Formd draft') },
+    );
+    if (!picked) return;
+    const action = await vscode.window.showQuickPick([
+      { label: vscode.l10n.t('Resume collaboration'), resume: true },
+      { label: vscode.l10n.t('Open a local copy'), resume: false },
+    ]);
+    if (!action) return;
+    const { key, filename } = picked.draft;
+    if (action.resume) {
+      await openDocument(key, filename);
+      return;
+    }
+    sessions.get(key)?.draft.flush();
+    const content = drafts.read(key);
+    if (content !== undefined)
+      await vscode.window.showTextDocument(
+        await vscode.workspace.openTextDocument({
+          language: 'markdown',
+          content,
+        }),
+      );
+  });
+  register('formd.exportMarkdown', async () => {
+    const document = vscode.window.activeTextEditor?.document;
+    if (document?.uri.scheme !== 'formd') return;
+    const destination = await vscode.window.showSaveDialog({
+      defaultUri: vscode.Uri.joinPath(
+        vscode.workspace.workspaceFolders?.[0]?.uri ??
+          vscode.Uri.file(process.cwd()),
+        document.uri.path.split('/').at(-1)!,
+      ),
+      filters: { Markdown: ['md'] },
+    });
+    if (destination)
+      await vscode.workspace.fs.writeFile(
+        destination,
+        new TextEncoder().encode(document.getText()),
+      );
+  });
+  register('formd.retrySync', async () => {
+    const document = vscode.window.activeTextEditor?.document;
+    if (document?.uri.scheme === 'formd')
+      sessions.getByUri(document.uri)?.session.retryPersistence();
+  });
   register('formd.openNote', async (note) => {
-    const selected = await choose(note);
-    if (selected) return open(selected);
+    const target = client();
+    const selected = await choose(note, target);
+    if (selected) return open(selected, target.baseUrl);
   });
   register<Folder>('formd.createNote', async (folder) => {
     const target = client();
@@ -181,7 +243,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (title === undefined) return;
     const note = await target.create(title, undefined, folder?.id);
     await tree.refresh();
-    return open(note);
+    return open(note, target.baseUrl);
   });
   register<Folder>('formd.createFolder', async (folder) => {
     const target = client();
@@ -199,7 +261,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
   register('formd.moveNote', async (note) => {
     const target = client();
-    const selected = await choose(note);
+    const selected = await choose(note, target);
     if (!selected) return;
     const destination = await pickDestination(target, selected.folderId);
     if (!destination) return;
@@ -253,18 +315,20 @@ export function activate(context: vscode.ExtensionContext) {
   register('formd.clearRecent', async () => recent.clear());
   register('formd.refreshNotes', () => tree.refresh());
   register('formd.renameNote', async (note) => {
-    const selected = await choose(note);
+    const target = client();
+    const selected = await choose(note, target);
     if (!selected) return;
     const title = await vscode.window.showInputBox({
       prompt: vscode.l10n.t('Document title'),
       value: selected.title,
     });
     if (title === undefined) return;
-    await client().rename(selected.id, title);
+    await target.rename(selected.id, title);
     await tree.refresh();
   });
   register('formd.deleteNote', async (note) => {
-    const selected = await choose(note);
+    const target = client();
+    const selected = await choose(note, target);
     if (!selected) return;
     if (
       (await vscode.window.showWarningMessage(
@@ -273,12 +337,13 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.l10n.t('Delete'),
       )) === vscode.l10n.t('Delete')
     ) {
-      await client().delete(selected.id);
+      await target.delete(selected.id);
       await tree.refresh();
     }
   });
   register('formd.openInBrowser', async (note) => {
-    const selected = await choose(note);
+    const target = client();
+    const selected = await choose(note, target);
     if (!selected) return;
     const base = vscode.workspace
       .getConfiguration('formd')
@@ -310,7 +375,7 @@ export function activate(context: vscode.ExtensionContext) {
     register(`formd.${command}`, async () => {
       const document = vscode.window.activeTextEditor?.document;
       if (document?.uri.scheme === 'formd')
-        await sessions.get(documentId(document.uri))?.binding?.[command]();
+        await sessions.getByUri(document.uri)?.binding?.[command]();
     });
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
@@ -323,12 +388,6 @@ export function activate(context: vscode.ExtensionContext) {
       if (event.affectsConfiguration('formd.serverUrl')) {
         recent.refresh();
         void tree.refresh();
-        if (sessions.size)
-          void vscode.window.showInformationMessage(
-            vscode.l10n.t(
-              'Formd server changed. Open documents stay connected to the previous server. Close them before opening documents from another server.',
-            ),
-          );
       }
     }),
   );

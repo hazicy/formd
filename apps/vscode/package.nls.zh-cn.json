@@ -1,4 +1,7 @@
 {
+  "formd.recoverDraft": "Formd: 恢复本地草稿",
+  "formd.exportMarkdown": "Formd: 导出当前 Markdown",
+  "formd.retrySync": "Formd: 重试同步",
   "extension.description": "在 VS Code 中编辑和协作 Formd Markdown 文档",
   "formd.openNote": "Formd: 打开协作文档",
   "formd.createNote": "Formd: 新建协作文档",

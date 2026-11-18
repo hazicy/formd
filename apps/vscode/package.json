@@ -26,6 +26,18 @@
   "contributes": {
     "commands": [
       {
+        "command": "formd.recoverDraft",
+        "title": "%formd.recoverDraft%"
+      },
+      {
+        "command": "formd.exportMarkdown",
+        "title": "%formd.exportMarkdown%"
+      },
+      {
+        "command": "formd.retrySync",
+        "title": "%formd.retrySync%"
+      },
+      {
         "command": "formd.openNote",
         "title": "%formd.openNote%"
       },

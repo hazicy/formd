@@ -46,6 +46,11 @@ export function createCollaboration() {
     server: Server,
     getDoc: (id: string) => Y.Doc | undefined,
     allowedOrigins: string[],
+    confirmPersistence: (
+      id: string,
+      connection: object,
+      reply: (saved: boolean) => void,
+    ) => void,
   ) {
     server.on('upgrade', (req, socket, head) => {
       const origin = req.headers.origin;
@@ -231,7 +236,24 @@ export function createCollaboration() {
             } finally {
               candidate.destroy();
             }
+            const { sequence } = message;
+            if (
+              sequence !== undefined &&
+              (!Number.isSafeInteger(sequence) || sequence < 1)
+            )
+              throw new Error('Invalid update sequence');
             Y.applyUpdate(doc, update, ws);
+            if (sequence !== undefined) {
+              confirmPersistence(id, ws, (saved) => {
+                if (ws.readyState !== WebSocket.OPEN) return;
+                ws.send(
+                  JSON.stringify({
+                    type: saved ? 'saved' : 'saveFailed',
+                    sequence,
+                  }),
+                );
+              });
+            }
           } catch {
             ws.send(
               JSON.stringify({ type: 'error', message: '无效内容或文档过大' }),

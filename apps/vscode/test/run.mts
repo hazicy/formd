@@ -6,16 +6,35 @@ import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
+import * as Y from 'yjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const temp = mkdtempSync(join(tmpdir(), 'formd-vscode-test-'));
 const webUrl = 'http://127.0.0.1:5175';
-const server = await createFormdServer(createMemoryNoteStore(), [webUrl]);
-await new Promise<void>((resolve) =>
-  server.server.listen(0, '127.0.0.1', resolve),
-);
-const port = (server.server.address() as { port: number }).port;
-const apiUrl = `http://127.0.0.1:${port}`;
+async function fixtureServer(content: string) {
+  const store = createMemoryNoteStore();
+  const doc = new Y.Doc();
+  doc.getText('content').insert(0, content);
+  const now = new Date().toISOString();
+  await store.upsert({
+    id: 'same-note-id',
+    title: 'Server identity',
+    folderId: null,
+    createdAt: now,
+    updatedAt: now,
+    state: Y.encodeStateAsUpdate(doc),
+  });
+  doc.destroy();
+  const instance = await createFormdServer(store, [webUrl]);
+  await new Promise<void>((resolve) =>
+    instance.server.listen(0, '127.0.0.1', resolve),
+  );
+  const port = (instance.server.address() as { port: number }).port;
+  return { ...instance, url: `http://127.0.0.1:${port}` };
+}
+const server = await fixtureServer('First server');
+const secondServer = await fixtureServer('Second server');
+const apiUrl = server.url;
 const require = createRequire(resolve(root, 'apps/web/package.json'));
 const vitePath = join(
   dirname(require.resolve('vite/package.json')),
@@ -48,6 +67,7 @@ try {
     extensionTestsPath: join(root, 'apps/vscode/dist/test.cjs'),
     extensionTestsEnv: {
       FORMD_TEST_API_URL: apiUrl,
+      FORMD_TEST_SECOND_API_URL: secondServer.url,
       FORMD_TEST_WEB_URL: webUrl,
       PLAYWRIGHT_CHANNEL: process.env.PLAYWRIGHT_CHANNEL || '',
     },
@@ -67,6 +87,6 @@ try {
   });
 } finally {
   web.kill('SIGTERM');
-  await server.close();
+  await Promise.all([server.close(), secondServer.close()]);
   rmSync(temp, { recursive: true, force: true });
 }
