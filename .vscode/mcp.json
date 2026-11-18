@@ -1,0 +1,19 @@
+{
+  "servers": {
+    "formd": {
+      "type": "stdio",
+      "command": "pnpm",
+      "args": [
+        "--dir",
+        "${workspaceFolder}",
+        "exec",
+        "tsx",
+        "apps/server/src/mcp.ts"
+      ],
+      "env": {
+        "FORMD_API_URL": "http://localhost:3001",
+        "FORMD_AGENT_NAME": "GitHub Copilot"
+      }
+    }
+  }
+}

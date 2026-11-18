@@ -3,6 +3,7 @@ import type { Server } from 'node:http';
 import { WebSocketServer, WebSocket } from 'ws';
 import * as Y from 'yjs';
 import { fromByteArray, toByteArray } from 'base64-js';
+import { captureSelection, resolveSelection } from '@formd/client';
 import {
   MAX_CONTENT_LENGTH,
   validPresenceUser,
@@ -79,6 +80,8 @@ export function createCollaboration() {
             data: fromByteArray(Y.encodeStateAsUpdate(doc)),
           }),
         );
+        let previewTimer: ReturnType<typeof setTimeout> | undefined;
+        let flashTimer: ReturnType<typeof setTimeout> | undefined;
         ws.on('message', (raw) => {
           try {
             const message = JSON.parse(raw.toString());
@@ -105,40 +108,101 @@ export function createCollaboration() {
             }
             if (message.type === 'agent.edit') {
               const { requestId, expected, replacement } = message;
+              const member = presence.get(ws);
               if (
                 typeof requestId !== 'string' ||
                 requestId.length > 80 ||
                 typeof expected !== 'string' ||
                 typeof replacement !== 'string' ||
-                presence.get(ws)?.user.client !== 'agent'
+                member?.user.client !== 'agent'
               )
                 throw new Error('Invalid agent edit');
-              const text = doc.getText('content');
-              const current = text.toString();
-              const start = current.indexOf(expected);
-              let error: string | undefined;
-              if (
-                start < 0 ||
-                (expected === ''
-                  ? current !== ''
-                  : current.indexOf(expected, start + 1) >= 0)
-              ) {
-                error =
-                  'The original text is missing or ambiguous. Read the latest document and use a unique excerpt.';
-              } else if (
-                current.length - expected.length + replacement.length >
-                MAX_CONTENT_LENGTH
-              ) {
-                error = 'The edit would exceed the document size limit.';
-              } else if (expected !== replacement) {
-                // Check and mutate in one synchronous turn, against the live Y.Doc.
-                doc.transact(() => {
-                  text.delete(start, expected.length);
-                  text.insert(start, replacement);
-                });
+              const reply = (error?: string) =>
+                ws.send(
+                  JSON.stringify({ type: 'agent.result', requestId, error }),
+                );
+              if (previewTimer) {
+                reply('An edit is already being previewed.');
+                return;
               }
-              ws.send(
-                JSON.stringify({ type: 'agent.result', requestId, error }),
+              const text = doc.getText('content');
+              const findStart = () => {
+                const current = text.toString();
+                if (!expected) return current ? -1 : 0;
+                const offset = current.indexOf(expected);
+                return offset >= 0 &&
+                  current.indexOf(expected, offset + 1) === -1
+                  ? offset
+                  : -1;
+              };
+              const conflict =
+                'The original text is missing or ambiguous. Read the latest document and use a unique excerpt.';
+              const start = findStart();
+              if (start < 0) {
+                reply(conflict);
+                return;
+              }
+              if (expected === replacement) {
+                reply();
+                return;
+              }
+
+              clearTimeout(flashTimer);
+              delete member.agentFlash;
+              const preview = captureSelection(
+                text,
+                start,
+                start + expected.length,
+              );
+              member.selection = preview;
+              broadcastPresence(id);
+              previewTimer = setTimeout(
+                () => {
+                  previewTimer = undefined;
+                  if (ws.readyState !== WebSocket.OPEN || getDoc(id) !== doc)
+                    return;
+                  const range = resolveSelection(text, preview);
+                  const offset = findStart();
+                  if (
+                    !range ||
+                    offset < 0 ||
+                    range.anchor !== offset ||
+                    range.head !== offset + expected.length
+                  ) {
+                    member.selection = null;
+                    broadcastPresence(id);
+                    reply(conflict);
+                    return;
+                  }
+                  if (
+                    text.length - expected.length + replacement.length >
+                    MAX_CONTENT_LENGTH
+                  ) {
+                    member.selection = null;
+                    broadcastPresence(id);
+                    reply('The edit would exceed the document size limit.');
+                    return;
+                  }
+                  doc.transact(() => {
+                    text.delete(offset, expected.length);
+                    text.insert(offset, replacement);
+                  });
+                  const caret = offset + replacement.length;
+                  member.selection = captureSelection(text, caret, caret);
+                  if (replacement) {
+                    member.agentFlash = {
+                      id: randomUUID(),
+                      range: captureSelection(text, offset, caret),
+                    };
+                    flashTimer = setTimeout(() => {
+                      delete member.agentFlash;
+                      broadcastPresence(id);
+                    }, 400);
+                  }
+                  broadcastPresence(id);
+                  reply();
+                },
+                expected ? 300 : 0,
               );
               return;
             }
@@ -165,6 +229,8 @@ export function createCollaboration() {
         });
         ws.on('error', () => ws.close());
         ws.on('close', () => {
+          clearTimeout(previewTimer);
+          clearTimeout(flashTimer);
           room.delete(ws);
           presence.delete(ws);
           broadcastPresence(id);

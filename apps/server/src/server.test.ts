@@ -4,7 +4,7 @@ import WebSocket from 'ws';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { fileURLToPath } from 'node:url';
-import { FormdClient, type NoteSession } from '@formd/client';
+import { FormdClient, resolveSelection, type NoteSession } from '@formd/client';
 import { createFormdServer } from './server.js';
 import { createMemoryNoteStore } from '../test/memory-store.js';
 Object.defineProperty(globalThis, 'WebSocket', {
@@ -206,6 +206,25 @@ test('MCP edits the live document without overwriting human changes', async () =
     );
 
     live.replace('Old sentence.\nHuman draft, updated.');
+    let previewSeen = false;
+    let flashSeen = false;
+    const stopWatching = live.subscribePresence(() => {
+      const agent = live.members.find(
+        (member) => member.user.client === 'agent',
+      );
+      if (!agent) return;
+      const preview = resolveSelection(live.text, agent.selection);
+      const flash = resolveSelection(
+        live.text,
+        agent.agentFlash?.range ?? null,
+      );
+      const content = live.text.toString();
+      previewSeen ||=
+        !!preview &&
+        content.slice(preview.anchor, preview.head) === 'Old sentence.';
+      flashSeen ||=
+        !!flash && content.slice(flash.anchor, flash.head) === 'New sentence.';
+    });
     const edited = await mcp.callTool({
       name: 'edit_document',
       arguments: {
@@ -219,6 +238,20 @@ test('MCP edits the live document without overwriting human changes', async () =
       () => live.text.toString() === 'New sentence.\nHuman draft, updated.',
       'Agent or human edit was lost',
     );
+    await until(() => {
+      const agent = live.members.find(
+        (member) => member.user.client === 'agent',
+      );
+      const selection = agent && resolveSelection(live.text, agent.selection);
+      const caret = 'New sentence.'.length;
+      return selection?.anchor === caret && selection.head === caret;
+    }, 'Agent cursor did not collapse at the end of the replacement');
+    stopWatching();
+    assert.ok(
+      previewSeen,
+      'Agent did not select the original text before editing',
+    );
+    assert.ok(flashSeen, 'Agent did not publish the replacement highlight');
     const conflict = await mcp.callTool({
       name: 'edit_document',
       arguments: {

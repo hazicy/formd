@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from 'motion/react';
 import styles from './PresenceTextarea.module.css';
 import {
   forwardRef,
@@ -28,6 +29,7 @@ export const PresenceTextarea = forwardRef<HTMLTextAreaElement, Props>(
   ) {
     const input = useRef<HTMLTextAreaElement>(null);
     useImperativeHandle(ref, () => input.current!, []);
+    const reduceMotion = useReducedMotion();
     const [members, setMembers] = useState<readonly PresenceMember[]>(
       session.members,
     );
@@ -181,8 +183,12 @@ export const PresenceTextarea = forwardRef<HTMLTextAreaElement, Props>(
           .map((member) => {
             const selection = resolveSelection(session.text, member.selection);
             if (!selection) return null;
-            const start = Math.min(selection.anchor, selection.head),
-              end = Math.max(selection.anchor, selection.head);
+            const flash = member.user.client === 'agent' && member.agentFlash;
+            const highlight =
+              (flash && resolveSelection(session.text, flash.range)) ||
+              selection;
+            const start = Math.min(highlight.anchor, highlight.head);
+            const end = Math.max(highlight.anchor, highlight.head);
             const caret = (
               <span
                 className={styles['remote-caret']}
@@ -214,12 +220,28 @@ export const PresenceTextarea = forwardRef<HTMLTextAreaElement, Props>(
                 >
                   {value.slice(0, start)}
                   {selection.head === start ? caret : null}
-                  <span
-                    className="remote-selection"
-                    style={{ background: member.user.color + '35' }}
-                  >
-                    {value.slice(start, end)}
-                  </span>
+                  {flash ? (
+                    <motion.span
+                      key={flash.id}
+                      className="remote-selection"
+                      initial={
+                        reduceMotion
+                          ? false
+                          : { backgroundColor: member.user.color + '35' }
+                      }
+                      animate={{ backgroundColor: member.user.color + '00' }}
+                      transition={{ duration: reduceMotion ? 0 : 0.35 }}
+                    >
+                      {value.slice(start, end)}
+                    </motion.span>
+                  ) : (
+                    <span
+                      className="remote-selection"
+                      style={{ background: member.user.color + '35' }}
+                    >
+                      {value.slice(start, end)}
+                    </span>
+                  )}
                   {selection.head !== start ? caret : null}
                   {value.slice(end)}
                   {'\u200b'}
