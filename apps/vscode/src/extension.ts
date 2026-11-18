@@ -7,8 +7,13 @@ import {
   markdownFilename,
   type Note,
   type NoteSession,
+  createGuestUser,
+  validPresenceUser,
+  type PresenceUser,
+  type PresenceMember,
 } from '@typo/client';
 import { NotesView } from './notes-view.js';
+import { PresenceController } from './presence.js';
 Object.defineProperty(globalThis, 'WebSocket', {
   value: WebSocket,
   configurable: true,
@@ -37,15 +42,37 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.StatusBarAlignment.Left,
   );
   status.command = 'typo.notes.focus';
+  const stored = context.globalState.get<PresenceUser>('typo.profile');
+  const profile = validPresenceUser(stored)
+    ? stored
+    : createGuestUser('vscode');
+  void context.globalState.update('typo.profile', profile);
+  function getProfile(): PresenceUser {
+    const config = vscode.workspace.getConfiguration('typo');
+    return {
+      ...profile,
+      name:
+        config.get<string>('displayName')?.trim().slice(0, 48) || profile.name,
+      color: /^#[0-9a-fA-F]{6}$/.test(config.get<string>('cursorColor') || '')
+        ? config.get<string>('cursorColor')!
+        : profile.color,
+      client: 'vscode',
+    };
+  }
   const client = () =>
     new TypoClient(
       vscode.workspace
         .getConfiguration('typo')
         .get('serverUrl', 'http://localhost:3001'),
+      getProfile(),
     );
   const tree = new NotesView(client);
+  const presence = new PresenceController(
+    () => entries.values(),
+    () => updateStatus(),
+  );
   const idOf = (uri: vscode.Uri) => uri.path.split('/')[1];
-  context.subscriptions.push(changes, status, output, tree);
+  context.subscriptions.push(changes, status, output, tree, presence);
   function report(error: unknown) {
     output.appendLine(String(error));
     void vscode.window.showErrorMessage(`Typo: ${String(error)}`);
@@ -62,7 +89,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
     status.text = entry.binding?.isFailed
       ? '$(warning) Typo · 绑定暂停'
-      : `$(sync) Typo · ${labels[entry.session.status]}`;
+      : `$(sync) Typo · ${labels[entry.session.status]} · ${entry.session.members.length} 在线`;
     status.tooltip =
       '正文逐次编辑自动同步；无需保存。断线草稿保存在当前会话内存中。';
     status.show();
@@ -132,6 +159,7 @@ export function activate(context: vscode.ExtensionContext) {
         },
         entry.initialState,
       );
+      presence.attach(entry);
       updateStatus();
     } catch (error) {
       report(error);
@@ -301,6 +329,12 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
+      if (
+        event.affectsConfiguration('typo.displayName') ||
+        event.affectsConfiguration('typo.cursorColor')
+      )
+        for (const entry of entries.values())
+          entry.session.setUser(getProfile());
       if (event.affectsConfiguration('typo.serverUrl')) {
         void tree.refresh();
         if (entries.size)
@@ -323,6 +357,7 @@ export function activate(context: vscode.ExtensionContext) {
           output.appendLine(String(error));
         }
         if (!document.isClosed) return;
+        presence.detach(entry);
         entry.binding?.dispose();
         entry.unsubscribe();
         entry.session.destroy();
@@ -334,11 +369,25 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push({
     dispose() {
       for (const entry of entries.values()) {
+        presence.detach(entry);
         entry.binding?.dispose();
         entry.unsubscribe();
         entry.session.destroy();
       }
     },
   });
-  return { notes: tree };
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'typo.jumpToMember',
+      (member: PresenceMember) => presence.jumpToMember(member),
+    ),
+    vscode.commands.registerCommand(
+      'typo.followMember',
+      (member: PresenceMember) => presence.jumpToMember(member, true),
+    ),
+    vscode.commands.registerCommand('typo.stopFollowing', () =>
+      presence.stopFollowing(),
+    ),
+  );
+  return { notes: tree, presence };
 }

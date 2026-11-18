@@ -27,4 +27,4 @@ VS Code 的编辑接口跨扩展宿主异步执行，不能直接复用 Monaco �
 
 WorkspaceEdit 的版本校验参考 [VS Code 的扩展宿主实现](https://github.com/microsoft/vscode/blob/main/src/vs/workbench/api/common/extHostBulkEdits.ts)。纯绑定核心导出在 `@typo/y-vscode/binding`，通过 EditorAdapter 接口测试异步竞态，不需要模拟整个 vscode 模块。
 
-目前只支持顶层命名的纯文本 Y.Text（默认 `content`）。不包含 awareness、远端成员光标或磁盘离线缓存。扩展的键盘撤销/重做使用协作命令；正文会显示 VS Code 的 dirty 标记，但实时同步不依赖保存。
+目前只支持顶层命名的纯文本 Y.Text（默认 `content`）。绑定核心不负责网络 presence 或磁盘离线缓存。`viewText` 暴露与编辑器当前版本一致的只读副本供光标相对位置映射；在线成员、远端光标/选区装饰及跟随由 `apps/vscode/src/presence.ts` 提供。扩展的键盘撤销/重做使用协作命令；正文会显示 VS Code 的 dirty 标记，但实时同步不依赖保存。

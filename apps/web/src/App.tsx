@@ -1,3 +1,5 @@
+import { PresenceTextarea } from './PresenceTextarea';
+import { PresencePanel } from './PresencePanel';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -26,9 +28,29 @@ import {
   markdownFilename,
   type Note,
   type NoteSession,
+  type PresenceUser,
+  createGuestUser,
+  validPresenceUser,
 } from '@typo/client';
+function loadProfile(): PresenceUser {
+  try {
+    const saved = JSON.parse(localStorage.getItem('typo.profile') || 'null');
+    if (validPresenceUser(saved)) return { ...saved, client: 'web' };
+  } catch {
+    /* anonymous defaults */
+  }
+  const guest = createGuestUser('web');
+  try {
+    localStorage.setItem('typo.profile', JSON.stringify(guest));
+  } catch {
+    /* private browsing */
+  }
+  return guest;
+}
+const initialProfile = loadProfile();
 const client = new TypoClient(
   import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  initialProfile,
 );
 const statusLabels = {
   connecting: '正在连接',
@@ -38,6 +60,17 @@ const statusLabels = {
   error: '同步失败 · 请备份内容',
 };
 export default function App() {
+  const [user, setUser] = useState<PresenceUser>(initialProfile);
+  function updateUser(next: PresenceUser) {
+    setUser(next);
+    session.current?.setUser(next);
+    client.user = next;
+    try {
+      localStorage.setItem('typo.profile', JSON.stringify(next));
+    } catch {
+      /* private browsing */
+    }
+  }
   const [notes, setNotes] = useState<Note[]>([]);
   const [selected, setSelected] = useState(location.hash.slice(1));
   const [query, setQuery] = useState('');
@@ -51,6 +84,9 @@ export default function App() {
   const [mode, setMode] = useState<'edit' | 'split' | 'preview'>('split');
   const [sidebar, setSidebar] = useState(false);
   const session = useRef<NoteSession | null>(null);
+  const [activeSession, setActiveSession] = useState<NoteSession | null>(null);
+  const displayedSession =
+    activeSession?.id === selected ? activeSession : null;
   const input = useRef<HTMLTextAreaElement>(null);
   const titleDirty = useRef(false);
   const titleVersion = useRef(0);
@@ -93,6 +129,7 @@ export default function App() {
     titleDirty.current = false;
     const active = client.connect(selected);
     session.current = active;
+    setActiveSession(active);
     const update = () => {
       setContent(active.text.toString());
       setStatus(active.status);
@@ -270,6 +307,14 @@ export default function App() {
             <strong>{note?.title || '我的文档'}</strong>
           </div>
           <div className="actions">
+            {note && displayedSession && (
+              <PresencePanel
+                key={selected}
+                session={displayedSession}
+                user={user}
+                onUserChange={updateUser}
+              />
+            )}
             {note && (
               <>
                 <span className="status">
@@ -393,21 +438,15 @@ export default function App() {
               </div>
             )}
             <div className={`editor-area ${mode}`}>
-              {mode !== 'preview' && (
-                <textarea
+              {mode !== 'preview' && displayedSession && (
+                <PresenceTextarea
+                  key={selected}
                   ref={input}
-                  className="source"
-                  aria-label="Markdown 编辑器"
-                  spellCheck={false}
+                  session={displayedSession}
                   value={content}
                   disabled={!editable}
-                  onChange={(e) => change(e.target.value)}
-                  onKeyDown={(e) => {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-                      e.preventDefault();
-                      insert('**', '**');
-                    }
-                  }}
+                  onChange={change}
+                  onBold={() => insert('**', '**')}
                 />
               )}
               {mode !== 'edit' && (

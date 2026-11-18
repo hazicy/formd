@@ -143,6 +143,10 @@ export class YEditorBinding {
     this.schedule();
   }
 
+  /** Read-only editor replica for mapping presence while remote edits are in flight. */
+  get viewText() {
+    return this.text;
+  }
   get isFailed() {
     return this.failed;
   }

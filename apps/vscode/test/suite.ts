@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
 import type { Note } from '@typo/core';
 import type { NotesView } from '../src/notes-view.js';
+import type { PresenceController } from '../src/presence.js';
 async function until(
   predicate: () => boolean | Promise<boolean>,
   message: string,
@@ -17,9 +18,15 @@ export async function run() {
   const apiUrl = process.env.TYPO_TEST_API_URL!;
   const config = vscode.workspace.getConfiguration('typo');
   await config.update('serverUrl', apiUrl, vscode.ConfigurationTarget.Global);
-  const extension = vscode.extensions.getExtension<{ notes: NotesView }>(
-    'typo-local.typo-vscode',
+  await config.update(
+    'displayName',
+    'VS Alice',
+    vscode.ConfigurationTarget.Global,
   );
+  const extension = vscode.extensions.getExtension<{
+    notes: NotesView;
+    presence: PresenceController;
+  }>('typo-local.typo-vscode');
   assert.ok(extension);
   const api = await extension.activate();
   async function request<T>(
@@ -66,6 +73,12 @@ export async function run() {
     const document = await vscode.workspace.openTextDocument(uri);
     const editor = await vscode.window.showTextDocument(document);
     const page = await browser.newPage();
+    await page.addInitScript(() =>
+      localStorage.setItem(
+        'typo.profile',
+        JSON.stringify({ name: 'Web Bob', color: '#b45e46', client: 'web' }),
+      ),
+    );
     await page.goto(`${process.env.TYPO_TEST_WEB_URL}/#${note.id}`);
     const webEditor = page.getByRole('textbox', { name: 'Markdown 编辑器' });
     await webEditor.waitFor();
@@ -115,6 +128,77 @@ export async function run() {
       throw error;
     });
     console.log('PASS simultaneous Web and VS Code edits converge');
+    await until(
+      () =>
+        api.presence
+          .getChildren()
+          .some((member) => member.user.name === 'Web Bob'),
+      'VS Code member sidebar did not list Web peer',
+    );
+    await page.getByRole('button', { name: /在线成员 2 人/ }).click();
+    await page
+      .getByRole('region', { name: '在线成员列表' })
+      .getByText('VS Alice', { exact: false })
+      .waitFor();
+    await page.getByRole('button', { name: '关闭在线成员' }).click();
+    const selectionStart = document.positionAt(2),
+      selectionEnd = document.positionAt(7);
+    editor.selection = new vscode.Selection(selectionStart, selectionEnd);
+    await page.getByRole('img', { name: /VS Alice 的光标/ }).waitFor();
+    await webEditor.focus();
+    await webEditor.evaluate((element) =>
+      (element as HTMLTextAreaElement).setSelectionRange(1, 1),
+    );
+    await webEditor.press('Shift+ArrowRight');
+    await webEditor.press('Shift+ArrowRight');
+    await webEditor.press('Shift+ArrowRight');
+    await webEditor.press('Shift+ArrowRight');
+    await until(
+      () =>
+        api.presence
+          .getChildren()
+          .some(
+            (member) =>
+              member.user.name === 'Web Bob' &&
+              api.presence.location(member.id)?.head.character === 5,
+          ),
+      'Web cursor did not appear in VS Code',
+    ).catch((error) => {
+      console.error(
+        'Presence snapshot',
+        JSON.stringify(
+          api.presence.getChildren().map((member) => ({
+            member,
+            location: api.presence.location(member.id)?.head,
+          })),
+        ),
+      );
+      throw error;
+    });
+    const bob = api.presence
+      .getChildren()
+      .find((member) => member.user.name === 'Web Bob')!;
+    await vscode.commands.executeCommand('typo.followMember', bob);
+    assert.equal(api.presence.followingId, bob.id);
+    await vscode.commands.executeCommand('typo.stopFollowing');
+    assert.equal(api.presence.followingId, undefined);
+    await editor.edit((edit) => edit.insert(new vscode.Position(0, 0), 'XY'));
+    await until(
+      () => api.presence.location(bob.id)?.head.character === 7,
+      'Relative cursor did not track concurrent insertion',
+    );
+    await until(
+      async () =>
+        webEditor.evaluate((element) => {
+          const input = element as HTMLTextAreaElement;
+          return input.selectionStart === 3 && input.selectionEnd === 7;
+        }),
+      'Web selection was not preserved through remote insertion',
+    );
+    console.log(
+      'PASS cross-platform online members, remote selections and follow/stop',
+    );
+
     // Exercise edits with multiple disjoint ranges in one VS Code transaction.
     const before = document.getText();
     await editor.edit((edit) => {
@@ -191,9 +275,17 @@ export async function run() {
       'Rename must not create a second binding',
     );
     console.log('PASS sidebar refresh and stable editor URI after rename');
+    await page.close();
+    await until(
+      () =>
+        api.presence.getChildren().length === 1 &&
+        !api.presence
+          .getChildren()
+          .some((member) => member.user.name === 'Web Bob'),
+      'Web peer remained online after closing',
+    );
     await document.save();
     await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-    await page.close();
     await client.delete(note.id);
     await vscode.commands.executeCommand('typo.refreshNotes');
     assert.ok(!api.notes.getChildren().some((n) => n.id === note.id));

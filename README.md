@@ -75,13 +75,25 @@ npx expo export --platform ios --platform android --output-dir dist
 
 设置 `typo.serverUrl` 指向与 Web 相同的后端，`typo.webUrl` 指向 Web 客户端地址。文档使用 `typo:` 虚拟文件系统，保留 VS Code 原生 Markdown 编辑体验；预览使用 VS Code 的「打开侧边预览」。
 
-**正文逐次编辑实时同步，无需 Ctrl/Cmd+S 或 Auto Save**。实现位于 [`packages/y-vscode`](packages/y-vscode/README.md)，参考 y-monaco 的增量绑定方式，并处理 VS Code 编辑 API 的异步版本冲突。远端修改以局部 TextEdit 应用，多光标编辑按 offset 写入 Y.Text。Cmd/Ctrl+Z 和协作重做命令只撤销当前绑定的本地修改。保存仅确认缓冲区状态，不会用旧的全文快照覆盖合并结果。暂不包含远端成员/光标显示。
+**正文逐次编辑实时同步，无需 Ctrl/Cmd+S 或 Auto Save**。实现位于 [`packages/y-vscode`](packages/y-vscode/README.md)，参考 y-monaco 的增量绑定方式，并处理 VS Code 编辑 API 的异步版本冲突。远端修改以局部 TextEdit 应用，多光标编辑按 offset 写入 Y.Text。Cmd/Ctrl+Z 和协作重做命令只撤销当前绑定的本地修改。保存仅确认缓冲区状态，不会用旧的全文快照覆盖合并结果。支持远端成员/光标/选区显示，以及当前文档内的成员定位与跟随。
 
 ```bash
 npm run package:vscode
-# 得到 apps/vscode/typo-vscode-0.2.0.vsix
-code --install-extension apps/vscode/typo-vscode-0.2.0.vsix
+# 得到 apps/vscode/typo-vscode-0.3.0.vsix
+code --install-extension apps/vscode/typo-vscode-0.3.0.vsix
 ```
+
+## 在线成员与光标
+
+Web 顶部显示在线成员头像与人数，点击可展开成员列表，编辑自己的显示名称和光标颜色；编辑区显示彩色远端光标、姓名标签和选区。位置使用 Yjs 相对位置，能随并发编辑移动，覆盖层同步文本换行与滚动。自己的选区也会在远端插入后保持锚定。
+
+VS Code 的 Typo 活动栏新增「在线成员」，显示当前文档的成员、客户端和所在行列。点击成员定位光标，行内图钉开始跟随，顶部停止按钮结束跟随；切换文档或使用键盘/鼠标移动选区也会结束跟随。跟随只滚动定位当前文档的成员光标，不自动跨文件切换。编辑器中显示成员颜色、姓名和选区，概览标尺标记位置。参考 [Live Share 的协作交互](https://learn.microsoft.com/en-us/visualstudio/liveshare/use/coedit-follow-focus-visual-studio-code)。
+
+扩展设置 `typo.displayName` 修改名称，`typo.cursorColor` 设置十六进制颜色，留空使用自动分配的访客资料。Web 资料保存在当前浏览器，VS Code 默认访客资料保存在扩展状态中。当前没有登录身份，列表按连接会话统计，同一个人打开多个窗口会显示多个会话，展示的是当前文档的在线状态。
+
+协议使用独立的 `presence` 消息传递 `{ user, selection }`，服务端为每条连接分配身份；选区端点编码为 Yjs RelativePosition。状态仅保存在内存中，不写入文档或修改文档更新时间。正常离开立即移除，异常断网由 WebSocket 心跳在约 30 秒内清理；重连重新注册，客户端断线时先清空远端成员。设计参考 [Yjs Awareness 与 Presence](https://docs.yjs.dev/getting-started/adding-awareness)，并使用服务端管理的文档级成员快照。当前只广播主选区；移动端尚未提供成员/光标界面。
+
+升级时请同时重启后端和 Web，并安装 0.3.0 扩展，保证两端使用支持 presence 的协议版本。
 
 ## 校验
 
@@ -101,7 +113,7 @@ npm run test:e2e
 # 如果本机已有 Chrome，可使用 PLAYWRIGHT_CHANNEL=chrome npm run test:e2e
 ```
 
-集成测试使用临时数据目录与真实 HTTP/WebSocket，覆盖文档 CRUD、两客户端并发修改收敛、断线编辑重连、服务重启恢复、删除通知和输入校验。y-vscode 绑定测试还覆盖异步编辑期间输入、相同字符并发插入、多光标 UTF-16 offset、独立撤销/重做和绑定释放。`npm run test:vscode` 使用独立临时用户目录启动 VS Code 扩展宿主及真实浏览器，验证侧栏、未保存输入实时同步、并发合并、光标位置、保存和重命名后的稳定绑定；默认下载测试 VS Code，可设置 `VSCODE_EXECUTABLE_PATH` 使用已有可执行文件，`PLAYWRIGHT_CHANNEL=chrome` 使用已有 Chrome。
+集成测试使用临时数据目录与真实 HTTP/WebSocket，覆盖文档 CRUD、两客户端并发修改收敛、断线编辑重连、服务重启恢复、删除通知和输入校验。y-vscode 绑定测试还覆盖异步编辑期间输入、相同字符并发插入、多光标 UTF-16 offset、独立撤销/重做和绑定释放。`npm run test:vscode` 使用独立临时用户目录启动 VS Code 扩展宿主及真实浏览器，验证侧栏、未保存输入实时同步、并发合并、双端成员与选区、相对位置、成员跟随/停止、离开清理、保存和重命名后的稳定绑定；默认下载测试 VS Code，可设置 `VSCODE_EXECUTABLE_PATH` 使用已有可执行文件，`PLAYWRIGHT_CHANNEL=chrome` 使用已有 Chrome。
 
 浏览器测试使用 3002/5174 端口与 `.tmp/e2e-data`，覆盖双窗口编辑、预览、重命名、导出、窄屏侧栏和删除通知。
 
@@ -122,7 +134,7 @@ npm run test:e2e
 
 ## 当前边界
 
-这是可运行的单实例开发 MVP。暂未实现登录、团队与文档权限、只读分享、版本历史、附件上传、在线成员/光标、生产数据库与多实例扩展。当前分享链接用于定位文档，不是权限控制；连接到此服务的客户端可以访问全部文档。
+这是可运行的单实例开发 MVP。暂未实现登录、团队与文档权限、只读分享、版本历史、附件上传、生产数据库与多实例扩展。当前分享链接用于定位文档，不是权限控制；连接到此服务的客户端可以访问全部文档。
 
 正文断线修改保留在当前客户端会话内存中，重连后自动合并；尚未同步时关闭页面、切换文档或退出应用会丢失该部分修改，应等待连接恢复或先导出。标题使用 REST 保存，更新后由 Web 列表每 5 秒刷新，移动端可下拉刷新。
 

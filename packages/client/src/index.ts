@@ -1,12 +1,23 @@
 import * as Y from 'yjs';
 import { fromByteArray, toByteArray } from 'base64-js';
-import type { Note } from '@typo/core';
+import {
+  createGuestUser,
+  validPresenceUser,
+  validRelativeSelection,
+  type Note,
+  type PresenceUser,
+  type PresenceMember,
+  type RelativeSelection,
+} from '@typo/core';
+export * from './presence.js';
 export * from '@typo/core';
 export type ConnectionStatus =
   'connecting' | 'connected' | 'offline' | 'deleted' | 'error';
 export class TypoClient {
   readonly baseUrl: string;
-  constructor(baseUrl: string) {
+  user?: PresenceUser;
+  constructor(baseUrl: string, user?: PresenceUser) {
+    this.user = user;
     this.baseUrl = baseUrl.replace(/\/$/, '');
   }
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -42,13 +53,18 @@ export class TypoClient {
       method: 'DELETE',
     });
   }
-  connect(id: string): NoteSession {
-    return new NoteSession(this.baseUrl, id);
+  connect(id: string, user = this.user): NoteSession {
+    return new NoteSession(this.baseUrl, id, user);
   }
 }
 export class NoteSession {
   readonly doc = new Y.Doc();
   readonly text = this.doc.getText('content');
+  members: readonly PresenceMember[] = [];
+  connectionId = '';
+  user: PresenceUser;
+  private selection: RelativeSelection | null = null;
+  private presenceListeners = new Set<() => void>();
   status: ConnectionStatus = 'connecting';
   private listeners = new Set<() => void>();
   private socket?: WebSocket;
@@ -59,7 +75,8 @@ export class NoteSession {
   private remote = {};
   private baseUrl: string;
   readonly id: string;
-  constructor(baseUrl: string, id: string) {
+  constructor(baseUrl: string, id: string, user?: PresenceUser) {
+    this.user = user ?? createGuestUser('unknown', this.doc.clientID);
     this.baseUrl = baseUrl;
     this.id = id;
     this.doc.on('update', (update: Uint8Array, origin: unknown) => {
@@ -76,6 +93,48 @@ export class NoteSession {
     return () => {
       this.listeners.delete(listener);
     };
+  }
+  subscribePresence(listener: () => void): () => void {
+    this.presenceListeners.add(listener);
+    return () => {
+      this.presenceListeners.delete(listener);
+    };
+  }
+  private emitPresence() {
+    for (const listener of this.presenceListeners) listener();
+  }
+  isRemoteOrigin(origin: unknown) {
+    return origin === this.remote;
+  }
+  setUser(user: PresenceUser) {
+    if (!validPresenceUser(user)) throw new Error('Invalid presence profile');
+    this.user = { ...user, name: user.name.trim() };
+    this.sendPresence();
+  }
+  setSelection(selection: RelativeSelection | null) {
+    if (!validRelativeSelection(selection)) return;
+    if (
+      this.selection?.anchor === selection?.anchor &&
+      this.selection?.head === selection?.head
+    )
+      return;
+    this.selection = selection;
+    this.sendPresence();
+  }
+  private sendPresence() {
+    if (this.ready && this.socket?.readyState === 1)
+      this.socket.send(
+        JSON.stringify({
+          type: 'presence',
+          user: this.user,
+          selection: this.selection,
+        }),
+      );
+  }
+  private clearPresence() {
+    this.members = [];
+    this.connectionId = '';
+    this.emitPresence();
   }
   private emit() {
     for (const listener of this.listeners) listener();
@@ -97,18 +156,34 @@ export class NoteSession {
       try {
         const message = JSON.parse(String(event.data));
         if (message.type === 'deleted') {
+          this.clearPresence();
           this.setStatus('deleted');
           socket.close();
           return;
         }
         if (message.type === 'error') {
+          this.clearPresence();
           this.setStatus('error');
           socket.close();
+          return;
+        }
+        if (message.type === 'presence') {
+          if (Array.isArray(message.members)) {
+            this.members = message.members.filter(
+              (member: PresenceMember) =>
+                typeof member?.id === 'string' &&
+                validPresenceUser(member.user) &&
+                validRelativeSelection(member.selection),
+            );
+            this.emitPresence();
+          }
           return;
         }
         if (message.type === 'sync' || message.type === 'update') {
           Y.applyUpdate(this.doc, toByteArray(message.data), this.remote);
           if (message.type === 'sync') {
+            this.connectionId =
+              typeof message.selfId === 'string' ? message.selfId : '';
             socket.send(
               JSON.stringify({
                 type: 'update',
@@ -116,6 +191,7 @@ export class NoteSession {
               }),
             );
             this.ready = true;
+            this.sendPresence();
             this.retry = 500;
             this.setStatus('connected');
           }
@@ -126,10 +202,12 @@ export class NoteSession {
       }
     };
     socket.onerror = () => {
+      this.clearPresence();
       if (this.status !== 'deleted') this.setStatus('offline');
     };
     socket.onclose = () => {
       this.ready = false;
+      this.clearPresence();
       if (this.disposed || this.status === 'deleted' || this.status === 'error')
         return;
       this.setStatus('offline');
@@ -163,6 +241,8 @@ export class NoteSession {
     this.disposed = true;
     clearTimeout(this.timer);
     this.socket?.close();
+    this.clearPresence();
+    this.presenceListeners.clear();
     this.listeners.clear();
     this.doc.destroy();
   }

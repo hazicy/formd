@@ -19,6 +19,9 @@ import {
   MAX_CONTENT_LENGTH,
   welcomeMarkdown,
   type Note,
+  validPresenceUser,
+  validRelativeSelection,
+  type PresenceMember,
 } from '@typo/core';
 interface StoredNote extends Note {
   state: string;
@@ -35,6 +38,20 @@ export function createTypoServer(
   const notes = new Map<string, Note>();
   const docs = new Map<string, Y.Doc>();
   const peers = new Map<string, Set<WebSocket>>();
+  const presence = new Map<WebSocket, PresenceMember>();
+  const alive = new WeakMap<WebSocket, boolean>();
+  function broadcastPresence(id: string) {
+    const room = peers.get(id);
+    if (!room) return;
+    const message = JSON.stringify({
+      type: 'presence',
+      members: [...room].flatMap((peer) =>
+        presence.has(peer) ? [presence.get(peer)!] : [],
+      ),
+    });
+    for (const peer of room)
+      if (peer.readyState === WebSocket.OPEN) peer.send(message);
+  }
   let flushTimer: ReturnType<typeof setTimeout> | undefined;
   function persist() {
     clearTimeout(flushTimer);
@@ -158,6 +175,17 @@ export function createTypoServer(
     noServer: true,
     maxPayload: 4 * 1024 * 1024,
   });
+  const heartbeat = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (alive.get(ws) === false) {
+        ws.terminate();
+        continue;
+      }
+      alive.set(ws, false);
+      ws.ping();
+    }
+  }, 15000);
+  heartbeat.unref();
   server.on('upgrade', (req, socket, head) => {
     const origin = req.headers.origin;
     if (origin && !allowedOrigins.includes(origin)) {
@@ -181,15 +209,40 @@ export function createTypoServer(
       const room = peers.get(id) || new Set<WebSocket>();
       peers.set(id, room);
       room.add(ws);
+      const connectionId = randomUUID();
+      alive.set(ws, true);
+      ws.on('pong', () => alive.set(ws, true));
       ws.send(
         JSON.stringify({
           type: 'sync',
+          selfId: connectionId,
           data: fromByteArray(Y.encodeStateAsUpdate(doc)),
         }),
       );
       ws.on('message', (raw) => {
         try {
           const message = JSON.parse(raw.toString());
+          if (message.type === 'presence') {
+            if (
+              raw.toString().length > 4096 ||
+              !validPresenceUser(message.user) ||
+              !validRelativeSelection(message.selection)
+            )
+              throw new Error('Invalid presence');
+            if (message.selection)
+              for (const value of [
+                message.selection.anchor,
+                message.selection.head,
+              ])
+                Y.decodeRelativePosition(toByteArray(value));
+            presence.set(ws, {
+              id: connectionId,
+              user: { ...message.user, name: message.user.name.trim() },
+              selection: message.selection,
+            });
+            broadcastPresence(id);
+            return;
+          }
           if (message.type !== 'update' || typeof message.data !== 'string')
             throw new Error('Invalid update');
           // Validate on a temporary document before mutating the shared document.
@@ -214,11 +267,14 @@ export function createTypoServer(
       ws.on('error', () => ws.close());
       ws.on('close', () => {
         room.delete(ws);
+        presence.delete(ws);
+        broadcastPresence(id);
         if (!room.size) peers.delete(id);
       });
     });
   });
   async function close() {
+    clearInterval(heartbeat);
     clearTimeout(flushTimer);
     persist();
     for (const client of wss.clients) client.terminate();

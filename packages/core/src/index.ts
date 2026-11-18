@@ -1,3 +1,4 @@
+export * from './presence.js';
 export interface Note {
   id: string;
   title: string;

@@ -2,7 +2,7 @@
   "name": "typo-vscode",
   "displayName": "Typo — Collaborative Markdown",
   "description": "在 VS Code 中编辑和协作 Typo Markdown 文档",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "typo-local",
   "license": "MIT",
   "engines": {
@@ -14,7 +14,8 @@
   "main": "./dist/extension.cjs",
   "activationEvents": [
     "onFileSystem:typo",
-    "onView:typo.notes"
+    "onView:typo.notes",
+    "onView:typo.members"
   ],
   "scripts": {
     "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs",
@@ -67,6 +68,21 @@
         "command": "typo.redo",
         "title": "Typo: 重做自己的修改",
         "icon": "$(redo)"
+      },
+      {
+        "command": "typo.jumpToMember",
+        "title": "Typo: 定位成员光标",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "typo.followMember",
+        "title": "Typo: 跟随成员",
+        "icon": "$(pin)"
+      },
+      {
+        "command": "typo.stopFollowing",
+        "title": "Typo: 停止跟随",
+        "icon": "$(debug-stop)"
       }
     ],
     "configuration": {
@@ -81,6 +97,18 @@
           "type": "string",
           "default": "http://localhost:5173",
           "description": "Typo Web 客户端地址，用于在浏览器中打开文档"
+        },
+        "typo.displayName": {
+          "type": "string",
+          "default": "",
+          "maxLength": 48,
+          "description": "协作中显示的名称，留空使用访客名称"
+        },
+        "typo.cursorColor": {
+          "type": "string",
+          "default": "",
+          "pattern": "^$|^#[0-9a-fA-F]{6}$",
+          "description": "协作光标颜色（十六进制），留空自动分配"
         }
       }
     },
@@ -100,6 +128,11 @@
           "name": "协作文档",
           "icon": "media/typo.svg",
           "contextualTitle": "Typo"
+        },
+        {
+          "id": "typo.members",
+          "name": "在线成员",
+          "contextualTitle": "Typo 在线成员"
         }
       ]
     },
@@ -119,6 +152,11 @@
           "command": "typo.configureServer",
           "when": "view == typo.notes",
           "group": "navigation@3"
+        },
+        {
+          "command": "typo.stopFollowing",
+          "when": "view == typo.members",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -136,6 +174,11 @@
           "command": "typo.deleteNote",
           "when": "view == typo.notes && viewItem == typoNote",
           "group": "1_modify@2"
+        },
+        {
+          "command": "typo.followMember",
+          "when": "view == typo.members && viewItem == typoMember",
+          "group": "inline@1"
         }
       ],
       "commandPalette": [
