@@ -13,6 +13,7 @@ import {
   resolveSelection,
   type NoteSession,
   type PresenceMember,
+  type ExcerptReplaced,
   type RelativeSelection,
 } from '@formd/client';
 interface Props {
@@ -33,6 +34,32 @@ export const PresenceTextarea = forwardRef<HTMLTextAreaElement, Props>(
     const [members, setMembers] = useState<readonly PresenceMember[]>(
       session.members,
     );
+    const [flashes, setFlashes] = useState<
+      ReadonlyMap<string, ExcerptReplaced>
+    >(new Map());
+    useEffect(() => {
+      const timers = new Map<string, ReturnType<typeof setTimeout>>();
+      const unsubscribe = session.subscribeExcerptReplaced((event) => {
+        if (event.memberId === session.connectionId) return;
+        clearTimeout(timers.get(event.memberId));
+        setFlashes((current) => new Map(current).set(event.memberId, event));
+        timers.set(
+          event.memberId,
+          setTimeout(() => {
+            timers.delete(event.memberId);
+            setFlashes((current) => {
+              const next = new Map(current);
+              next.delete(event.memberId);
+              return next;
+            });
+          }, 400),
+        );
+      });
+      return () => {
+        unsubscribe();
+        for (const timer of timers.values()) clearTimeout(timer);
+      };
+    }, [session]);
     const [layout, setLayout] = useState<{
       style: React.CSSProperties;
       top: number;
@@ -183,7 +210,7 @@ export const PresenceTextarea = forwardRef<HTMLTextAreaElement, Props>(
           .map((member) => {
             const selection = resolveSelection(session.text, member.selection);
             if (!selection) return null;
-            const flash = member.user.client === 'agent' && member.agentFlash;
+            const flash = !reduceMotion && flashes.get(member.id);
             const highlight =
               (flash && resolveSelection(session.text, flash.range)) ||
               selection;
@@ -224,13 +251,9 @@ export const PresenceTextarea = forwardRef<HTMLTextAreaElement, Props>(
                     <motion.span
                       key={flash.id}
                       className="remote-selection"
-                      initial={
-                        reduceMotion
-                          ? false
-                          : { backgroundColor: member.user.color + '35' }
-                      }
+                      initial={{ backgroundColor: member.user.color + '35' }}
                       animate={{ backgroundColor: member.user.color + '00' }}
-                      transition={{ duration: reduceMotion ? 0 : 0.35 }}
+                      transition={{ duration: 0.35 }}
                     >
                       {value.slice(start, end)}
                     </motion.span>

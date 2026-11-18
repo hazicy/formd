@@ -19,7 +19,11 @@ export interface PresenceMember {
   id: string;
   user: PresenceUser;
   selection: RelativeSelection | null;
-  agentFlash?: { id: string; range: RelativeSelection };
+}
+export interface ExcerptReplaced {
+  id: string;
+  memberId: string;
+  range: RelativeSelection;
 }
 export function createGuestUser(
   client: PresenceUser['client'] = 'unknown',

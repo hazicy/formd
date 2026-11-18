@@ -34,6 +34,7 @@ export class AgentSession {
                 resolve();
               }
               break;
+            case 'replaceExcerpt.result':
             case 'agent.result':
               this.pending.get(message.requestId)?.(message.error);
               break;
@@ -77,7 +78,22 @@ export class AgentSession {
     return this.doc.getText('content').toString();
   }
 
-  async edit(expected: string, replacement: string) {
+  async edit(expected: string, replacement: string, previewMs = 300) {
+    const previewId =
+      expected && expected !== replacement && previewMs > 0
+        ? await this.request({ type: 'previewExcerpt', expected })
+        : undefined;
+    if (previewId)
+      await new Promise<void>((resolve) => setTimeout(resolve, previewMs));
+    await this.request({
+      type: 'replaceExcerpt',
+      expected,
+      replacement,
+      previewId,
+    });
+  }
+
+  private async request(operation: Record<string, unknown>) {
     await this.ready;
     if (!this.active) throw new Error('Document connection closed.');
     const requestId = randomUUID();
@@ -96,18 +112,11 @@ export class AgentSession {
         5000,
       );
       this.pending.set(requestId, finish);
-      this.socket.send(
-        JSON.stringify({
-          type: 'agent.edit',
-          requestId,
-          expected,
-          replacement,
-        }),
-        (error) => {
-          if (error) finish(error.message);
-        },
-      );
+      this.socket.send(JSON.stringify({ ...operation, requestId }), (error) => {
+        if (error) finish(error.message);
+      });
     });
+    return requestId;
   }
 
   close() {

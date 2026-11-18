@@ -80,8 +80,13 @@ export function createCollaboration() {
             data: fromByteArray(Y.encodeStateAsUpdate(doc)),
           }),
         );
-        let previewTimer: ReturnType<typeof setTimeout> | undefined;
-        let flashTimer: ReturnType<typeof setTimeout> | undefined;
+        let pendingPreview:
+          | {
+              id: string;
+              expected: string;
+              range: ReturnType<typeof captureSelection>;
+            }
+          | undefined;
         ws.on('message', (raw) => {
           try {
             const message = JSON.parse(raw.toString());
@@ -106,25 +111,33 @@ export function createCollaboration() {
               broadcastPresence(id);
               return;
             }
-            if (message.type === 'agent.edit') {
-              const { requestId, expected, replacement } = message;
+            if (
+              message.type === 'previewExcerpt' ||
+              message.type === 'replaceExcerpt' ||
+              message.type === 'agent.edit'
+            ) {
+              const { requestId, expected, replacement, previewId } = message;
+              const previewOnly = message.type === 'previewExcerpt';
               const member = presence.get(ws);
               if (
                 typeof requestId !== 'string' ||
                 requestId.length > 80 ||
                 typeof expected !== 'string' ||
-                typeof replacement !== 'string' ||
-                member?.user.client !== 'agent'
+                (!previewOnly && typeof replacement !== 'string') ||
+                !member
               )
-                throw new Error('Invalid agent edit');
+                throw new Error('Invalid excerpt replacement');
               const reply = (error?: string) =>
                 ws.send(
-                  JSON.stringify({ type: 'agent.result', requestId, error }),
+                  JSON.stringify({
+                    type:
+                      message.type === 'agent.edit'
+                        ? 'agent.result'
+                        : 'replaceExcerpt.result',
+                    requestId,
+                    error,
+                  }),
                 );
-              if (previewTimer) {
-                reply('An edit is already being previewed.');
-                return;
-              }
               const text = doc.getText('content');
               const findStart = () => {
                 const current = text.toString();
@@ -138,72 +151,71 @@ export function createCollaboration() {
               const conflict =
                 'The original text is missing or ambiguous. Read the latest document and use a unique excerpt.';
               const start = findStart();
-              if (start < 0) {
+              if (previewOnly) {
+                pendingPreview = undefined;
+                member.selection = null;
+                if (start >= 0) {
+                  const range = captureSelection(
+                    text,
+                    start,
+                    start + expected.length,
+                  );
+                  pendingPreview = { id: requestId, expected, range };
+                  member.selection = range;
+                }
+                broadcastPresence(id);
+                reply(start < 0 ? conflict : undefined);
+                return;
+              }
+              if (previewId !== undefined && pendingPreview?.id !== previewId) {
                 reply(conflict);
                 return;
               }
-              if (expected === replacement) {
-                reply();
+              const preview =
+                previewId === undefined ? undefined : pendingPreview;
+              if (pendingPreview) member.selection = null;
+              pendingPreview = undefined;
+              const range = preview && resolveSelection(text, preview.range);
+              if (
+                start < 0 ||
+                (preview &&
+                  (preview.expected !== expected ||
+                    !range ||
+                    range.anchor !== start ||
+                    range.head !== start + expected.length))
+              ) {
+                broadcastPresence(id);
+                reply(conflict);
                 return;
               }
-
-              clearTimeout(flashTimer);
-              delete member.agentFlash;
-              const preview = captureSelection(
-                text,
-                start,
-                start + expected.length,
-              );
-              member.selection = preview;
+              if (
+                text.length - expected.length + replacement.length >
+                MAX_CONTENT_LENGTH
+              ) {
+                broadcastPresence(id);
+                reply('The edit would exceed the document size limit.');
+                return;
+              }
+              if (expected !== replacement) {
+                doc.transact(() => {
+                  text.delete(start, expected.length);
+                  text.insert(start, replacement);
+                });
+              }
+              const caret = start + replacement.length;
+              member.selection = captureSelection(text, caret, caret);
               broadcastPresence(id);
-              previewTimer = setTimeout(
-                () => {
-                  previewTimer = undefined;
-                  if (ws.readyState !== WebSocket.OPEN || getDoc(id) !== doc)
-                    return;
-                  const range = resolveSelection(text, preview);
-                  const offset = findStart();
-                  if (
-                    !range ||
-                    offset < 0 ||
-                    range.anchor !== offset ||
-                    range.head !== offset + expected.length
-                  ) {
-                    member.selection = null;
-                    broadcastPresence(id);
-                    reply(conflict);
-                    return;
-                  }
-                  if (
-                    text.length - expected.length + replacement.length >
-                    MAX_CONTENT_LENGTH
-                  ) {
-                    member.selection = null;
-                    broadcastPresence(id);
-                    reply('The edit would exceed the document size limit.');
-                    return;
-                  }
-                  doc.transact(() => {
-                    text.delete(offset, expected.length);
-                    text.insert(offset, replacement);
-                  });
-                  const caret = offset + replacement.length;
-                  member.selection = captureSelection(text, caret, caret);
-                  if (replacement) {
-                    member.agentFlash = {
-                      id: randomUUID(),
-                      range: captureSelection(text, offset, caret),
-                    };
-                    flashTimer = setTimeout(() => {
-                      delete member.agentFlash;
-                      broadcastPresence(id);
-                    }, 400);
-                  }
-                  broadcastPresence(id);
-                  reply();
-                },
-                expected ? 300 : 0,
-              );
+              if (replacement && expected !== replacement) {
+                const event = JSON.stringify({
+                  type: 'excerpt.replaced',
+                  id: randomUUID(),
+                  memberId: member.id,
+                  range: captureSelection(text, start, caret),
+                });
+                for (const peer of room)
+                  if (peer.readyState === WebSocket.OPEN) peer.send(event);
+              }
+              reply();
               return;
             }
             if (message.type !== 'update' || typeof message.data !== 'string')
@@ -229,8 +241,6 @@ export function createCollaboration() {
         });
         ws.on('error', () => ws.close());
         ws.on('close', () => {
-          clearTimeout(previewTimer);
-          clearTimeout(flashTimer);
           room.delete(ws);
           presence.delete(ws);
           broadcastPresence(id);

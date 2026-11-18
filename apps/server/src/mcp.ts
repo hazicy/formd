@@ -78,10 +78,19 @@ server.registerTool(
       id,
       expected: z.string().max(MAX_CONTENT_LENGTH),
       replacement: z.string().max(MAX_CONTENT_LENGTH),
+      preview_ms: z
+        .number()
+        .int()
+        .min(0)
+        .max(2000)
+        .optional()
+        .describe(
+          'How long to show the original selection before submitting. Defaults to 300 ms; 0 skips preview.',
+        ),
     },
   },
-  async ({ id, expected, replacement }) => {
-    await sessionFor(id).edit(expected, replacement);
+  async ({ id, expected, replacement, preview_ms }) => {
+    await sessionFor(id).edit(expected, replacement, preview_ms);
     return result({ id, applied: true });
   },
 );

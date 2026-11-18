@@ -6,6 +6,7 @@ import {
   validRelativeSelection,
   type Note,
   type Folder,
+  type ExcerptReplaced,
   type PresenceUser,
   type PresenceMember,
   type RelativeSelection,
@@ -98,6 +99,7 @@ export class NoteSession {
   connectionId = '';
   user: PresenceUser;
   private selection: RelativeSelection | null = null;
+  private excerptListeners = new Set<(event: ExcerptReplaced) => void>();
   private presenceListeners = new Set<() => void>();
   status: ConnectionStatus = 'connecting';
   private listeners = new Set<() => void>();
@@ -132,6 +134,12 @@ export class NoteSession {
     this.presenceListeners.add(listener);
     return () => {
       this.presenceListeners.delete(listener);
+    };
+  }
+  subscribeExcerptReplaced(listener: (event: ExcerptReplaced) => void) {
+    this.excerptListeners.add(listener);
+    return () => {
+      this.excerptListeners.delete(listener);
     };
   }
   private emitPresence() {
@@ -199,6 +207,19 @@ export class NoteSession {
           this.clearPresence();
           this.setStatus('error');
           socket.close();
+          return;
+        }
+        if (message.type === 'excerpt.replaced') {
+          const { id, memberId } = message;
+          const range: unknown = message.range;
+          if (
+            typeof id === 'string' &&
+            typeof memberId === 'string' &&
+            range &&
+            validRelativeSelection(range)
+          )
+            for (const listener of this.excerptListeners)
+              listener({ id, memberId, range });
           return;
         }
         if (message.type === 'presence') {
@@ -277,6 +298,7 @@ export class NoteSession {
     this.socket?.close();
     this.clearPresence();
     this.presenceListeners.clear();
+    this.excerptListeners.clear();
     this.listeners.clear();
     this.doc.destroy();
   }

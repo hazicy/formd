@@ -205,7 +205,6 @@ test('MCP edits the live document without overwriting human changes', async () =
       'Agent did not appear in the online members',
     );
 
-    live.replace('Old sentence.\nHuman draft, updated.');
     let previewSeen = false;
     let flashSeen = false;
     const stopWatching = live.subscribePresence(() => {
@@ -214,26 +213,30 @@ test('MCP edits the live document without overwriting human changes', async () =
       );
       if (!agent) return;
       const preview = resolveSelection(live.text, agent.selection);
-      const flash = resolveSelection(
-        live.text,
-        agent.agentFlash?.range ?? null,
-      );
       const content = live.text.toString();
       previewSeen ||=
         !!preview &&
         content.slice(preview.anchor, preview.head) === 'Old sentence.';
-      flashSeen ||=
-        !!flash && content.slice(flash.anchor, flash.head) === 'New sentence.';
     });
-    const edited = await mcp.callTool({
+    const stopFlashes = live.subscribeExcerptReplaced((event) => {
+      const flash = resolveSelection(live.text, event.range);
+      flashSeen ||=
+        !!flash &&
+        live.text.toString().slice(flash.anchor, flash.head) ===
+          'New sentence.';
+    });
+    const edit = mcp.callTool({
       name: 'edit_document',
       arguments: {
         id: note.id,
         expected: 'Old sentence.',
         replacement: 'New sentence.',
+        preview_ms: 750,
       },
     });
-    assert.equal(edited.isError, undefined);
+    await until(() => previewSeen, 'Original excerpt was not previewed');
+    live.replace('Old sentence.\nHuman draft, updated.');
+    assert.equal((await edit).isError, undefined);
     await until(
       () => live.text.toString() === 'New sentence.\nHuman draft, updated.',
       'Agent or human edit was lost',
@@ -246,22 +249,50 @@ test('MCP edits the live document without overwriting human changes', async () =
       const caret = 'New sentence.'.length;
       return selection?.anchor === caret && selection.head === caret;
     }, 'Agent cursor did not collapse at the end of the replacement');
+    await until(() => flashSeen, 'Replacement event did not reach the editor');
     stopWatching();
+    stopFlashes();
     assert.ok(
       previewSeen,
       'Agent did not select the original text before editing',
     );
     assert.ok(flashSeen, 'Agent did not publish the replacement highlight');
-    const conflict = await mcp.callTool({
+    const conflict = mcp.callTool({
       name: 'edit_document',
       arguments: {
         id: note.id,
-        expected: 'Old sentence.',
+        expected: 'New sentence.',
         replacement: 'Do not apply.',
+        preview_ms: 750,
       },
     });
-    assert.equal(conflict.isError, true);
-    assert.equal(live.text.toString(), 'New sentence.\nHuman draft, updated.');
+    await until(() => {
+      const agent = live.members.find(
+        (member) => member.user.client === 'agent',
+      );
+      const range = agent && resolveSelection(live.text, agent.selection);
+      return range?.anchor === 0 && range.head === 'New sentence.'.length;
+    }, 'Second excerpt was not previewed');
+    live.replace('Human sentence.\nHuman draft, updated.');
+    assert.equal((await conflict).isError, true);
+    assert.equal(
+      live.text.toString(),
+      'Human sentence.\nHuman draft, updated.',
+    );
+    const immediate = await mcp.callTool({
+      name: 'edit_document',
+      arguments: {
+        id: note.id,
+        expected: 'Human sentence.',
+        replacement: 'Final sentence.',
+        preview_ms: 0,
+      },
+    });
+    assert.equal(immediate.isError, undefined);
+    await until(
+      () => live.text.toString() === 'Final sentence.\nHuman draft, updated.',
+      'Immediate edit was lost',
+    );
     await mcp.callTool({ name: 'close_document', arguments: { id: note.id } });
     await until(
       () => !live.members.some((member) => member.user.client === 'agent'),
