@@ -9,7 +9,7 @@ import {
   type PresenceMember,
   type RelativeSelection,
 } from '@typo/core';
-export * from './presence.js';
+export * from './presence';
 export * from '@typo/core';
 export type ConnectionStatus =
   'connecting' | 'connected' | 'offline' | 'deleted' | 'error';

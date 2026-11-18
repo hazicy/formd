@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+
+nodeLinker: hoisted
+
+overrides:
+  markdown-it: ^14.3.3
+
+allowBuilds:
+  esbuild: true
+  '@vscode/vsce-sign': true
+  keytar: true

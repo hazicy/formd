@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@typo/core": "*",
+    "@typo/core": "workspace:*",
     "yjs": "^13.6.27",
     "base64-js": "^1.5.1"
   }

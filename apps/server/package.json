@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@typo/core": "*",
+    "@typo/core": "workspace:*",
     "express": "^5.1.0",
     "cors": "^2.8.5",
     "ws": "^8.18.3",

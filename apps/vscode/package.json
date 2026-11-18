@@ -20,7 +20,7 @@
   "scripts": {
     "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p test/tsconfig.json",
-    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository",
+    "package": "pnpm run build && vsce package --no-dependencies --allow-missing-repository",
     "build:test": "esbuild test/suite.ts --bundle --platform=node --format=cjs --external:vscode --external:@playwright/test --outfile=dist/test.cjs"
   },
   "contributes": {
@@ -217,9 +217,9 @@
     ]
   },
   "dependencies": {
-    "@typo/client": "*",
+    "@typo/client": "workspace:*",
     "ws": "^8.18.3",
-    "@typo/y-vscode": "*",
+    "@typo/y-vscode": "workspace:*",
     "yjs": "^13.6.27"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 # Formd
 
-面向 Web、Expo / React Native 和 VS Code 的协作 Markdown 工作空间。使用 **npm workspaces + TypeScript** 组织 monorepo。
+面向 Web、Expo / React Native 和 VS Code 的协作 Markdown 工作空间。使用 **pnpm workspace + TypeScript** 组织 monorepo。
 
 ```text
 apps/
@@ -16,11 +16,11 @@ packages/
 
 ## 快速开始
 
-需要 Node.js 22.12+ 与 npm 10+。依赖和锁文件统一在仓库根目录管理。
+需要 Node.js 22.12+ 与 pnpm 12.10.1。依赖和锁文件统一在仓库根目录管理。
 
 ```bash
-npm ci
-npm run dev
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
 
 - Web：<http://localhost:5173>
@@ -34,8 +34,8 @@ npm run dev
 由官方 `create-vite` React TypeScript 模板创建。
 
 ```bash
-npm run dev:web
-npm run build -w @typo/web
+pnpm run dev:web
+pnpm --filter @typo/web run build
 ```
 
 可将 `apps/web/.env.example` 复制为 `.env.local` 配置 `VITE_API_URL`。支持新建、重命名、删除、标题搜索、编辑/分屏/预览、Markdown 格式快捷操作、分享当前文档链接、下载 `.md` 与窄屏侧栏。Markdown 原始 HTML 不执行。
@@ -46,11 +46,11 @@ npm run build -w @typo/web
 
 ```bash
 # 在一个终端启动后端，并允许局域网设备连接
-HOST=0.0.0.0 npm run dev:server
+HOST=0.0.0.0 pnpm run dev:server
 
 # 将 apps/mobile/.env.example 复制为 apps/mobile/.env.local
 # 把 EXPO_PUBLIC_API_URL 改成电脑的局域网地址，例如 http://192.168.1.100:3001
-npm run dev:mobile
+pnpm run dev:mobile
 ```
 
 手机与电脑需在同一网络。iOS 模拟器可以使用 `http://localhost:3001`，Android 模拟器通常使用 `http://10.0.2.2:3001`。真机的 `localhost` 指向手机自身。
@@ -60,7 +60,7 @@ npm run dev:mobile
 ```bash
 # 验证 iOS/Android JavaScript 产物；这不生成原生安装包
 cd apps/mobile
-npx expo export --platform ios --platform android --output-dir dist
+pnpm exec expo export --platform ios --platform android --output-dir dist
 ```
 
 ## VS Code 扩展
@@ -78,7 +78,7 @@ npx expo export --platform ios --platform android --output-dir dist
 **正文逐次编辑实时同步，无需 Ctrl/Cmd+S 或 Auto Save**。实现位于 [`packages/y-vscode`](packages/y-vscode/README.md)，参考 y-monaco 的增量绑定方式，并处理 VS Code 编辑 API 的异步版本冲突。远端修改以局部 TextEdit 应用，多光标编辑按 offset 写入 Y.Text。Cmd/Ctrl+Z 和协作重做命令只撤销当前绑定的本地修改。保存仅确认缓冲区状态，不会用旧的全文快照覆盖合并结果。支持远端成员/光标/选区显示，以及当前文档内的成员定位与跟随。
 
 ```bash
-npm run package:vscode
+pnpm run package:vscode
 # 得到 apps/vscode/typo-vscode-0.3.0.vsix
 code --install-extension apps/vscode/typo-vscode-0.3.0.vsix
 ```
@@ -98,26 +98,26 @@ VS Code 的 Formd 活动栏新增「在线成员」，显示当前文档的成�
 ## 校验
 
 ```bash
-npm run typecheck
-npm run build
-npm test
-npm run lint -w @typo/mobile
-npm run lint -w @typo/web
+pnpm run typecheck
+pnpm run build
+pnpm test
+pnpm --filter @typo/mobile run lint
+pnpm --filter @typo/web run lint
 
 # 真实 VS Code 扩展宿主 + Chrome/Chromium 联测
-npm run test:vscode
+pnpm run test:vscode
 
 # 首次安装 Playwright 浏览器
-npx playwright install chromium
-npm run test:e2e
-# 如果本机已有 Chrome，可使用 PLAYWRIGHT_CHANNEL=chrome npm run test:e2e
+pnpm exec playwright install chromium
+pnpm run test:e2e
+# 如果本机已有 Chrome，可使用 PLAYWRIGHT_CHANNEL=chrome pnpm run test:e2e
 ```
 
-集成测试使用临时数据目录与真实 HTTP/WebSocket，覆盖文档 CRUD、两客户端并发修改收敛、断线编辑重连、服务重启恢复、删除通知和输入校验。y-vscode 绑定测试还覆盖异步编辑期间输入、相同字符并发插入、多光标 UTF-16 offset、独立撤销/重做和绑定释放。`npm run test:vscode` 使用独立临时用户目录启动 VS Code 扩展宿主及真实浏览器，验证侧栏、未保存输入实时同步、并发合并、双端成员与选区、相对位置、成员跟随/停止、离开清理、保存和重命名后的稳定绑定；默认下载测试 VS Code，可设置 `VSCODE_EXECUTABLE_PATH` 使用已有可执行文件，`PLAYWRIGHT_CHANNEL=chrome` 使用已有 Chrome。
+集成测试使用临时数据目录与真实 HTTP/WebSocket，覆盖文档 CRUD、两客户端并发修改收敛、断线编辑重连、服务重启恢复、删除通知和输入校验。y-vscode 绑定测试还覆盖异步编辑期间输入、相同字符并发插入、多光标 UTF-16 offset、独立撤销/重做和绑定释放。`pnpm run test:vscode` 使用独立临时用户目录启动 VS Code 扩展宿主及真实浏览器，验证侧栏、未保存输入实时同步、并发合并、双端成员与选区、相对位置、成员跟随/停止、离开清理、保存和重命名后的稳定绑定；默认下载测试 VS Code，可设置 `VSCODE_EXECUTABLE_PATH` 使用已有可执行文件，`PLAYWRIGHT_CHANNEL=chrome` 使用已有 Chrome。
 
 浏览器测试使用 3002/5174 端口与 `.tmp/e2e-data`，覆盖双窗口编辑、预览、重命名、导出、窄屏侧栏和删除通知。
 
-`npm run build` 构建 Web、服务端和 VS Code 扩展；Expo 的移动端导出单独运行。移动端 JavaScript 打包通过不代表已经验证真机行为或生成签名安装包。
+`pnpm run build` 构建 Web、服务端和 VS Code 扩展；Expo 的移动端导出单独运行。移动端 JavaScript 打包通过不代表已经验证真机行为或生成签名安装包。
 
 ## API 与配置
 
@@ -138,6 +138,6 @@ npm run test:e2e
 
 正文断线修改保留在当前客户端会话内存中，重连后自动合并；尚未同步时关闭页面、切换文档或退出应用会丢失该部分修改，应等待连接恢复或先导出。标题使用 REST 保存，更新后由 Web 列表每 5 秒刷新，移动端可下拉刷新。
 
-依赖审计仍有 Expo 指纹工具及 VSIX 打包工具链的 moderate 告警。已将移动端 Markdown 解析器覆盖为修复版 `markdown-it >=14.3.3`，避免旧渲染库携带的高风险解析器；不要使用 `npm audit fix --force` 降级 Expo SDK。
+依赖审计仍有 Expo 指纹工具及 VSIX 打包工具链的 moderate 告警。已将移动端 Markdown 解析器覆盖为修复版 `markdown-it >=14.3.3`，避免旧渲染库携带的高风险解析器；不要使用 `强制自动修复` 降级 Expo SDK。
 
 后续可在保留共享客户端协议的前提下，将存储替换为 PostgreSQL、加入身份鉴权与授权，再扩展版本记录和客户端持久离线缓存。

@@ -2,27 +2,24 @@
   "name": "formd",
   "private": true,
   "version": "0.1.0",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "packageManager": "pnpm@12.10.1",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "concurrently -k -n server,web \"npm run dev:server\" \"npm run dev:web\"",
-    "dev:web": "npm run dev -w @typo/web",
-    "dev:server": "npm run dev -w @typo/server",
-    "dev:mobile": "npm run start -w @typo/mobile",
-    "build": "npm run build -w @typo/web && npm run build -w @typo/server && npm run build -w typo-vscode",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev": "concurrently -k -n server,web \"pnpm run dev:server\" \"pnpm run dev:web\"",
+    "dev:web": "pnpm --filter @typo/web run dev",
+    "dev:server": "pnpm --filter @typo/server run dev",
+    "dev:mobile": "pnpm --filter @typo/mobile run start",
+    "build": "pnpm --filter @typo/web run build && pnpm --filter @typo/server run build && pnpm --filter typo-vscode run build",
+    "typecheck": "pnpm -r --filter \"./apps/**\" --filter \"./packages/**\" --if-present run typecheck",
     "test": "tsx --test packages/core/src/*.test.ts packages/y-vscode/src/*.test.ts apps/server/src/*.test.ts",
-    "package:vscode": "npm run package -w typo-vscode",
+    "package:vscode": "pnpm --filter typo-vscode run package",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "npm run lint --workspaces --if-present",
-    "test:vscode": "npm run build -w typo-vscode && npm run build:test -w typo-vscode && tsx apps/vscode/test/run.mts"
+    "lint": "pnpm -r --filter \"./apps/**\" --filter \"./packages/**\" --if-present run lint",
+    "test:vscode": "pnpm --filter typo-vscode run build && pnpm --filter typo-vscode run build:test && tsx apps/vscode/test/run.mts"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
@@ -32,8 +29,5 @@
     "tsx": "^4.20.0",
     "typescript": "~6.0.3",
     "@vscode/test-electron": "^2.5.2"
-  },
-  "overrides": {
-    "markdown-it": "^14.3.3"
   }
 }

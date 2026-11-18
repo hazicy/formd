@@ -1,4 +1,4 @@
-export * from './presence.js';
+export * from './presence';
 export interface Note {
   id: string;
   title: string;

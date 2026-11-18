@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
-    "@typo/client": "*",
+    "@typo/client": "workspace:*",
     "expo": "~58.0.26",
     "expo-constants": "~58.0.16",
     "expo-crypto": "~58.0.8",

@@ -14,7 +14,7 @@
 
 Ctrl/Cmd+S 只确认编辑器保存状态，不会再次把整篇旧快照写回共享文档。标题修改后刷新列表；打开中的文档保留原 URI，避免重复绑定。
 
-开发：在仓库根目录运行 `npm run dev`，在 VS Code 按 F5 启动扩展开发宿主。打包运行 `npm run package:vscode`，安装生成的 `typo-vscode-0.3.0.vsix`。
+开发：在仓库根目录运行 `pnpm run dev`，在 VS Code 按 F5 启动扩展开发宿主。打包运行 `pnpm run package:vscode`，安装生成的 `typo-vscode-0.3.0.vsix`。
 
 这是无鉴权的单实例开发 MVP。离线修改尚未同步时请保持文档打开，或先复制/导出正文；断线草稿只存在会话内存中。切换服务器前请关闭当前协作文档。
 

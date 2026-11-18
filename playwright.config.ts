@@ -11,7 +11,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'npm run dev:server',
+      command: 'pnpm run dev:server',
       url: 'http://127.0.0.1:3002/api/health',
       env: {
         PORT: '3002',
@@ -21,7 +21,7 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
-      command: 'npm run dev -w @typo/web -- --port 5174 --host 127.0.0.1',
+      command: 'pnpm --filter @typo/web run dev --port 5174 --host 127.0.0.1',
       url: 'http://127.0.0.1:5174',
       env: { VITE_API_URL: 'http://127.0.0.1:3002' },
       reuseExistingServer: false,
