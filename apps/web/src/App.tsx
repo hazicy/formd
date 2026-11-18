@@ -1,15 +1,21 @@
+import {
+  ActionDialog,
+  FolderSelect,
+  FolderTree,
+  type WorkspaceAction,
+} from './WorkspaceControls';
 import { Button } from '@base-ui/react/button';
 import { Input } from '@base-ui/react/input';
 import styles from './App.module.css';
-import { PresenceTextarea } from './PresenceTextarea';
+import { MarkdownEditor, type MarkdownEditorHandle } from './MarkdownEditor';
 import { PresencePanel } from './PresencePanel';
 import { useEffect, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import {
   Plus,
   Search,
   FileText,
+  Star,
+  Library,
   FolderPlus,
   Feather,
   ChevronRight,
@@ -26,7 +32,6 @@ import {
   PanelLeftClose,
   Clock,
   BookOpen,
-  FolderOpen,
   PanelLeft,
 } from 'lucide-react';
 import {
@@ -70,6 +75,23 @@ const statusLabels = {
   deleted: '文档已被删除',
   error: '同步失败 · 请备份内容',
 };
+const documentViews = {
+  all: '全部文档',
+  recent: '最近访问',
+  favorites: '收藏',
+} as const;
+
+function savedIds(key: string): string[] {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(key) ?? '[]');
+    return Array.isArray(value)
+      ? value.filter((id): id is string => typeof id === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function App() {
   const [user, setUser] = useState<PresenceUser>(initialProfile);
   function updateUser(next: PresenceUser) {
@@ -86,21 +108,32 @@ export default function App() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [selected, setSelected] = useState(location.hash.slice(1));
+  const [view, setView] = useState<keyof typeof documentViews>('all');
+  const [favorites, setFavorites] = useState(() => savedIds('formd.favorites'));
+  const [recent, setRecent] = useState(() => savedIds('formd.recent'));
+  const [action, setAction] = useState<WorkspaceAction | null>(null);
+  useEffect(() => {
+    try {
+      localStorage.setItem('formd.favorites', JSON.stringify(favorites));
+      localStorage.setItem('formd.recent', JSON.stringify(recent));
+    } catch {
+      /* storage may be disabled */
+    }
+  }, [favorites, recent]);
   const [query, setQuery] = useState('');
-  const [content, setContent] = useState('');
+  const [documentSize, setDocumentSize] = useState({ length: 0, lines: 1 });
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<keyof typeof statusLabels>('connecting');
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [mode, setMode] = useState<'edit' | 'split' | 'preview'>('split');
   const [sidebar, setSidebar] = useState(false);
   const session = useRef<NoteSession | null>(null);
   const [activeSession, setActiveSession] = useState<NoteSession | null>(null);
   const displayedSession =
     activeSession?.id === selected ? activeSession : null;
-  const input = useRef<HTMLTextAreaElement>(null);
+  const input = useRef<MarkdownEditorHandle>(null);
   const titleDirty = useRef(false);
   const titleVersion = useRef(0);
   const note = notes.find((n) => n.id === selected);
@@ -112,6 +145,33 @@ export default function App() {
       ? entry.title.toLowerCase().includes(normalizedQuery)
       : entry.folderId === currentFolderId,
   );
+  const favoriteIds = new Set(favorites);
+  const recentOrder = new Map(recent.map((id, index) => [id, index]));
+  const dashboardNotes = notes.filter(
+    (entry) =>
+      (!currentFolderId || entry.folderId === currentFolderId) &&
+      (!normalizedQuery ||
+        entry.title.toLowerCase().includes(normalizedQuery)) &&
+      (view !== 'favorites' || favoriteIds.has(entry.id)) &&
+      (view !== 'recent' || recentOrder.has(entry.id)),
+  );
+  if (view === 'recent')
+    dashboardNotes.sort(
+      (a, b) => recentOrder.get(a.id)! - recentOrder.get(b.id)!,
+    );
+  useEffect(() => {
+    if (note)
+      setRecent((previous) =>
+        [note.id, ...previous.filter((id) => id !== note.id)].slice(0, 100),
+      );
+  }, [note?.id]);
+  function toggleFavorite(id: string) {
+    setFavorites((previous) =>
+      previous.includes(id)
+        ? previous.filter((item) => item !== id)
+        : [...previous, id],
+    );
+  }
   const byFolderId = new Map(folders.map((folder) => [folder.id, folder]));
   function folderPath(id: string) {
     const names: string[] = [];
@@ -122,11 +182,13 @@ export default function App() {
     }
     return names.join(' / ');
   }
-  const folderOptions = folders.map((folder) => (
-    <option key={folder.id} value={folder.id}>
-      {folderPath(folder.id)}
-    </option>
-  ));
+  const folderOptions = [
+    { value: '', label: '根目录' },
+    ...folders.map((folder) => ({
+      value: folder.id,
+      label: folderPath(folder.id),
+    })),
+  ];
   async function mutateFolder(action: () => Promise<unknown>) {
     setBusy(true);
     try {
@@ -176,13 +238,11 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (!selected) return;
-    setContent('');
     titleDirty.current = false;
     const active = client.connect(selected);
     session.current = active;
     setActiveSession(active);
     const update = () => {
-      setContent(active.text.toString());
       setStatus(active.status);
     };
     update();
@@ -229,8 +289,7 @@ export default function App() {
     }
   }
   async function remove() {
-    if (!note || !confirm(`确定删除「${note.title}」？此操作无法撤销。`))
-      return;
+    if (!note) return;
     setBusy(true);
     try {
       await client.delete(note.id);
@@ -243,35 +302,14 @@ export default function App() {
       setBusy(false);
     }
   }
-  function change(value: string) {
-    session.current?.replace(value);
-  }
   function insert(before: string, after = '') {
-    const el = input.current;
-    if (!el) {
-      setMode('edit');
-      return;
-    }
-    const start = el.selectionStart,
-      end = el.selectionEnd;
-    change(
-      content.slice(0, start) +
-        before +
-        (content.slice(start, end) || '文字') +
-        after +
-        content.slice(end),
-    );
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(
-        start + before.length,
-        start + before.length + (end - start || 2),
-      );
-    });
+    input.current?.insert(before, after);
   }
   function download() {
     const url = URL.createObjectURL(
-      new Blob([content], { type: 'text/markdown;charset=utf-8' }),
+      new Blob([displayedSession?.text.toString() ?? ''], {
+        type: 'text/markdown;charset=utf-8',
+      }),
     );
     const a = document.createElement('a');
     a.href = url;
@@ -310,86 +348,111 @@ export default function App() {
           </Button>
         </div>
         <div className={styles.workspace}>
-          <FolderOpen size={15} /> 工作空间
-        </div>
-        <Button
-          className={`${styles.note} ${!selected ? styles.active : ''}`}
-          aria-current={!selected ? 'page' : undefined}
-          onClick={() => select('')}
-        >
-          <FileText size={15} /> 我的文档
-        </Button>
-        <div className={styles['folder-controls']}>
-          <select
-            aria-label="浏览文件夹"
-            value={currentFolderId ?? ''}
-            onChange={(event) => setFolderId(event.target.value || null)}
-          >
-            <option value="">根目录</option>
-            {folderOptions}
-          </select>
+          <Library size={15} /> 文档库
           <Button
             aria-label="新建文件夹"
             title="新建文件夹"
             disabled={busy}
-            onClick={() => {
-              const name = window.prompt('文件夹名称')?.trim();
-              if (name)
-                void mutateFolder(async () => {
-                  const folder = await client.createFolder(
-                    name,
-                    currentFolderId,
-                  );
-                  setFolderId(folder.id);
-                });
-            }}
+            onClick={() =>
+              setAction({
+                title: '新建文件夹',
+                initialName: '',
+                run: (name) =>
+                  void mutateFolder(async () => {
+                    const folder = await client.createFolder(
+                      name,
+                      currentFolderId,
+                    );
+                    setFolderId(folder.id);
+                  }),
+              })
+            }
           >
             <FolderPlus size={16} />
           </Button>
         </div>
+        <Button
+          className={`${styles.note} ${!selected && !currentFolderId ? styles.active : ''}`}
+          aria-current={!selected && !currentFolderId ? 'page' : undefined}
+          onClick={() => {
+            setFolderId(null);
+            setView('all');
+            select('');
+          }}
+        >
+          <FileText size={15} /> 全部文件夹
+        </Button>
+        <FolderTree
+          folders={folders}
+          notes={notes}
+          selected={currentFolderId}
+          activeNote={selected}
+          onOpen={select}
+          onChoose={(id) => {
+            setFolderId(id);
+            if (selected) select('');
+          }}
+        />
+        {selected && (
+          <FolderSelect
+            label="浏览文件夹"
+            value={currentFolderId ?? ''}
+            options={folderOptions}
+            onChange={setFolderId}
+          />
+        )}
         {currentFolder && (
           <div className={styles['folder-controls']}>
             <Button
               disabled={busy}
-              onClick={() => {
-                const name = window
-                  .prompt('文件夹名称', currentFolder.name)
-                  ?.trim();
-                if (name && name !== currentFolder.name)
-                  void mutateFolder(() =>
-                    client.updateFolder(currentFolder.id, { name }),
-                  );
-              }}
+              onClick={() =>
+                setAction({
+                  title: '重命名文件夹',
+                  initialName: currentFolder.name,
+                  run: (name) =>
+                    void mutateFolder(() =>
+                      client.updateFolder(currentFolder.id, { name }),
+                    ),
+                })
+              }
             >
               重命名
             </Button>
-            <select
-              aria-label="移动文件夹到"
+            <FolderSelect
+              label="移动文件夹到"
               value={currentFolder.parentId ?? ''}
               disabled={busy}
-              onChange={(event) => {
-                const parentId = event.target.value || null;
+              options={folderOptions.filter((option) => {
+                let target = byFolderId.get(option.value);
+                while (target) {
+                  if (target.id === currentFolder.id) return false;
+                  target = target.parentId
+                    ? byFolderId.get(target.parentId)
+                    : undefined;
+                }
+                return true;
+              })}
+              onChange={(parentId) =>
                 void mutateFolder(() =>
                   client.updateFolder(currentFolder.id, { parentId }),
-                );
-              }}
-            >
-              <option value="">根目录</option>
-              {folderOptions.filter(
-                (option) => option.key !== currentFolder.id,
-              )}
-            </select>
+                )
+              }
+            />
             <Button
               aria-label="删除文件夹"
               title="删除空文件夹"
               disabled={busy}
-              onClick={() => {
-                if (window.confirm(`删除空文件夹「${currentFolder.name}」？`))
-                  void mutateFolder(async () => {
-                    await client.deleteFolder(currentFolder.id);
-                    setFolderId(currentFolder.parentId);
-                  });
-              }}
+              onClick={() =>
+                setAction({
+                  title: `删除「${currentFolder.name}」？`,
+                  description: '只能删除空文件夹，此操作无法撤销。',
+                  run: () =>
+                    void mutateFolder(async () => {
+                      await client.deleteFolder(currentFolder.id);
+                      setFolderId(currentFolder.parentId);
+                    }),
+                })
+              }
             >
               <Trash2 size={15} />
             </Button>
@@ -457,21 +520,17 @@ export default function App() {
               {note && (
                 <>
                   {folders.length > 0 && (
-                    <select
-                      className={styles['document-folder']}
-                      aria-label="移动文档到"
+                    <FolderSelect
+                      label="移动文档到"
                       value={note.folderId ?? ''}
                       disabled={busy}
-                      onChange={(event) => {
-                        const destination = event.target.value || null;
+                      options={folderOptions}
+                      onChange={(destination) =>
                         void mutateFolder(() =>
                           client.move(note.id, destination),
-                        );
-                      }}
-                    >
-                      <option value="">根目录</option>
-                      {folderOptions}
-                    </select>
+                        )
+                      }
+                    />
                   )}
                   <span className={styles.status}>
                     <span
@@ -490,7 +549,13 @@ export default function App() {
                     aria-label="删除文档"
                     title="删除文档"
                     disabled={busy}
-                    onClick={() => void remove()}
+                    onClick={() =>
+                      setAction({
+                        title: `删除「${note.title}」？`,
+                        description: '此操作无法撤销。',
+                        run: () => void remove(),
+                      })
+                    }
                   >
                     <Trash2 size={15} />
                   </Button>
@@ -523,7 +588,31 @@ export default function App() {
               >
                 <PanelLeft size={16} />
               </Button>
-              <h1>我的文档</h1>
+              <h1>{currentFolder?.name ?? '文档库'}</h1>
+            </div>
+            <div
+              className={styles['view-filters']}
+              role="group"
+              aria-label="文档筛选"
+            >
+              {(
+                Object.keys(documentViews) as (keyof typeof documentViews)[]
+              ).map((key) => (
+                <Button
+                  key={key}
+                  aria-pressed={view === key}
+                  onClick={() => setView(key)}
+                >
+                  {key === 'recent' ? (
+                    <Clock size={14} />
+                  ) : key === 'favorites' ? (
+                    <Star size={14} />
+                  ) : (
+                    <FileText size={14} />
+                  )}
+                  {documentViews[key]}
+                </Button>
+              ))}
             </div>
             <div className={styles['list-tools']}>
               {searchField}
@@ -558,16 +647,7 @@ export default function App() {
                 </tr>
               </thead>
               <tbody>
-                <tr className={styles['group-row']}>
-                  <td colSpan={4}>
-                    <FolderOpen size={15} />{' '}
-                    {normalizedQuery
-                      ? '搜索结果'
-                      : (currentFolder?.name ?? '根目录')}
-                    <span>{visibleNotes.length}</span>
-                  </td>
-                </tr>
-                {visibleNotes.map((entry) => (
+                {dashboardNotes.map((entry) => (
                   <tr key={entry.id}>
                     <td>
                       <Button
@@ -593,22 +673,28 @@ export default function App() {
                     </td>
                     <td>
                       <Button
-                        aria-label={`打开 ${entry.title}`}
-                        onClick={() => select(entry.id)}
+                        aria-label={`${favoriteIds.has(entry.id) ? '取消收藏' : '收藏'} ${entry.title}`}
+                        aria-pressed={favoriteIds.has(entry.id)}
+                        onClick={() => toggleFavorite(entry.id)}
+                        className={styles['favorite-button']}
                       >
-                        打开 <ChevronRight size={14} />
+                        <Star size={16} />
                       </Button>
                     </td>
                   </tr>
                 ))}
-                {!visibleNotes.length && (
+                {!dashboardNotes.length && (
                   <tr>
                     <td className={styles['list-empty']} colSpan={4}>
                       {loading
                         ? '正在加载文档…'
                         : normalizedQuery
                           ? '没有匹配的文档'
-                          : '此文件夹暂无文档'}
+                          : view === 'recent'
+                            ? '暂无访问记录'
+                            : view === 'favorites'
+                              ? '暂无收藏文档'
+                              : '暂无文档'}
                     </td>
                   </tr>
                 )}
@@ -661,25 +747,13 @@ export default function App() {
                       key={String(label)}
                       aria-label={String(label)}
                       title={String(label)}
-                      disabled={!editable || mode === 'preview'}
+                      disabled={!editable}
                       onClick={() => insert(String(before), String(after))}
                     >
                       <I size={16} />
                     </Button>
                   );
                 })}
-              </div>
-              <div className={styles.modes}>
-                {(['edit', 'split', 'preview'] as const).map((m) => (
-                  <Button
-                    key={m}
-                    className={mode === m ? styles.active : ''}
-                    aria-pressed={mode === m}
-                    onClick={() => setMode(m)}
-                  >
-                    {{ edit: '编辑', split: '分屏', preview: '预览' }[m]}
-                  </Button>
-                ))}
               </div>
             </div>
             {(status === 'deleted' ||
@@ -692,34 +766,23 @@ export default function App() {
                   : '，可导出当前内容备份。'}
               </div>
             )}
-            <div
-              className={`${styles['editor-area']} ${mode === 'split' ? styles.split : ''}`}
-            >
-              {mode !== 'preview' && displayedSession && (
-                <PresenceTextarea
+            <div className={styles['editor-area']}>
+              {displayedSession && (
+                <MarkdownEditor
                   key={selected}
                   ref={input}
                   session={displayedSession}
-                  value={content}
-                  disabled={!editable}
-                  onChange={change}
-                  onBold={() => insert('**', '**')}
+                  readOnly={!editable}
+                  onDocumentSizeChange={setDocumentSize}
                 />
-              )}
-              {mode !== 'edit' && (
-                <article className={styles.preview}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {content}
-                  </ReactMarkdown>
-                </article>
               )}
             </div>
             <footer className={styles.bottom}>
               <span>
                 Markdown{' '}
                 <span className={styles['document-count']}>
-                  {content.length.toLocaleString()} 字符 ·{' '}
-                  {content.split('\n').length} 行
+                  {documentSize.length.toLocaleString()} 字符 ·{' '}
+                  {documentSize.lines} 行
                 </span>
               </span>
             </footer>
@@ -744,6 +807,7 @@ export default function App() {
           </div>
         )}
       </main>
+      {action && <ActionDialog action={action} close={() => setAction(null)} />}
       {toast && (
         <div className={styles.toast} role="status">
           {toast}

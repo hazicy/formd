@@ -26,6 +26,7 @@
   --page-gutter: var(--space-8);
 
   --color-canvas: #f3f2ef;
+  --color-backdrop: rgb(30 24 18 / 30%);
   --color-surface: #fff;
   --color-subtle: #f7f6f4;
   --color-hover: #efeeeb;

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-test('edit, preview, collaborate, export and delete a document', async ({
+test('edit with live Markdown, collaborate, export and delete a document', async ({
   page,
   context,
   request,
@@ -13,18 +13,19 @@ test('edit, preview, collaborate, export and delete a document', async ({
   const editor = page.getByRole('textbox', { name: 'Markdown 编辑器' });
   await expect(editor).toBeEnabled();
   await editor.fill('# Browser test\n\n**Shared** ideas.');
-  await expect(page.locator('article h1')).toHaveText('Browser test');
+  await expect(editor.getByRole('heading', { level: 1 })).toHaveText(
+    'Browser test',
+  );
   const second = await context.newPage();
   await second.goto(`/#${note.id}`);
   const otherEditor = second.getByRole('textbox', { name: 'Markdown 编辑器' });
   await expect(otherEditor).toBeEnabled();
-  await expect(otherEditor).toHaveValue('# Browser test\n\n**Shared** ideas.');
+  await expect(otherEditor.locator('.md-strong')).toHaveText('Shared');
   await otherEditor.fill(
     '# Browser test\n\n**Shared** ideas.\n\nFrom another window.',
   );
-  await expect(editor).toHaveValue(
-    '# Browser test\n\n**Shared** ideas.\n\nFrom another window.',
-  );
+  await expect(editor.getByText('From another window.')).toBeVisible();
+  await expect(page.getByRole('button', { name: '分屏' })).toHaveCount(0);
   const title = page.getByRole('textbox', { name: '文档标题' });
   await title.fill('Shared browser note');
   await title.press('Enter');
@@ -41,7 +42,7 @@ test('edit, preview, collaborate, export and delete a document', async ({
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator('article h1')).toBeVisible();
+  await expect(editor.getByRole('heading', { level: 1 })).toBeVisible();
   await page.getByRole('button', { name: '打开侧栏' }).click();
   await expect(
     page.getByRole('navigation', { name: '文档列表' }),
@@ -51,8 +52,17 @@ test('edit, preview, collaborate, export and delete a document', async ({
     path: 'test-results/workspace-mobile.png',
     fullPage: true,
   });
-  page.on('dialog', (dialog) => dialog.accept());
+  await editor.fill('# Browser test\n\n| Name |\n| --- |\n| Shared |\n\nDone');
+  const table = editor.getByRole('table');
+  await expect(table.getByRole('cell', { name: 'Shared' })).toBeVisible();
+  await table.getByRole('cell', { name: 'Shared' }).click();
+  await expect(table).toHaveCount(0);
+  await expect(editor).toContainText('| Name |');
   await page.getByRole('button', { name: '删除文档', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: '删除', exact: true })
+    .click();
   await expect(second.getByRole('status')).toContainText('文档已被删除');
 });
 
@@ -95,18 +105,17 @@ test('online members, names, colored selections and wrapped/scrolled remote curs
     page.getByRole('button', { name: '在线成员 2 人' }),
   ).toBeVisible();
   await first.focus();
-  await first.evaluate((element) =>
-    (element as HTMLTextAreaElement).setSelectionRange(85, 85),
-  );
+  await first.press('ControlOrMeta+Home');
+  for (let offset = 0; offset < 85; offset++) await first.press('ArrowRight');
   await first.press('Shift+ArrowRight');
   await first.press('Shift+ArrowRight');
   const cursor = second.getByRole('img', { name: /Alice 的光标/ });
   await expect(cursor).toBeVisible();
-  await expect(cursor.locator('.remote-selection')).toHaveText(
+  await expect(other.locator('[class*="_selection_"]')).toHaveText(
     content.slice(85, 87),
   );
   const inputBounds = await other.boundingBox();
-  const labelBounds = await cursor.locator('.remote-label').boundingBox();
+  const labelBounds = await cursor.locator('[class*="_label_"]').boundingBox();
   expect(labelBounds!.x).toBeGreaterThanOrEqual(inputBounds!.x);
   expect(labelBounds!.x).toBeLessThan(inputBounds!.x + inputBounds!.width);
   expect(labelBounds!.y).toBeGreaterThan(inputBounds!.y);
@@ -129,20 +138,12 @@ test('online members, names, colored selections and wrapped/scrolled remote curs
     fullPage: true,
   });
   await page.getByRole('button', { name: '关闭在线成员' }).click();
-  const line20 = content.split('\n').slice(0, 20).join('\n').length + 1;
-  await first.focus();
-  await first.evaluate(
-    (element, offset) =>
-      (element as HTMLTextAreaElement).setSelectionRange(offset, offset),
-    line20,
-  );
-  await first.press('ArrowRight');
+  await first.press('ControlOrMeta+End');
   await other.evaluate((element) => {
-    const input = element as HTMLTextAreaElement;
-    input.scrollTop = 1000;
-    input.dispatchEvent(new Event('scroll'));
+    const scroller = element.closest('.cm-scroller')!;
+    scroller.scrollTop = scroller.scrollHeight;
   });
-  await expect(cursor).toHaveAttribute('aria-label', /第 21 行/);
+  await expect(cursor).toHaveAttribute('aria-label', /第 65 行/);
   await second.screenshot({
     path: 'test-results/presence-scrolled.png',
     fullPage: true,
@@ -182,23 +183,31 @@ test('organize a document in nested folders without changing its link', async ({
   expect(duplicate.status()).toBe(409);
 
   await page.goto(`/#${note.id}`);
+  const tree = page.getByRole('tree', { name: '文档库文件树' });
+  const project = tree.getByRole('treeitem', { name: 'Projects', exact: true });
+  await project.focus();
+  await project.press('ArrowRight');
+  await expect(
+    tree.getByRole('treeitem', { name: 'Drafts', exact: true }),
+  ).toBeVisible();
   const move = page.getByRole('combobox', { name: '移动文档到' });
-  await move.selectOption(folder.id);
-  await expect(move).toHaveValue(folder.id);
+  await move.click();
+  await page.getByRole('option', { name: 'Projects / Drafts' }).click();
+  await expect(move).toContainText('Projects / Drafts');
   const notEmpty = await request.delete(`${api}/folders/${folder.id}`);
   expect(notEmpty.status()).toBe(409);
-  await page
-    .getByRole('combobox', { name: '浏览文件夹' })
-    .selectOption(folder.id);
+  await page.getByRole('combobox', { name: '浏览文件夹' }).click();
+  await page.getByRole('option', { name: 'Projects / Drafts' }).click();
   await expect(
     page.getByRole('button', { name: 'Move this document' }),
   ).toBeVisible();
   await expect(
     page.getByRole('textbox', { name: 'Markdown 编辑器' }),
-  ).toHaveValue('# Draft');
+  ).toContainText('Draft');
   await expect(page).toHaveURL(new RegExp(`#${note.id}$`));
-  await move.selectOption('');
-  await expect(move).toHaveValue('');
+  await move.click();
+  await page.getByRole('option', { name: '根目录' }).click();
+  await expect(move).toContainText('根目录');
   expect(
     (await request.delete(`${api}/folders/${folder.id}`)).ok(),
   ).toBeTruthy();
@@ -229,9 +238,18 @@ test('browse and search the workspace without opening an editor', async ({
     await table.getByRole('button', { name: note.title, exact: true }).click();
     await expect(
       page.getByRole('textbox', { name: 'Markdown 编辑器' }),
-    ).toHaveValue('# From the list');
+    ).toContainText('From the list');
     await page.goBack();
     await expect(table.getByText(note.title)).toBeVisible();
+    await search.clear();
+    await page.getByRole('button', { name: '最近访问', exact: true }).click();
+    await expect(table.getByText(note.title)).toBeVisible();
+    await table.getByRole('button', { name: `收藏 ${note.title}` }).click();
+    await page.reload();
+    await page.getByRole('button', { name: '收藏', exact: true }).click();
+    await expect(table.getByText(note.title)).toBeVisible();
+    await table.getByRole('button', { name: `取消收藏 ${note.title}` }).click();
+    await expect(table.getByText('暂无收藏文档')).toBeVisible();
   } finally {
     await request.delete(`${api}/notes/${note.id}`);
   }

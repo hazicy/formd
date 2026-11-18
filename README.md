@@ -71,7 +71,7 @@ pnpm run dev:web
 pnpm --filter @formd/web run build
 ```
 
-可将 `apps/web/.env.example` 复制为 `.env.local` 配置 `VITE_API_URL`。支持新建、重命名、删除、标题搜索、编辑/分屏/预览、Markdown 格式快捷操作、分享当前文档链接、下载 `.md` 与窄屏侧栏。Markdown 原始 HTML 不执行。
+可将 `apps/web/.env.example` 复制为 `.env.local` 配置 `VITE_API_URL`。支持新建、重命名、删除、标题搜索、Markdown 单栏实时编辑、Markdown 格式快捷操作、分享当前文档链接、下载 `.md` 与窄屏侧栏。Markdown 原始 HTML 不执行。
 
 ## Expo / React Native
 
