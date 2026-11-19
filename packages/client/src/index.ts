@@ -1,4 +1,5 @@
 import * as Y from 'yjs';
+import { NoteComments } from './comments';
 import { fromByteArray, toByteArray } from 'base64-js';
 import {
   createGuestUser,
@@ -12,6 +13,7 @@ import {
   type RelativeSelection,
 } from '@formd/core';
 export * from './presence';
+export * from './comments';
 export * from '@formd/core';
 export type ConnectionStatus =
   'connecting' | 'connected' | 'offline' | 'deleted' | 'error';
@@ -97,6 +99,7 @@ export type PersistenceStatus = 'saving' | 'saved' | 'failed';
 export class NoteSession {
   readonly doc = new Y.Doc();
   readonly text = this.doc.getText('content');
+  readonly comments = new NoteComments(this.doc, () => this.user.name);
   members: readonly PresenceMember[] = [];
   connectionId = '';
   user: PresenceUser;

@@ -1,0 +1,66 @@
+.panel {
+  width: min(36%, 24rem);
+  min-width: 15rem;
+  min-height: 0;
+  overflow: auto;
+  border-inline-start: 1px solid var(--color-border);
+  padding: var(--space-4);
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+.panel header,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.panel h2 {
+  margin: 0;
+  font-size: var(--text-md);
+}
+.panel form,
+.thread {
+  display: grid;
+  gap: var(--space-2);
+  margin-block: var(--space-3);
+}
+.thread {
+  border-block-start: 1px solid var(--color-border);
+  padding-block-start: var(--space-3);
+}
+.panel textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 3.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+}
+.panel button {
+  justify-self: start;
+  padding: var(--space-1) var(--space-2);
+}
+.anchor,
+.panel blockquote {
+  text-align: start;
+  overflow-wrap: anywhere;
+  color: var(--color-muted);
+  margin: 0;
+}
+.message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .panel {
+    width: 100%;
+    max-height: 40vh;
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--color-border);
+  }
+}

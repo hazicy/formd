@@ -6,7 +6,12 @@ import * as Y from 'yjs';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { fileURLToPath } from 'node:url';
-import { FormdClient, resolveSelection, type NoteSession } from '@formd/client';
+import {
+  FormdClient,
+  captureCommentAnchor,
+  resolveSelection,
+  type NoteSession,
+} from '@formd/client';
 import { createFormdServer } from './server.js';
 import { createMemoryNoteStore } from '../test/memory-store.js';
 Object.defineProperty(globalThis, 'WebSocket', {
@@ -169,6 +174,73 @@ test('save batches acknowledge only the newest sequence per connection', async (
     observer?.destroy();
     source.destroy();
     await instance.close();
+  }
+});
+
+test('anchored comments and concurrent replies survive server restart', async () => {
+  const store = createMemoryNoteStore();
+  const server = await createFormdServer(store);
+  let restarted: typeof server | undefined;
+  const sessions: NoteSession[] = [];
+  try {
+    const port = await listen(server);
+    const client = new FormdClient(`http://127.0.0.1:${port}`);
+    const note = await client.create('Review', 'paragraph');
+    const first = client.connect(note.id);
+    const second = client.connect(note.id);
+    sessions.push(first, second);
+    await until(
+      () => first.status === 'connected' && second.status === 'connected',
+      'Editors did not connect',
+    );
+    const id = first.comments.create(
+      captureCommentAnchor(first.text, 0, 9),
+      'First comment',
+    );
+    await until(
+      () => second.comments.list().length === 1,
+      'Comment did not synchronize',
+    );
+    first.comments.reply(id, 'First reply');
+    second.comments.reply(id, 'Second reply');
+    second.text.insert(0, 'Prefix ');
+    await until(
+      () =>
+        first.comments.list()[0].messages.length === 3 &&
+        first.text.toString() === 'Prefix paragraph',
+      'Concurrent edits did not merge',
+    );
+    first.comments.setResolved(id, true);
+    await until(
+      () => first.persistenceStatus === 'saved',
+      'Comment changes were not persisted',
+    );
+    await server.close();
+
+    restarted = await createFormdServer(store);
+    const nextPort = await listen(restarted);
+    const reopened = new FormdClient(`http://127.0.0.1:${nextPort}`).connect(
+      note.id,
+    );
+    sessions.push(reopened);
+    await until(
+      () => reopened.status === 'connected',
+      'Reopened editor did not connect',
+    );
+    const [thread] = reopened.comments.list();
+    assert.equal(thread.resolved, true);
+    assert.deepEqual(
+      new Set(thread.messages.map((message) => message.body)),
+      new Set(['First comment', 'First reply', 'Second reply']),
+    );
+    assert.deepEqual(resolveSelection(reopened.text, thread.anchor), {
+      anchor: 7,
+      head: 16,
+    });
+  } finally {
+    for (const session of sessions) session.destroy();
+    await restarted?.close();
+    await server.close();
   }
 });
 

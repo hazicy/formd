@@ -8,6 +8,7 @@ import { Button } from '@base-ui/react/button';
 import { Input } from '@base-ui/react/input';
 import styles from './App.module.css';
 import { MarkdownEditor, type MarkdownEditorHandle } from './MarkdownEditor';
+import { CommentsPanel } from './CommentsPanel';
 import { PresencePanel } from './PresencePanel';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -33,6 +34,7 @@ import {
   Clock,
   BookOpen,
   PanelLeft,
+  MessageSquare,
 } from 'lucide-react';
 import {
   FormdClient,
@@ -41,6 +43,7 @@ import {
   type Folder,
   type NoteSession,
   type PresenceUser,
+  type RelativeSelection,
   createGuestUser,
   validPresenceUser,
 } from '@formd/client';
@@ -133,6 +136,11 @@ export default function App() {
   const [activeSession, setActiveSession] = useState<NoteSession | null>(null);
   const displayedSession =
     activeSession?.id === selected ? activeSession : null;
+  const [commentPanel, setCommentPanel] = useState<{
+    noteId: string;
+    draft: RelativeSelection | null;
+  } | null>(null);
+  const commentsOpen = commentPanel?.noteId === selected;
   const input = useRef<MarkdownEditorHandle>(null);
   const titleDirty = useRef(false);
   const titleVersion = useRef(0);
@@ -755,6 +763,30 @@ export default function App() {
                   );
                 })}
               </div>
+              <div className={styles.formatting}>
+                <Button
+                  aria-label="添加评论"
+                  title="为选区或当前行添加评论"
+                  disabled={!editable}
+                  onClick={() => {
+                    const draft = input.current?.commentAnchor();
+                    if (draft) setCommentPanel({ noteId: selected, draft });
+                  }}
+                >
+                  <MessageSquare size={16} />
+                  添加评论
+                </Button>
+                <Button
+                  aria-pressed={commentsOpen}
+                  onClick={() =>
+                    setCommentPanel(
+                      commentsOpen ? null : { noteId: selected, draft: null },
+                    )
+                  }
+                >
+                  评论
+                </Button>
+              </div>
             </div>
             {(status === 'deleted' ||
               status === 'error' ||
@@ -774,6 +806,19 @@ export default function App() {
                   session={displayedSession}
                   readOnly={!editable}
                   onDocumentSizeChange={setDocumentSize}
+                />
+              )}
+              {displayedSession && commentsOpen && (
+                <CommentsPanel
+                  key={`comments-${selected}`}
+                  session={displayedSession}
+                  editable={editable}
+                  draft={commentPanel.draft}
+                  onDraftChange={(draft) =>
+                    setCommentPanel({ noteId: selected, draft })
+                  }
+                  onClose={() => setCommentPanel(null)}
+                  onLocate={(anchor) => input.current?.locateComment(anchor)}
                 />
               )}
             </div>

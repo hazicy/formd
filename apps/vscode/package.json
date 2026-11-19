@@ -2,7 +2,7 @@
   "name": "formd-vscode",
   "displayName": "Formd — Collaborative Markdown",
   "description": "%extension.description%",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "publisher": "formd-local",
   "license": "MIT",
   "engines": {
@@ -25,6 +25,18 @@
   },
   "contributes": {
     "commands": [
+      {
+        "command": "formd.submitComment",
+        "title": "%formd.submitComment%"
+      },
+      {
+        "command": "formd.resolveComment",
+        "title": "%formd.resolveComment%"
+      },
+      {
+        "command": "formd.reopenComment",
+        "title": "%formd.reopenComment%"
+      },
       {
         "command": "formd.recoverDraft",
         "title": "%formd.recoverDraft%"
@@ -179,6 +191,23 @@
       ]
     },
     "menus": {
+      "comments/commentThread/context": [
+        {
+          "command": "formd.submitComment",
+          "when": "commentController == formd && commentThread != formd-resolved",
+          "group": "navigation"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "formd.resolveComment",
+          "when": "commentController == formd && commentThread == formd-open"
+        },
+        {
+          "command": "formd.reopenComment",
+          "when": "commentController == formd && commentThread == formd-resolved"
+        }
+      ],
       "view/title": [
         {
           "command": "formd.createNote",
@@ -254,6 +283,18 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "formd.submitComment",
+          "when": "false"
+        },
+        {
+          "command": "formd.resolveComment",
+          "when": "false"
+        },
+        {
+          "command": "formd.reopenComment",
+          "when": "false"
+        },
         {
           "command": "formd.undo",
           "when": "resourceScheme == formd"

@@ -254,3 +254,64 @@ test('browse and search the workspace without opening an editor', async ({
     await request.delete(`${api}/notes/${note.id}`);
   }
 });
+
+test('comments follow text edits, reload, and resolve across clients', async ({
+  page,
+  context,
+  request,
+}) => {
+  const api = 'http://127.0.0.1:3002/api';
+  const note = await (
+    await request.post(`${api}/notes`, {
+      data: {
+        title: 'Comment anchors',
+        content: 'Before\nReview this paragraph\nAfter',
+      },
+    })
+  ).json();
+  try {
+    await page.goto(`/#${note.id}`);
+    const editor = page.getByRole('textbox', { name: 'Markdown 编辑器' });
+    await expect(editor.getByText('Review this paragraph')).toBeVisible();
+    await editor.getByText('Review this paragraph').click();
+    await page.getByRole('button', { name: '添加评论' }).click();
+    const comments = page.getByRole('complementary', { name: '文档评论' });
+    await comments
+      .getByRole('textbox', { name: '新评论' })
+      .fill('Can we expand this?');
+    await comments.getByRole('button', { name: '发布评论' }).click();
+    const second = await context.newPage();
+    await second.goto(`/#${note.id}`);
+    await second.getByRole('button', { name: '评论', exact: true }).click();
+    const peerComments = second.getByRole('complementary', {
+      name: '文档评论',
+    });
+    await expect(peerComments.getByText('Can we expand this?')).toBeVisible();
+    const peerEditor = second.getByRole('textbox', { name: 'Markdown 编辑器' });
+    await peerEditor.press('ControlOrMeta+Home');
+    await second.keyboard.insertText('Inserted text\n');
+    await expect(
+      comments.getByRole('button', { name: 'Review this paragraph' }),
+    ).toBeVisible();
+    await peerComments.getByRole('textbox', { name: '回复内容' }).fill('Done.');
+    await peerComments
+      .getByRole('button', { name: '回复', exact: true })
+      .click();
+    await expect(comments.getByText('Done.', { exact: true })).toBeVisible();
+    await comments.getByRole('button', { name: '标记为已解决' }).click();
+    await expect(
+      peerComments.getByText('已解决', { exact: true }),
+    ).toBeVisible();
+    await second.reload();
+    await second.getByRole('button', { name: '评论', exact: true }).click();
+    await expect(
+      peerComments.getByText('Done.', { exact: true }),
+    ).toBeVisible();
+    await peerComments.getByRole('button', { name: '重新打开' }).click();
+    await expect(
+      comments.getByRole('textbox', { name: '回复内容' }),
+    ).toBeVisible();
+  } finally {
+    await request.delete(`${api}/notes/${note.id}`);
+  }
+});

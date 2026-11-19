@@ -18,6 +18,7 @@ import { DocumentSessions } from './documents/session-manager.js';
 import { documentUri, type DocumentKey } from './documents/document-key.js';
 import { createFileSystemProvider } from './documents/file-system-provider.js';
 import { DraftStore } from './documents/draft-store.js';
+import { DocumentComments } from './comments.js';
 import { createConnectionStatus } from './connection-status.js';
 Object.defineProperty(globalThis, 'WebSocket', {
   value: WebSocket,
@@ -65,13 +66,20 @@ export function activate(context: vscode.ExtensionContext) {
       'drafts',
     ).fsPath,
   );
+  const comments = new DocumentComments();
   const sessions: DocumentSessions = new DocumentSessions(
     client,
     drafts,
     output,
     report,
-    (entry) => presence.attach(entry),
-    (entry) => presence.detach(entry),
+    (entry) => {
+      presence.attach(entry);
+      comments.attach(entry);
+    },
+    (entry) => {
+      comments.detach(entry);
+      presence.detach(entry);
+    },
   );
   const presence = new PresenceController(() => sessions.values());
   const provider = createFileSystemProvider(sessions, changes.event);
@@ -82,6 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
     tree,
     presence,
     recent,
+    comments,
     createConnectionStatus(sessions),
     sessions.onDidDelete((uri) => {
       changes.fire([{ type: vscode.FileChangeType.Deleted, uri }]);
@@ -119,6 +128,15 @@ export function activate(context: vscode.ExtensionContext) {
       ),
     );
   };
+  register<vscode.CommentReply>('formd.submitComment', async (reply) => {
+    if (reply) await comments.submit(reply);
+  });
+  register<vscode.CommentThread>('formd.resolveComment', async (thread) => {
+    if (thread) comments.resolve(thread, true);
+  });
+  register<vscode.CommentThread>('formd.reopenComment', async (thread) => {
+    if (thread) comments.resolve(thread, false);
+  });
   async function choose(
     note: Note | undefined,
     target: FormdClient,

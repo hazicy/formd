@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { resolve, dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:net';
 import * as Y from 'yjs';
 
 const root = resolve(import.meta.dirname, '../../..');
@@ -61,17 +62,25 @@ try {
       throw new Error('Test Vite server failed to start');
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
+  const debugSocket = createServer();
+  await new Promise<void>((resolve) =>
+    debugSocket.listen(0, '127.0.0.1', resolve),
+  );
+  const debugPort = (debugSocket.address() as { port: number }).port;
+  await new Promise<void>((resolve) => debugSocket.close(() => resolve()));
   await runTests({
     vscodeExecutablePath: process.env.VSCODE_EXECUTABLE_PATH,
     extensionDevelopmentPath: join(root, 'apps/vscode'),
     extensionTestsPath: join(root, 'apps/vscode/dist/test.cjs'),
     extensionTestsEnv: {
       FORMD_TEST_API_URL: apiUrl,
+      FORMD_TEST_DEBUG_PORT: String(debugPort),
       FORMD_TEST_SECOND_API_URL: secondServer.url,
       FORMD_TEST_WEB_URL: webUrl,
       PLAYWRIGHT_CHANNEL: process.env.PLAYWRIGHT_CHANNEL || '',
     },
     launchArgs: [
+      `--remote-debugging-port=${debugPort}`,
       '--user-data-dir',
       join(temp, 'user-data'),
       '--extensions-dir',

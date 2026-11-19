@@ -20,10 +20,12 @@ import {
 } from '@codemirror/view';
 import {
   captureSelection,
+  captureCommentAnchor,
   resolveSelection,
   type ExcerptReplaced,
   type NoteSession,
   type PresenceMember,
+  type RelativeSelection,
 } from '@formd/client';
 import {
   forwardRef,
@@ -36,6 +38,8 @@ import styles from './MarkdownEditor.module.css';
 
 export interface MarkdownEditorHandle {
   insert(before: string, after: string): void;
+  commentAnchor(): RelativeSelection | null;
+  locateComment(anchor: RelativeSelection): void;
 }
 
 const fromSession = Annotation.define<boolean>();
@@ -136,8 +140,26 @@ export const MarkdownEditor = forwardRef<
       insert(before, after) {
         if (editor.current) insert(editor.current, before, after);
       },
+      commentAnchor() {
+        const view = editor.current;
+        if (!view || view.state.readOnly) return null;
+        const { from, to } = view.state.selection.main;
+        const line = view.state.doc.lineAt(from);
+        return captureCommentAnchor(
+          session.text,
+          from === to ? line.from : from,
+          from === to ? line.to : to,
+        );
+      },
+      locateComment(anchor) {
+        const view = editor.current;
+        const selection = resolveSelection(session.text, anchor);
+        if (!view || !selection) return;
+        view.dispatch({ selection, scrollIntoView: true });
+        view.focus();
+      },
     }),
-    [],
+    [session],
   );
 
   useLayoutEffect(() => {

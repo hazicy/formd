@@ -339,6 +339,63 @@ export async function run() {
       'Local CRDT redo failed',
     );
     console.log('PASS local-only Yjs undo and redo');
+
+    const commentedLine = document.lineAt(0);
+    editor.selection = new vscode.Selection(
+      commentedLine.range.start,
+      commentedLine.range.end,
+    );
+    await vscode.commands.executeCommand('workbench.action.addComment');
+    const findCommentInput = () =>
+      vscode.workspace.textDocuments.find(
+        (doc) => doc.uri.scheme === 'comment' && doc.uri.authority === 'formd',
+      );
+    await until(
+      () => !!findCommentInput(),
+      'Native comment input did not open',
+    );
+    const commentInput = findCommentInput()!;
+    const editComment = new vscode.WorkspaceEdit();
+    editComment.insert(
+      commentInput.uri,
+      new vscode.Position(0, 0),
+      'Review from native VS Code',
+    );
+    assert.ok(
+      await vscode.workspace.applyEdit(editComment),
+      'Could not type in the native comment input',
+    );
+    const workbenchBrowser = await chromium.connectOverCDP(
+      `http://127.0.0.1:${process.env.FORMD_TEST_DEBUG_PORT}`,
+    );
+    const workbench = workbenchBrowser
+      .contexts()[0]
+      .pages()
+      .find((candidate) => candidate.url().includes('workbench'));
+    assert.ok(workbench, 'VS Code workbench is unavailable');
+    await workbench
+      .getByRole('button', {
+        name: vscode.env.language === 'zh-cn' ? /^发布评论/ : /^Post Comment/,
+      })
+      .click({ timeout: 8000 });
+
+    await page.getByRole('button', { name: '评论', exact: true }).click();
+    const comments = page.getByRole('complementary', { name: '文档评论' });
+    await comments
+      .getByText('Review from native VS Code', { exact: true })
+      .waitFor({ timeout: 10000 });
+    await comments
+      .getByRole('textbox', { name: '回复内容' })
+      .fill('Reply from Web');
+    await comments.getByRole('button', { name: '回复', exact: true }).click();
+    await comments.getByText('Reply from Web', { exact: true }).waitFor();
+    await comments.getByRole('button', { name: '关闭评论' }).click();
+    await workbench
+      .getByText('Reply from Web', { exact: true })
+      .waitFor({ timeout: 8000 });
+    await workbenchBrowser.close();
+    console.log('PASS native VS Code comments synchronize both ways with Web');
+
     const moved = await request<Note>(`/api/notes/${note.id}`, 'PATCH', {
       folderId: child.id,
     });

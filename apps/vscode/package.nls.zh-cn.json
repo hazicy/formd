@@ -1,4 +1,7 @@
 {
+  "formd.submitComment": "发布评论",
+  "formd.resolveComment": "解决线程",
+  "formd.reopenComment": "重新打开线程",
   "formd.recoverDraft": "Formd: 恢复本地草稿",
   "formd.exportMarkdown": "Formd: 导出当前 Markdown",
   "formd.retrySync": "Formd: 重试同步",

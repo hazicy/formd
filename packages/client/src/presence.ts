@@ -1,21 +1,36 @@
 import * as Y from 'yjs';
 import { fromByteArray, toByteArray } from 'base64-js';
 import type { RelativeSelection } from '@formd/core';
+function encodePosition(text: Y.Text, index: number, association = 0) {
+  return fromByteArray(
+    Y.encodeRelativePosition(
+      Y.createRelativePositionFromTypeIndex(
+        text,
+        Math.max(0, Math.min(text.length, index)),
+        association,
+      ),
+    ),
+  );
+}
 export function captureSelection(
   text: Y.Text,
   anchor: number,
   head: number,
 ): RelativeSelection {
-  const position = (index: number) =>
-    fromByteArray(
-      Y.encodeRelativePosition(
-        Y.createRelativePositionFromTypeIndex(
-          text,
-          Math.max(0, Math.min(text.length, index)),
-        ),
-      ),
-    );
-  return { anchor: position(anchor), head: position(head) };
+  return {
+    anchor: encodePosition(text, anchor),
+    head: encodePosition(text, head),
+  };
+}
+export function captureCommentAnchor(
+  text: Y.Text,
+  start: number,
+  end: number,
+): RelativeSelection {
+  return {
+    anchor: encodePosition(text, start),
+    head: encodePosition(text, end, start === end ? 0 : -1),
+  };
 }
 export function resolveSelection(
   text: Y.Text,

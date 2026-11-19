@@ -1,4 +1,7 @@
 {
+  "formd.submitComment": "Post Comment",
+  "formd.resolveComment": "Resolve Thread",
+  "formd.reopenComment": "Reopen Thread",
   "formd.recoverDraft": "Formd: Recover Local Draft",
   "formd.exportMarkdown": "Formd: Export Current Markdown",
   "formd.retrySync": "Formd: Retry Sync",
