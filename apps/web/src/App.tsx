@@ -2,7 +2,6 @@ import {
   ActionDialog,
   EntryMenu,
   type EntryCommand,
-  FolderSelect,
   FolderTree,
   type WorkspaceAction,
 } from './WorkspaceControls';
@@ -13,7 +12,7 @@ import { MarkdownEditor, type MarkdownEditorHandle } from './MarkdownEditor';
 import { CommentsPanel } from './CommentsPanel';
 import { CommentInbox } from './CommentInbox';
 import { PresencePanel } from './PresencePanel';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Plus,
   Search,
@@ -26,14 +25,6 @@ import {
   Feather,
   ChevronRight,
   Share2,
-  Download,
-  Trash2,
-  Bold,
-  Italic,
-  Heading,
-  Link,
-  Code,
-  List,
   Menu,
   PanelLeftClose,
   Clock,
@@ -343,20 +334,28 @@ export default function App() {
       setBusy(false);
     }
   }
-  function insert(before: string, after = '') {
-    input.current?.insert(before, after);
-  }
-  function download() {
-    const url = URL.createObjectURL(
-      new Blob([displayedSession?.text.toString() ?? ''], {
-        type: 'text/markdown;charset=utf-8',
-      }),
-    );
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = markdownFilename(title);
-    a.click();
-    URL.revokeObjectURL(url);
+  const addComment = useCallback(
+    (draft: RelativeSelection) => setCommentPanel({ noteId: selected, draft }),
+    [selected],
+  );
+  async function download(target: Note) {
+    try {
+      const active = displayedSession?.id === target.id ? displayedSession : null;
+      const local = active && (active.status === 'connected' || active.status === 'offline');
+      const content = local
+        ? active.text.toString()
+        : (await client.readContent(target.id)).content;
+      const url = URL.createObjectURL(
+        new Blob([content], { type: 'text/markdown;charset=utf-8' }),
+      );
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = markdownFilename(local ? title : target.title);
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setError(String(error));
+    }
   }
   const editable = !!note && (status === 'connected' || status === 'offline');
   function manageEntry(entry: Folder | Note, command: EntryCommand) {
@@ -514,6 +513,7 @@ export default function App() {
                     name={n.title}
                     busy={busy}
                     onManage={(command) => manageEntry(n, command)}
+                    onDownload={() => void download(n)}
                   />
                 </div>
               ))}
@@ -531,6 +531,7 @@ export default function App() {
           hidden={searchingSidebar}
           busy={busy}
           onManage={manageEntry}
+          onDownload={(entry) => void download(entry)}
           onOpen={select}
           onChoose={(id) => {
             setFolderId(id);
@@ -558,9 +559,13 @@ export default function App() {
               >
                 <Menu size={18} />
               </Button>
-              <Button onClick={() => select('')}>我的文档</Button>
-              <ChevronRight size={13} />
-              <strong>{note?.title || '我的文档'}</strong>
+              <Button onClick={() => select('')}>文档库</Button>
+              {note?.folderId && (
+                <>
+                  <ChevronRight size={13} />
+                  <strong>{folderPath(note.folderId)}</strong>
+                </>
+              )}
             </div>
             <div className={styles.actions}>
               {note && displayedSession && (
@@ -573,45 +578,30 @@ export default function App() {
               )}
               {note && (
                 <>
-                  {folders.length > 0 && (
-                    <FolderSelect
-                      label="移动文档到"
-                      value={note.folderId ?? ''}
-                      disabled={busy}
-                      options={folderOptions}
-                      onChange={(destination) =>
-                        void mutateFolder(() =>
-                          client.move(note.id, destination),
-                        )
-                      }
-                    />
-                  )}
-                  <span className={styles.status}>
+                  <span
+                    className={styles.status}
+                    role="img"
+                    tabIndex={0}
+                    aria-label={statusLabels[status]}
+                  >
                     <span
                       className={`${styles.dot} ${status !== 'connected' ? styles.offline : ''}`}
                     />
-                    {statusLabels[status]}
+                    <span className={styles['status-tooltip']} aria-hidden="true">
+                      {statusLabels[status]}
+                    </span>
                   </span>
                   <Button
-                    aria-label="导出 Markdown"
-                    title="导出 Markdown"
-                    onClick={download}
-                  >
-                    <Download size={15} />
-                  </Button>
-                  <Button
-                    aria-label="删除文档"
-                    title="删除文档"
-                    disabled={busy}
+                    aria-label="评论"
+                    title="查看评论"
+                    aria-pressed={commentsOpen}
                     onClick={() =>
-                      setAction({
-                        title: `删除「${note.title}」？`,
-                        description: '此操作无法撤销。',
-                        run: () => void remove(note),
-                      })
+                      setCommentPanel(
+                        commentsOpen ? null : { noteId: selected, draft: null },
+                      )
                     }
                   >
-                    <Trash2 size={15} />
+                    <MessageSquare size={16} />
                   </Button>
                   <Button
                     aria-label="分享文档"
@@ -784,6 +774,7 @@ export default function App() {
                           toggle: () => toggleFavorite(entry.id),
                         }}
                         onManage={(command) => manageEntry(entry, command)}
+                        onDownload={() => void download(entry)}
                       />
                     </td>
                   </tr>
@@ -806,83 +797,6 @@ export default function App() {
           </section>
         ) : note ? (
           <>
-            <div className={styles['document-heading']}>
-              <Input
-                className={styles.title}
-                aria-label="文档标题"
-                maxLength={160}
-                value={title}
-                onChange={(e) => {
-                  titleDirty.current = true;
-                  titleVersion.current++;
-                  setTitle(e.target.value);
-                }}
-                onBlur={() => void rename()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur();
-                }}
-              />
-              <div className={styles.meta}>
-                <Clock size={12} /> 更新于{' '}
-                {new Date(note.updatedAt).toLocaleString('zh-CN', {
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-                <span>·</span>
-                <span>Markdown 文档</span>
-              </div>
-            </div>
-            <div className={styles['editor-toolbar']}>
-              <div className={styles.formatting}>
-                {[
-                  [Heading, '标题', '# ', ''],
-                  [Bold, '粗体', '**', '**'],
-                  [Italic, '斜体', '*', '*'],
-                  [Link, '链接', '[', '](https://example.com)'],
-                  [Code, '代码', '`', '`'],
-                  [List, '列表', '- ', ''],
-                ].map(([Icon, label, before, after]) => {
-                  const I = Icon as typeof Bold;
-                  return (
-                    <Button
-                      key={String(label)}
-                      aria-label={String(label)}
-                      title={String(label)}
-                      disabled={!editable}
-                      onClick={() => insert(String(before), String(after))}
-                    >
-                      <I size={16} />
-                    </Button>
-                  );
-                })}
-              </div>
-              <div className={styles.formatting}>
-                <Button
-                  aria-label="添加评论"
-                  title="为选区或当前行添加评论"
-                  disabled={!editable}
-                  onClick={() => {
-                    const draft = input.current?.commentAnchor();
-                    if (draft) setCommentPanel({ noteId: selected, draft });
-                  }}
-                >
-                  <MessageSquare size={16} />
-                  添加评论
-                </Button>
-                <Button
-                  aria-pressed={commentsOpen}
-                  onClick={() =>
-                    setCommentPanel(
-                      commentsOpen ? null : { noteId: selected, draft: null },
-                    )
-                  }
-                >
-                  评论
-                </Button>
-              </div>
-            </div>
             {(status === 'deleted' ||
               status === 'error' ||
               status === 'offline') && (
@@ -894,15 +808,35 @@ export default function App() {
               </div>
             )}
             <div className={styles['editor-area']}>
-              {displayedSession && (
-                <MarkdownEditor
-                  key={selected}
-                  ref={input}
-                  session={displayedSession}
-                  readOnly={!editable}
-                  onDocumentSizeChange={setDocumentSize}
-                />
-              )}
+              <div className={styles['editor-column']}>
+                <div className={styles['document-heading']}>
+                  <Input
+                    className={styles.title}
+                    aria-label="文档标题"
+                    maxLength={160}
+                    value={title}
+                    onChange={(e) => {
+                      titleDirty.current = true;
+                      titleVersion.current++;
+                      setTitle(e.target.value);
+                    }}
+                    onBlur={() => void rename()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                    }}
+                  />
+                </div>
+                {displayedSession && (
+                  <MarkdownEditor
+                    key={selected}
+                    ref={input}
+                    session={displayedSession}
+                    readOnly={!editable}
+                    onDocumentSizeChange={setDocumentSize}
+                    onComment={addComment}
+                  />
+                )}
+              </div>
               {displayedSession && commentsOpen && (
                 <CommentsPanel
                   key={`comments-${selected}`}

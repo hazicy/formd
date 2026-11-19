@@ -12,15 +12,63 @@
   outline: none;
 }
 .editor :global(.cm-scroller) {
-  font: var(--text-md)/1.85 var(--font-sans);
+  font: 15px/1.75 var(--font-sans);
 }
 .editor :global(.cm-content) {
   width: 100%;
-  max-width: 52rem;
+  max-width: var(--editor-width, 52rem);
   margin-inline: auto;
-  padding: var(--space-8) clamp(16px, 5vw, 40px);
+  padding: var(--space-2) var(--editor-inset, 16px) var(--space-8);
   caret-color: var(--color-text);
   box-sizing: border-box;
+}
+.editor :global(.cm-editor) .selection-toolbar:global(.cm-tooltip) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  max-width: calc(100vw - 24px);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: 0 2px 6px #30251b12, 0 10px 24px #30251b20;
+}
+.selection-toolbar:global(.cm-tooltip-above) {
+  translate: 0 -6px;
+}
+.selection-toolbar:global(.cm-tooltip-below) {
+  translate: 0 6px;
+}
+.editor:not(:focus-within) .selection-toolbar {
+  visibility: hidden;
+}
+.selection-toolbar button {
+  min-width: 30px;
+  min-height: 32px;
+  padding: 0 var(--space-2);
+  border-radius: 9px;
+  color: var(--color-secondary);
+  font-size: var(--text-sm);
+}
+.selection-toolbar button:is(:hover, :focus-visible) {
+  color: var(--color-text);
+  background: var(--color-hover);
+}
+.selection-toolbar button:nth-child(2) {
+  font-weight: 700;
+}
+.selection-toolbar button:nth-child(3) {
+  font-style: italic;
+}
+.selection-toolbar button:last-child {
+  margin-inline-start: 2px;
+  color: var(--color-accent);
+  background: var(--color-selected);
+  font-weight: 600;
+}
+.selection-toolbar button:last-child:is(:hover, :focus-visible) {
+  background: var(--color-hover);
 }
 .editor :global(.md-heading) {
   font-size: 1.08em;

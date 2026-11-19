@@ -146,6 +146,11 @@ export function createHttpApp(
     });
     return note ? c.json(note) : c.json({ error: '文档不存在' }, 404);
   });
+  app.get('/api/notes/:id', (c) => {
+    const doc = notes.getDoc(c.req.param('id'));
+    if (!doc) return c.json({ error: '文档不存在' }, 404);
+    return c.json({ content: doc.getText('content').toString() });
+  });
   app.delete('/api/notes/:id', async (c) => {
     const deleted = await notes.remove(c.req.param('id'));
     return deleted

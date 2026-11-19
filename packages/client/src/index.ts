@@ -40,6 +40,9 @@ export class FormdClient {
   list(): Promise<Note[]> {
     return this.request('/api/notes');
   }
+  readContent(id: string): Promise<{ content: string }> {
+    return this.request(`/api/notes/${encodeURIComponent(id)}`);
+  }
   commentInbox(name: string, signal?: AbortSignal): Promise<CommentInboxItem[]> {
     return this.request(`/api/comment-inbox?${new URLSearchParams({ name })}`, {
       signal,

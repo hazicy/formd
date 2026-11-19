@@ -16,6 +16,7 @@ import {
   EditorView,
   WidgetType,
   keymap,
+  showTooltip,
   type DecorationSet,
 } from '@codemirror/view';
 import {
@@ -37,8 +38,6 @@ import { markdownLive } from './markdownLive';
 import styles from './MarkdownEditor.module.css';
 
 export interface MarkdownEditorHandle {
-  insert(before: string, after: string): void;
-  commentAnchor(): RelativeSelection | null;
   locateComment(anchor: RelativeSelection): void;
 }
 
@@ -111,6 +110,44 @@ function insert(view: EditorView, before: string, after: string) {
 }
 
 const readOnlyConfig = new Compartment();
+const selectionActions = [
+  ['H', '标题', '# ', ''],
+  ['B', '粗体', '**', '**'],
+  ['I', '斜体', '*', '*'],
+  ['链接', '链接', '[', '](https://example.com)'],
+  ['代码', '代码', '`', '`'],
+  ['列表', '列表', '- ', ''],
+] as const;
+
+function selectionToolbar(onComment: (view: EditorView) => boolean) {
+  function create(view: EditorView) {
+    const document = view.dom.ownerDocument;
+    const dom = document.createElement('div');
+    dom.className = styles['selection-toolbar'];
+    dom.setAttribute('role', 'group');
+    dom.setAttribute('aria-label', '选区操作');
+    dom.addEventListener('mousedown', (event) => event.preventDefault());
+    const addButton = (text: string, label: string, run: () => void) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = text;
+      button.title = label;
+      button.setAttribute('aria-label', label);
+      button.addEventListener('click', run);
+      dom.append(button);
+    };
+    for (const [text, label, before, after] of selectionActions) {
+      addButton(text, label, () => insert(view, before, after));
+    }
+    addButton('评论', '添加评论', () => onComment(view));
+    return { dom };
+  }
+  return showTooltip.compute(['selection', EditorState.readOnly], (state) => {
+    const { from, to, empty } = state.selection.main;
+    return state.readOnly || empty ? null : { pos: from, end: to, above: true, create };
+  });
+}
+
 const editing = (readOnly: boolean) => [
   EditorState.readOnly.of(readOnly),
   EditorView.editable.of(!readOnly),
@@ -130,27 +167,14 @@ export const MarkdownEditor = forwardRef<
     session: NoteSession;
     readOnly: boolean;
     onDocumentSizeChange: (size: { length: number; lines: number }) => void;
+    onComment: (anchor: RelativeSelection) => void;
   }
->(function MarkdownEditor({ session, readOnly, onDocumentSizeChange }, ref) {
+>(function MarkdownEditor({ session, readOnly, onDocumentSizeChange, onComment }, ref) {
   const host = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorView | null>(null);
   useImperativeHandle(
     ref,
     () => ({
-      insert(before, after) {
-        if (editor.current) insert(editor.current, before, after);
-      },
-      commentAnchor() {
-        const view = editor.current;
-        if (!view || view.state.readOnly) return null;
-        const { from, to } = view.state.selection.main;
-        const line = view.state.doc.lineAt(from);
-        return captureCommentAnchor(
-          session.text,
-          from === to ? line.from : from,
-          from === to ? line.to : to,
-        );
-      },
       locateComment(anchor) {
         const view = editor.current;
         const selection = resolveSelection(session.text, anchor);
@@ -207,6 +231,19 @@ export const MarkdownEditor = forwardRef<
         });
       });
     };
+    function addComment(view: EditorView) {
+      if (view.state.readOnly) return false;
+      const { from, to, empty } = view.state.selection.main;
+      const line = view.state.doc.lineAt(from);
+      const anchor = captureCommentAnchor(
+        session.text,
+        empty ? line.from : from,
+        empty ? line.to : to,
+      );
+      if (!anchor) return false;
+      onComment(anchor);
+      return true;
+    }
     const view = new EditorView({
       parent: host.current!,
       state: EditorState.create({
@@ -217,8 +254,10 @@ export const MarkdownEditor = forwardRef<
           markdownLive,
           presence,
           history(),
+          selectionToolbar(addComment),
           keymap.of([
             { key: 'Mod-b', run: (view) => insert(view, '**', '**') },
+            { key: 'Mod-Alt-m', run: addComment },
             ...defaultKeymap,
             ...historyKeymap,
           ]),
@@ -317,7 +356,7 @@ export const MarkdownEditor = forwardRef<
       view.destroy();
       editor.current = null;
     };
-  }, [session, onDocumentSizeChange]);
+  }, [session, onDocumentSizeChange, onComment]);
 
   useLayoutEffect(() => {
     editor.current?.dispatch({

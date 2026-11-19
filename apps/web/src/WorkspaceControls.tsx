@@ -159,11 +159,13 @@ export function EntryMenu({
   busy,
   onManage,
   favorite,
+  onDownload,
 }: {
   name: string;
   busy: boolean;
   onManage: (command: EntryCommand) => void;
   favorite?: { active: boolean; toggle: () => void };
+  onDownload?: () => void;
 }) {
   return (
     <Menu.Root>
@@ -193,6 +195,11 @@ export function EntryMenu({
             <Menu.Item className={styles['select-item']} onClick={() => onManage('move')}>
               移动到…
             </Menu.Item>
+            {onDownload && (
+              <Menu.Item className={styles['select-item']} onClick={onDownload}>
+                下载 Markdown
+              </Menu.Item>
+            )}
             <Menu.Item className={styles['select-item']} onClick={() => onManage('delete')}>
               删除
             </Menu.Item>
@@ -213,6 +220,7 @@ export function FolderTree({
   onManage,
   onChoose,
   onOpen,
+  onDownload,
 }: {
   folders: Folder[];
   notes: Note[];
@@ -221,6 +229,7 @@ export function FolderTree({
   busy: boolean;
   onManage: (entry: Folder | Note, command: EntryCommand) => void;
   onOpen: (id: string) => void;
+  onDownload: (note: Note) => void;
   selected: string | null;
   onChoose: (id: string) => void;
 }) {
@@ -308,6 +317,7 @@ export function FolderTree({
               name={item.getItemName()}
               busy={busy}
               onManage={(command) => onManage(entry, command)}
+              onDownload={'parentId' in entry ? undefined : () => onDownload(entry)}
             />
           </div>
         );

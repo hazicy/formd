@@ -228,5 +228,5 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
 
 export type NoteService = Pick<
   Awaited<ReturnType<typeof createNoteService>>,
-  'list' | 'has' | 'create' | 'update' | 'remove' | 'commentInbox' | 'deleteFolder'
+  'list' | 'has' | 'getDoc' | 'create' | 'update' | 'remove' | 'commentInbox' | 'deleteFolder'
 >;

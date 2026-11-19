@@ -120,6 +120,8 @@
   font-size: var(--text-sm);
 }
 .main {
+  --editor-width: 64rem;
+  --editor-inset: clamp(16px, 4vw, 32px);
   min-width: 0;
   flex: 1;
   display: flex;
@@ -163,17 +165,35 @@
   font-size: var(--text-sm);
 }
 .status {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+}
+.status-tooltip {
+  position: absolute;
+  z-index: 2;
+  inset: calc(100% + 4px) 0 auto auto;
+  visibility: hidden;
+  pointer-events: none;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-control);
+  color: var(--color-text);
   font-size: var(--text-xs);
-  color: var(--color-muted);
-  display: flex;
-  gap: 6px;
-  align-items: center;
   white-space: nowrap;
-  margin-right: var(--space-3);
+}
+.status:is(:hover, :focus) .status-tooltip {
+  visibility: visible;
 }
 .dot {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
   border-radius: var(--radius-full);
   background: var(--color-success);
 }
@@ -181,7 +201,11 @@
   background: var(--color-warning);
 }
 .document-heading {
-  padding: var(--space-6) var(--page-gutter);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--editor-width);
+  margin-inline: auto;
+  padding: var(--space-6) var(--editor-inset) var(--space-2);
 }
 .title {
   border: 0;
@@ -192,35 +216,17 @@
   font-weight: 600;
   width: 100%;
 }
-.meta {
-  font-size: var(--text-xs);
-  color: var(--color-muted);
-  margin-top: 14px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.editor-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 28px;
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-subtle);
-}
-.formatting {
-  display: flex;
-  gap: var(--space-1);
-}
-.formatting button {
-  padding: 7px;
-  color: var(--color-secondary);
-}
 .editor-area {
   flex: 1;
   min-height: 0;
   display: flex;
+}
+.editor-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 .bottom {
   height: 33px;
@@ -266,12 +272,6 @@
   box-shadow: var(--shadow-overlay);
 }
 @media (max-width: 1050px) {
-  .status {
-    display: none;
-  }
-  .document-heading {
-    padding: 28px;
-  }
   .topbar {
     padding: 0 var(--space-5);
   }
@@ -303,12 +303,6 @@
   }
   .title {
     font-size: 25px;
-  }
-  .editor-toolbar {
-    padding: 7px 10px;
-  }
-  .formatting button:nth-child(n + 4) {
-    display: none;
   }
   .bottom {
     padding: 0 var(--space-3);

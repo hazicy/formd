@@ -32,8 +32,12 @@ test('edit with live Markdown, collaborate, export and delete a document', async
   await expect(
     page.getByRole('button', { name: 'Shared browser note' }),
   ).toBeVisible();
+  const documentRow = page.getByRole('treeitem', { name: 'Shared browser note', exact: true });
+  const documentMenu = page.getByRole('button', { name: '「Shared browser note」的更多操作' });
+  await documentRow.hover();
+  await documentMenu.click();
   const downloadEvent = page.waitForEvent('download');
-  await page.getByRole('button', { name: '导出 Markdown' }).click();
+  await page.getByRole('menuitem', { name: '下载 Markdown' }).click();
   expect((await downloadEvent).suggestedFilename()).toBe(
     'Shared browser note.md',
   );
@@ -45,7 +49,7 @@ test('edit with live Markdown, collaborate, export and delete a document', async
   await expect(editor.getByRole('heading', { level: 1 })).toBeVisible();
   await page.getByRole('button', { name: '打开侧栏' }).click();
   await expect(
-    page.getByRole('navigation', { name: '文档列表' }),
+    page.getByRole('tree', { name: '文档库文件树' }),
   ).toBeVisible();
   await page.getByRole('button', { name: '关闭侧栏' }).click();
   await page.screenshot({
@@ -58,7 +62,10 @@ test('edit with live Markdown, collaborate, export and delete a document', async
   await table.getByRole('cell', { name: 'Shared' }).click();
   await expect(table).toHaveCount(0);
   await expect(editor).toContainText('| Name |');
-  await page.getByRole('button', { name: '删除文档', exact: true }).click();
+  await page.getByRole('button', { name: '打开侧栏' }).click();
+  await documentRow.hover();
+  await documentMenu.click();
+  await page.getByRole('menuitem', { name: '删除', exact: true }).click();
   await page
     .getByRole('dialog')
     .getByRole('button', { name: '删除', exact: true })
@@ -190,10 +197,15 @@ test('organize a document in nested folders without changing its link', async ({
   await expect(
     tree.getByRole('treeitem', { name: 'Drafts', exact: true }),
   ).toBeVisible();
-  const move = page.getByRole('combobox', { name: '移动文档到' });
-  await move.click();
+  await tree.getByRole('treeitem', { name: 'Move this document', exact: true }).hover();
+  await tree.getByRole('button', { name: '「Move this document」的更多操作' }).click();
+  await page.getByRole('menuitem', { name: '移动到…', exact: true }).click();
+  const move = page.getByRole('dialog', { name: '移动文档' });
+  await move.getByRole('combobox', { name: '移动文件夹到' }).click();
   await page.getByRole('option', { name: 'Projects / Drafts' }).click();
-  await expect(move).toContainText('Projects / Drafts');
+  await move.getByRole('button', { name: '移动', exact: true }).click();
+  const location = page.getByText('Projects / Drafts', { exact: true });
+  await expect(location).toBeVisible();
   await project.hover();
   await tree.getByRole('button', { name: '「Projects」的更多操作' }).click();
   await page.getByRole('menuitem', { name: '删除', exact: true }).click();
@@ -201,14 +213,11 @@ test('organize a document in nested folders without changing its link', async ({
   await dialog.getByRole('button', { name: '删除', exact: true }).click();
   await expect(project).toHaveCount(0);
   await expect(tree.getByRole('treeitem', { name: 'Drafts', exact: true })).toBeVisible();
-  await expect(move).toContainText('Drafts');
+  await expect(location).toHaveCount(0);
   await expect(
     page.getByRole('textbox', { name: 'Markdown 编辑器' }),
   ).toContainText('Draft');
   await expect(page).toHaveURL(new RegExp(`#${note.id}$`));
-  await move.click();
-  await page.getByRole('option', { name: '根目录' }).click();
-  await expect(move).toContainText('根目录');
   expect(
     (await request.delete(`${api}/folders/${folder.id}`)).ok(),
   ).toBeTruthy();
@@ -272,6 +281,8 @@ test('comments follow text edits, reload, and resolve across clients', async ({
     const editor = page.getByRole('textbox', { name: 'Markdown 编辑器' });
     await expect(editor.getByText('Review this paragraph')).toBeVisible();
     await editor.getByText('Review this paragraph').click();
+    await editor.press('Home');
+    await editor.press('Shift+End');
     await page.getByRole('button', { name: '添加评论' }).click();
     const comments = page.getByRole('complementary', { name: '文档评论' });
     await comments
