@@ -14,9 +14,9 @@ import {
   Ellipsis,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import styles from './App.module.css';
+import styles from '../../styles/workspace.module.css';
 
-export type WorkspaceAction = {
+export type LibraryAction = {
   title: string;
   description?: string;
   initialName?: string;
@@ -28,7 +28,7 @@ export function ActionDialog({
   action,
   close,
 }: {
-  action: WorkspaceAction;
+  action: LibraryAction;
   close: () => void;
 }) {
   const [name, setName] = useState(action.initialName ?? '');
@@ -185,14 +185,23 @@ export function EntryMenu({
         >
           <Menu.Popup className={styles['select-popup']}>
             {favorite && (
-              <Menu.Item className={styles['select-item']} onClick={favorite.toggle}>
+              <Menu.Item
+                className={styles['select-item']}
+                onClick={favorite.toggle}
+              >
                 {favorite.active ? '取消收藏' : '收藏'}
               </Menu.Item>
             )}
-            <Menu.Item className={styles['select-item']} onClick={() => onManage('rename')}>
+            <Menu.Item
+              className={styles['select-item']}
+              onClick={() => onManage('rename')}
+            >
               重命名
             </Menu.Item>
-            <Menu.Item className={styles['select-item']} onClick={() => onManage('move')}>
+            <Menu.Item
+              className={styles['select-item']}
+              onClick={() => onManage('move')}
+            >
               移动到…
             </Menu.Item>
             {onDownload && (
@@ -200,7 +209,10 @@ export function EntryMenu({
                 下载 Markdown
               </Menu.Item>
             )}
-            <Menu.Item className={styles['select-item']} onClick={() => onManage('delete')}>
+            <Menu.Item
+              className={styles['select-item']}
+              onClick={() => onManage('delete')}
+            >
               删除
             </Menu.Item>
           </Menu.Popup>
@@ -311,13 +323,19 @@ export function FolderTree({
           </Button>
         );
         return (
-          <div key={item.getId()} className={styles['tree-entry-row']} role="presentation">
+          <div
+            key={item.getId()}
+            className={styles['tree-entry-row']}
+            role="presentation"
+          >
             {row}
             <EntryMenu
               name={item.getItemName()}
               busy={busy}
               onManage={(command) => onManage(entry, command)}
-              onDownload={'parentId' in entry ? undefined : () => onDownload(entry)}
+              onDownload={
+                'parentId' in entry ? undefined : () => onDownload(entry)
+              }
             />
           </div>
         );

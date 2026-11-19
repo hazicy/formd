@@ -144,7 +144,9 @@ function selectionToolbar(onComment: (view: EditorView) => boolean) {
   }
   return showTooltip.compute(['selection', EditorState.readOnly], (state) => {
     const { from, to, empty } = state.selection.main;
-    return state.readOnly || empty ? null : { pos: from, end: to, above: true, create };
+    return state.readOnly || empty
+      ? null
+      : { pos: from, end: to, above: true, create };
   });
 }
 
@@ -169,7 +171,10 @@ export const MarkdownEditor = forwardRef<
     onDocumentSizeChange: (size: { length: number; lines: number }) => void;
     onComment: (anchor: RelativeSelection) => void;
   }
->(function MarkdownEditor({ session, readOnly, onDocumentSizeChange, onComment }, ref) {
+>(function MarkdownEditor(
+  { session, readOnly, onDocumentSizeChange, onComment },
+  ref,
+) {
   const host = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorView | null>(null);
   useImperativeHandle(

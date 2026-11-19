@@ -1,7 +1,7 @@
 import { Button } from '@base-ui/react/button';
 import type { CommentInboxItem, FormdClient } from '@formd/client';
 import { useEffect, useState } from 'react';
-import styles from './App.module.css';
+import styles from '../../styles/workspace.module.css';
 
 export function CommentInbox({
   client,
@@ -46,7 +46,8 @@ export function CommentInbox({
     <section className={styles['comment-inbox']} aria-label="待我处理的讨论">
       {failed && (
         <p role="alert">
-          无法刷新讨论。 <Button onClick={() => setAttempt((value) => value + 1)}>重试</Button>
+          无法刷新讨论。{' '}
+          <Button onClick={() => setAttempt((value) => value + 1)}>重试</Button>
         </p>
       )}
       {!failed && !items && <p role="status">正在加载讨论…</p>}
@@ -60,13 +61,18 @@ export function CommentInbox({
               <Button onClick={() => onOpen(item)}>
                 <strong>{item.noteTitle}</strong>
                 <span>
-                  {item.message.author} · {item.reason === 'mention' ? '@了你' : '回复了你'}
+                  {item.message.author} ·{' '}
+                  {item.reason === 'mention' ? '@了你' : '回复了你'}
                   {' · '}
-                  <time dateTime={new Date(item.message.createdAt).toISOString()}>
+                  <time
+                    dateTime={new Date(item.message.createdAt).toISOString()}
+                  >
                     {new Date(item.message.createdAt).toLocaleString('zh-CN')}
                   </time>
                 </span>
-                <span className={styles['inbox-excerpt']}>{item.message.body}</span>
+                <span className={styles['inbox-excerpt']}>
+                  {item.message.body}
+                </span>
               </Button>
             </li>
           ))}
