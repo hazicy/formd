@@ -103,6 +103,11 @@ export function createHttpApp(
   });
   app.get('/api/health', (c) => c.json({ ok: true }));
   app.get('/api/notes', (c) => c.json(notes.list()));
+  app.get('/api/comment-inbox', (c) => {
+    const name = c.req.query('name')?.trim();
+    if (!name || name.length > 48) return c.json({ error: '显示名称无效' }, 400);
+    return c.json(notes.commentInbox(name));
+  });
   app.post('/api/notes', limitJsonBody, parseJsonBody, async (c) => {
     const {
       title = '未命名文档',

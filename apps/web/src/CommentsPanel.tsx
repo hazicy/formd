@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
   MAX_COMMENT_LENGTH,
   resolveSelection,
@@ -9,6 +9,7 @@ import styles from './CommentsPanel.module.css';
 
 export function CommentsPanel({
   session,
+  activeThreadId,
   editable,
   draft,
   onClose,
@@ -16,6 +17,7 @@ export function CommentsPanel({
   onLocate,
 }: {
   session: NoteSession;
+  activeThreadId?: string;
   editable: boolean;
   draft: RelativeSelection | null;
   onClose: () => void;
@@ -24,6 +26,9 @@ export function CommentsPanel({
 }) {
   const [threads, setThreads] = useState(() => session.comments.list());
   const [error, setError] = useState('');
+  const scrollToThread = useCallback((element: HTMLElement | null) => {
+    element?.scrollIntoView({ block: 'nearest' });
+  }, []);
   useEffect(() => {
     const update = () => setThreads(session.comments.list());
     const unsubscribe = session.subscribe(update);
@@ -69,6 +74,7 @@ export function CommentsPanel({
           关闭评论
         </button>
       </header>
+      {editable && <p>输入 @显示名称 提及协作者。</p>}
       {editable && draft && (
         <form
           onSubmit={(event) =>
@@ -97,7 +103,12 @@ export function CommentsPanel({
       {error && <p role="alert">{error}</p>}
       {!threads.length && !draft && <p>暂无评论</p>}
       {threads.map((thread) => (
-        <article className={styles.thread} key={thread.id}>
+        <article
+          className={styles.thread}
+          key={thread.id}
+          aria-current={activeThreadId === thread.id ? 'true' : undefined}
+          ref={activeThreadId === thread.id ? scrollToThread : undefined}
+        >
           <button
             type="button"
             className={styles.anchor}

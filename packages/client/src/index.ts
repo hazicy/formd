@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import { NoteComments } from './comments';
+import { NoteComments, type CommentInboxItem } from './comments';
 import { fromByteArray, toByteArray } from 'base64-js';
 import {
   createGuestUser,
@@ -39,6 +39,11 @@ export class FormdClient {
   }
   list(): Promise<Note[]> {
     return this.request('/api/notes');
+  }
+  commentInbox(name: string, signal?: AbortSignal): Promise<CommentInboxItem[]> {
+    return this.request(`/api/comment-inbox?${new URLSearchParams({ name })}`, {
+      signal,
+    });
   }
   create(
     title = '未命名文档',

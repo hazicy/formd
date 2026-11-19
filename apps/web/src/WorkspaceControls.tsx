@@ -158,10 +158,12 @@ export function EntryMenu({
   name,
   busy,
   onManage,
+  favorite,
 }: {
   name: string;
   busy: boolean;
   onManage: (command: EntryCommand) => void;
+  favorite?: { active: boolean; toggle: () => void };
 }) {
   return (
     <Menu.Root>
@@ -174,8 +176,17 @@ export function EntryMenu({
         <Ellipsis size={15} />
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Positioner className={styles['select-positioner']} align="end" sideOffset={4}>
+        <Menu.Positioner
+          className={styles['select-positioner']}
+          align="end"
+          sideOffset={4}
+        >
           <Menu.Popup className={styles['select-popup']}>
+            {favorite && (
+              <Menu.Item className={styles['select-item']} onClick={favorite.toggle}>
+                {favorite.active ? '取消收藏' : '收藏'}
+              </Menu.Item>
+            )}
             <Menu.Item className={styles['select-item']} onClick={() => onManage('rename')}>
               重命名
             </Menu.Item>

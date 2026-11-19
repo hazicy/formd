@@ -16,6 +16,15 @@ export interface CommentThread {
   messages: CommentMessage[];
 }
 
+export interface CommentInboxItem {
+  noteId: string;
+  noteTitle: string;
+  threadId: string;
+  anchor: RelativeSelection;
+  reason: 'mention' | 'reply';
+  message: CommentMessage;
+}
+
 function validMessage(value: unknown): value is CommentMessage {
   if (!value || typeof value !== 'object') return false;
   const { author, body, createdAt } = value as CommentMessage;

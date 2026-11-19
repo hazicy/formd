@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import * as Y from 'yjs';
+import { NoteComments, type CommentInboxItem } from '@formd/client';
 import { normalizeTitle, type Note } from '@formd/core';
 import type { NoteStore } from './storage/index.js';
 
@@ -156,6 +157,43 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
     });
   }
   return {
+    commentInbox(name: string): CommentInboxItem[] {
+      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const mention = new RegExp(
+        `(?<![a-zA-Z0-9_.+@])@${escaped}(?![\\p{L}\\p{N}_])`,
+        'u',
+      );
+      const items: CommentInboxItem[] = [];
+      for (const [id, doc] of docs) {
+        const note = notes.get(id);
+        if (!note) continue;
+        for (const thread of new NoteComments(doc, () => '').list()) {
+          if (thread.resolved) continue;
+          const latest = thread.messages.at(-1)!;
+          let mentioned: (typeof thread.messages)[number] | undefined;
+          for (const message of thread.messages) {
+            if (message.author.trim() !== name && mention.test(message.body)) {
+              mentioned = message;
+            }
+          }
+          const reply =
+            thread.messages[0].author.trim() === name &&
+            latest.author.trim() !== name;
+          if (!mentioned && !reply) continue;
+          const useReply =
+            reply && (!mentioned || latest.createdAt > mentioned.createdAt);
+          items.push({
+            noteId: id,
+            noteTitle: note.title,
+            threadId: thread.id,
+            anchor: thread.anchor,
+            reason: useReply ? 'reply' : 'mention',
+            message: useReply ? latest : mentioned!,
+          });
+        }
+      }
+      return items.sort((a, b) => b.message.createdAt - a.message.createdAt);
+    },
     list: () =>
       [...notes.values()].sort((a, b) =>
         b.updatedAt.localeCompare(a.updatedAt),
@@ -182,5 +220,5 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
 
 export type NoteService = Pick<
   Awaited<ReturnType<typeof createNoteService>>,
-  'list' | 'has' | 'create' | 'update' | 'remove'
+  'list' | 'has' | 'create' | 'update' | 'remove' | 'commentInbox'
 >;

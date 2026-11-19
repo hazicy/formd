@@ -11,6 +11,7 @@ import { Input } from '@base-ui/react/input';
 import styles from './App.module.css';
 import { MarkdownEditor, type MarkdownEditorHandle } from './MarkdownEditor';
 import { CommentsPanel } from './CommentsPanel';
+import { CommentInbox } from './CommentInbox';
 import { PresencePanel } from './PresencePanel';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -18,8 +19,10 @@ import {
   Search,
   FileText,
   Star,
-  Library,
   FolderPlus,
+  House,
+  Inbox,
+  Puzzle,
   Feather,
   ChevronRight,
   Share2,
@@ -42,6 +45,7 @@ import {
   FormdClient,
   markdownFilename,
   type Note,
+  type CommentInboxItem,
   type Folder,
   type NoteSession,
   type PresenceUser,
@@ -114,6 +118,9 @@ export default function App() {
   const [folderId, setFolderId] = useState<string | null>(null);
   const [selected, setSelected] = useState(location.hash.slice(1));
   const [view, setView] = useState<keyof typeof documentViews>('all');
+  const [workspacePage, setWorkspacePage] = useState<'inbox' | 'plugins' | null>(null);
+  const [commentTarget, setCommentTarget] = useState<CommentInboxItem | null>(null);
+  const pendingCommentTarget = useRef<CommentInboxItem | null>(null);
   const [favorites, setFavorites] = useState(() => savedIds('formd.favorites'));
   const [recent, setRecent] = useState(() => savedIds('formd.recent'));
   const [action, setAction] = useState<WorkspaceAction | null>(null);
@@ -150,7 +157,7 @@ export default function App() {
   const currentFolder = folders.find((folder) => folder.id === folderId);
   const currentFolderId = currentFolder?.id ?? null;
   const normalizedQuery = query.trim().toLowerCase();
-  const searchingSidebar = Boolean(selected && normalizedQuery);
+  const searchingSidebar = Boolean(normalizedQuery);
   const searchResults = searchingSidebar
     ? notes.filter((entry) => entry.title.toLowerCase().includes(normalizedQuery))
     : [];
@@ -159,8 +166,6 @@ export default function App() {
   const dashboardNotes = notes.filter(
     (entry) =>
       (!currentFolderId || entry.folderId === currentFolderId) &&
-      (!normalizedQuery ||
-        entry.title.toLowerCase().includes(normalizedQuery)) &&
       (view !== 'favorites' || favoriteIds.has(entry.id)) &&
       (view !== 'recent' || recentOrder.has(entry.id)),
   );
@@ -210,12 +215,36 @@ export default function App() {
     }
   }
   function select(id: string) {
+    setWorkspacePage(null);
+    setCommentTarget(null);
+    pendingCommentTarget.current = null;
     if (id) location.hash = id;
     else if (location.hash)
       history.pushState(null, '', location.pathname + location.search);
     setSelected(id);
     setSidebar(false);
   }
+  function openInboxItem(item: CommentInboxItem) {
+    select(item.noteId);
+    setCommentPanel({ noteId: item.noteId, draft: null });
+    setCommentTarget(item);
+    pendingCommentTarget.current = item;
+  }
+  useEffect(() => {
+    if (
+      !commentTarget ||
+      commentTarget.noteId !== displayedSession?.id ||
+      status !== 'connected' ||
+      displayedSession.status !== 'connected'
+    )
+      return;
+    const frame = requestAnimationFrame(() => {
+      if (pendingCommentTarget.current !== commentTarget) return;
+      pendingCommentTarget.current = null;
+      input.current?.locateComment(commentTarget.anchor);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [commentTarget, displayedSession, status]);
   async function refresh() {
     try {
       const [data, directories] = await Promise.all([
@@ -397,17 +426,6 @@ export default function App() {
     }
   }
 
-  const searchField = (
-    <div className={styles.search}>
-      <Search size={15} />
-      <Input
-        aria-label="搜索文档"
-        placeholder="搜索文档…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-    </div>
-  );
   return (
     <div className={styles.app}>
       <aside className={`${styles.sidebar} ${sidebar ? '' : styles.hidden}`}>
@@ -426,42 +444,50 @@ export default function App() {
             <PanelLeftClose size={16} />
           </Button>
         </div>
-        <div className={styles.workspace}>
-          <Library size={15} /> 文档库
-          <Button
-            aria-label="新建文件夹"
-            title="新建文件夹"
-            disabled={busy}
-            onClick={() =>
-              setAction({
-                title: '新建文件夹',
-                initialName: '',
-                run: (name) =>
-                  void mutateFolder(async () => {
-                    const folder = await client.createFolder(
-                      name,
-                      currentFolderId,
-                    );
-                    setFolderId(folder.id);
-                  }),
-              })
-            }
-          >
-            <FolderPlus size={16} />
-          </Button>
+        <div className={styles.search} role="search" aria-label="文档库">
+          <Search size={15} aria-hidden="true" />
+          <Input
+            type="search"
+            aria-label="全局搜索文档"
+            placeholder="搜索全部文档…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </div>
-        <Button
-          className={`${styles.note} ${!selected && !currentFolderId ? styles.active : ''}`}
-          aria-current={!selected && !currentFolderId ? 'page' : undefined}
-          onClick={() => {
-            setFolderId(null);
-            setView('all');
-            select('');
-          }}
-        >
-          <FileText size={15} /> 文档库首页
-        </Button>
-        {selected && searchField}
+        <nav className={styles['sidebar-nav']} aria-label="文档库导航">
+          <Button
+            className={`${styles.note} ${!selected && !workspacePage && !currentFolderId ? styles.active : ''}`}
+            aria-current={!selected && !workspacePage && !currentFolderId ? 'page' : undefined}
+            onClick={() => {
+              setQuery('');
+              setFolderId(null);
+              setView('all');
+              select('');
+            }}
+          >
+            <House size={16} /> 首页
+          </Button>
+          <Button
+            className={`${styles.note} ${workspacePage === 'inbox' && !selected ? styles.active : ''}`}
+            aria-current={workspacePage === 'inbox' && !selected ? 'page' : undefined}
+            onClick={() => {
+              select('');
+              setWorkspacePage('inbox');
+            }}
+          >
+            <Inbox size={16} /> 待我处理
+          </Button>
+          <Button
+            className={`${styles.note} ${workspacePage === 'plugins' && !selected ? styles.active : ''}`}
+            aria-current={workspacePage === 'plugins' && !selected ? 'page' : undefined}
+            onClick={() => {
+              select('');
+              setWorkspacePage('plugins');
+            }}
+          >
+            <Puzzle size={16} /> 插件
+          </Button>
+        </nav>
         {searchingSidebar && (
           <>
             <div className={styles['section-label']}>
@@ -503,7 +529,7 @@ export default function App() {
           onOpen={select}
           onChoose={(id) => {
             setFolderId(id);
-            if (selected) select('');
+            if (selected || workspacePage) select('');
           }}
         />
         <div className={styles['sidebar-footer']}>
@@ -601,6 +627,19 @@ export default function App() {
               )}
             </div>
           </header>
+        ) : workspacePage ? (
+          <header className={styles['list-header']}>
+            <div className={styles['list-title']}>
+              <Button
+                className={styles['mobile-menu']}
+                aria-label="打开侧栏"
+                onClick={() => setSidebar(true)}
+              >
+                <PanelLeft size={16} />
+              </Button>
+              <h1>{workspacePage === 'inbox' ? '待我处理' : '插件'}</h1>
+            </div>
+          </header>
         ) : (
           <header className={styles['list-header']}>
             <div className={styles['list-title']}>
@@ -612,6 +651,36 @@ export default function App() {
                 <PanelLeft size={16} />
               </Button>
               <h1>{currentFolder?.name ?? '文档库'}</h1>
+              <div className={styles['list-create']}>
+                <Button
+                  aria-label="新建文件夹"
+                  title="新建文件夹"
+                  disabled={busy}
+                  onClick={() =>
+                    setAction({
+                      title: '新建文件夹',
+                      initialName: '',
+                      run: (name) =>
+                        void mutateFolder(async () => {
+                          const folder = await client.createFolder(
+                            name,
+                            currentFolderId,
+                          );
+                          setFolderId(folder.id);
+                        }),
+                    })
+                  }
+                >
+                  <FolderPlus size={16} />
+                </Button>
+                <Button
+                  className={styles.primary}
+                  disabled={busy}
+                  onClick={() => void create()}
+                >
+                  <Plus size={16} /> 新建文档
+                </Button>
+              </div>
             </div>
             <div
               className={styles['view-filters']}
@@ -637,16 +706,6 @@ export default function App() {
                 </Button>
               ))}
             </div>
-            <div className={styles['list-tools']}>
-              {searchField}
-              <Button
-                className={styles.primary}
-                disabled={busy}
-                onClick={() => void create()}
-              >
-                <Plus size={16} /> 新建文档
-              </Button>
-            </div>
           </header>
         )}
         {error && (
@@ -655,7 +714,18 @@ export default function App() {
             <Button onClick={() => void refresh()}>重试</Button>
           </div>
         )}
-        {!selected ? (
+        {!selected && workspacePage === 'inbox' ? (
+          <CommentInbox
+            key={user.name}
+            client={client}
+            name={user.name}
+            onOpen={openInboxItem}
+          />
+        ) : !selected && workspacePage === 'plugins' ? (
+          <section className={styles['document-list']} aria-label="插件列表">
+            <p className={styles.empty}>暂无可用插件。</p>
+          </section>
+        ) : !selected ? (
           <section
             className={styles['document-list']}
             aria-label="工作空间文档"
@@ -663,10 +733,11 @@ export default function App() {
             <table className={styles['documents-table']}>
               <thead>
                 <tr>
-                  <th scope="col">文档</th>
-                  <th scope="col">文件夹</th>
+                  <th scope="col">标题</th>
+                  <th scope="col">位置</th>
+                  <th scope="col">创建时间</th>
                   <th scope="col">最近更新</th>
-                  <th scope="col">操作</th>
+                  <th scope="col" aria-label="操作" />
                 </tr>
               </thead>
               <tbody>
@@ -685,6 +756,11 @@ export default function App() {
                       {entry.folderId ? folderPath(entry.folderId) : '根目录'}
                     </td>
                     <td>
+                      <time dateTime={entry.createdAt}>
+                        {new Date(entry.createdAt).toLocaleDateString('zh-CN')}
+                      </time>
+                    </td>
+                    <td>
                       <time dateTime={entry.updatedAt}>
                         {new Date(entry.updatedAt).toLocaleString('zh-CN', {
                           month: '2-digit',
@@ -695,29 +771,28 @@ export default function App() {
                       </time>
                     </td>
                     <td>
-                      <Button
-                        aria-label={`${favoriteIds.has(entry.id) ? '取消收藏' : '收藏'} ${entry.title}`}
-                        aria-pressed={favoriteIds.has(entry.id)}
-                        onClick={() => toggleFavorite(entry.id)}
-                        className={styles['favorite-button']}
-                      >
-                        <Star size={16} />
-                      </Button>
+                      <EntryMenu
+                        name={entry.title}
+                        busy={busy}
+                        favorite={{
+                          active: favoriteIds.has(entry.id),
+                          toggle: () => toggleFavorite(entry.id),
+                        }}
+                        onManage={(command) => manageEntry(entry, command)}
+                      />
                     </td>
                   </tr>
                 ))}
                 {!dashboardNotes.length && (
                   <tr>
-                    <td className={styles['list-empty']} colSpan={4}>
+                    <td className={styles['list-empty']} colSpan={5}>
                       {loading
                         ? '正在加载文档…'
-                        : normalizedQuery
-                          ? '没有匹配的文档'
-                          : view === 'recent'
-                            ? '暂无访问记录'
-                            : view === 'favorites'
-                              ? '暂无收藏文档'
-                              : '暂无文档'}
+                        : view === 'recent'
+                          ? '暂无访问记录'
+                          : view === 'favorites'
+                            ? '暂无收藏文档'
+                            : '暂无文档'}
                     </td>
                   </tr>
                 )}
@@ -829,6 +904,11 @@ export default function App() {
                   session={displayedSession}
                   editable={editable}
                   draft={commentPanel.draft}
+                  activeThreadId={
+                    commentTarget?.noteId === selected
+                      ? commentTarget.threadId
+                      : undefined
+                  }
                   onDraftChange={(draft) =>
                     setCommentPanel({ noteId: selected, draft })
                   }
