@@ -1,4 +1,4 @@
-import type { Folder, Note } from '@formd/core';
+import { MAX_TITLE_LENGTH, type Folder, type Note } from '@formd/core';
 
 export interface StoredNote extends Note {
   state: Uint8Array;
@@ -44,6 +44,34 @@ export interface NoteStore {
     id: string,
     changes: Partial<Pick<Folder, 'parentId' | 'name'>>,
   ): Promise<Folder>;
-  deleteFolder(id: string): Promise<void>;
+  deleteFolder(id: string): Promise<string | null>;
   close(): Promise<void>;
+}
+
+export function folderRemoval(folders: Folder[], id: string) {
+  const folder = folders.find((entry) => entry.id === id);
+  if (!folder) throw new StorageConflict('文件夹不存在', 404);
+  const { parentId } = folder;
+  const names = new Set(
+    // Do not replace the removed folder with a promoted folder of the same name.
+    folders.filter((entry) => entry.parentId === parentId)
+      .map((entry) => entry.name),
+  );
+  const children = folders.filter((entry) => entry.parentId === id);
+  // Reserve existing child names too, so resolving a collision never renames
+  // an otherwise unaffected child.
+  const reserved = new Set([...names, ...children.map((child) => child.name)]);
+  const moved = children.map((child) => {
+    let { name } = child;
+    if (names.has(name)) {
+      let index = 2;
+      do {
+        const suffix = ` (${index++})`;
+        name = child.name.slice(0, MAX_TITLE_LENGTH - suffix.length) + suffix;
+      } while (reserved.has(name));
+      reserved.add(name);
+    }
+    return { ...child, name, parentId, updatedAt: new Date().toISOString() };
+  });
+  return { parentId, moved };
 }

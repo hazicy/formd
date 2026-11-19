@@ -98,8 +98,8 @@ export function createHttpApp(
   app.delete('/api/folders/:id', async (c) => {
     const id = c.req.param('id');
     if (!isFolderId(id)) return c.json({ error: '文件夹不存在' }, 404);
-    await store.deleteFolder(id);
-    return c.json({ ok: true });
+    const parentId = await notes.deleteFolder(id);
+    return c.json({ ok: true, parentId });
   });
   app.get('/api/health', (c) => c.json({ ok: true }));
   app.get('/api/notes', (c) => c.json(notes.list()));

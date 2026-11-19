@@ -194,13 +194,14 @@ test('organize a document in nested folders without changing its link', async ({
   await move.click();
   await page.getByRole('option', { name: 'Projects / Drafts' }).click();
   await expect(move).toContainText('Projects / Drafts');
-  const notEmpty = await request.delete(`${api}/folders/${folder.id}`);
-  expect(notEmpty.status()).toBe(409);
-  await page.getByRole('combobox', { name: '浏览文件夹' }).click();
-  await page.getByRole('option', { name: 'Projects / Drafts' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Move this document' }),
-  ).toBeVisible();
+  await project.hover();
+  await tree.getByRole('button', { name: '「Projects」的更多操作' }).click();
+  await page.getByRole('menuitem', { name: '删除', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '删除「Projects」？' });
+  await dialog.getByRole('button', { name: '删除', exact: true }).click();
+  await expect(project).toHaveCount(0);
+  await expect(tree.getByRole('treeitem', { name: 'Drafts', exact: true })).toBeVisible();
+  await expect(move).toContainText('Drafts');
   await expect(
     page.getByRole('textbox', { name: 'Markdown 编辑器' }),
   ).toContainText('Draft');
@@ -210,9 +211,6 @@ test('organize a document in nested folders without changing its link', async ({
   await expect(move).toContainText('根目录');
   expect(
     (await request.delete(`${api}/folders/${folder.id}`)).ok(),
-  ).toBeTruthy();
-  expect(
-    (await request.delete(`${api}/folders/${parent.id}`)).ok(),
   ).toBeTruthy();
 });
 

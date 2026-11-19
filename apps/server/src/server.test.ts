@@ -37,6 +37,40 @@ async function listen(
   );
   return (instance.server.address() as { port: number }).port;
 }
+
+test('deleting a folder preserves its notes and nested folders', async () => {
+  const store = createMemoryNoteStore();
+  const instance = await createFormdServer(store);
+  try {
+    const client = new FormdClient(`http://127.0.0.1:${await listen(instance)}`);
+    const parent = await client.createFolder('上级');
+    const removed = await client.createFolder('待删除', parent.id);
+    const existing = await client.createFolder('资料', parent.id);
+    const child = await client.createFolder('资料', removed.id);
+    const sameName = await client.createFolder(removed.name, removed.id);
+    const nested = await client.createFolder('子目录', child.id);
+    const note = await client.create('原文', '# Markdown', removed.id);
+    const nestedNote = await client.create('子目录文档', '', nested.id);
+
+    assert.equal((await client.deleteFolder(removed.id)).parentId, parent.id);
+    const folders = new Map((await client.listFolders()).map((entry) => [entry.id, entry]));
+    assert.equal(folders.has(removed.id), false);
+    assert.equal(folders.get(existing.id)?.name, '资料');
+    assert.equal(folders.get(child.id)?.name, '资料 (2)');
+    assert.equal(folders.get(child.id)?.parentId, parent.id);
+    assert.equal(folders.get(sameName.id)?.name, '待删除 (2)');
+    assert.equal(folders.get(sameName.id)?.parentId, parent.id);
+    assert.equal(folders.get(nested.id)?.parentId, child.id);
+    const notes = new Map((await client.list()).map((entry) => [entry.id, entry]));
+    assert.equal(notes.get(note.id)?.folderId, parent.id);
+    assert.equal(notes.get(nestedNote.id)?.folderId, nested.id);
+    assert.equal((await store.load()).find((entry) => entry.id === note.id)?.folderId, parent.id);
+    await client.rename(note.id, '仍可编辑');
+  } finally {
+    await instance.close();
+  }
+});
+
 test('sync confirms only persisted updates and retries failed saves', async () => {
   const store = createMemoryNoteStore();
   const upsert = store.upsert;

@@ -204,6 +204,14 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
       write(() => add(title, content, folderId)),
     update,
     remove,
+    deleteFolder: (id: string) =>
+      write(async () => {
+        const parentId = await store.deleteFolder(id);
+        for (const note of notes.values()) {
+          if (note.folderId === id) note.folderId = parentId;
+        }
+        return parentId;
+      }),
     confirmPersistence,
     async close() {
       closing = true;
@@ -220,5 +228,5 @@ export async function createNoteService(store: NoteStore, events: NoteEvents) {
 
 export type NoteService = Pick<
   Awaited<ReturnType<typeof createNoteService>>,
-  'list' | 'has' | 'create' | 'update' | 'remove' | 'commentInbox'
+  'list' | 'has' | 'create' | 'update' | 'remove' | 'commentInbox' | 'deleteFolder'
 >;

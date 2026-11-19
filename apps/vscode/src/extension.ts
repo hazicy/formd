@@ -319,7 +319,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (
       (await vscode.window.showWarningMessage(
         vscode.l10n.t(
-          'Permanently delete the empty folder “{0}”?',
+          'Delete the folder “{0}”? Its contents will move up one level. Conflicting folder names will be numbered.',
           folder.name,
         ),
         { modal: true },

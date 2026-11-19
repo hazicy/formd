@@ -90,7 +90,7 @@ export class FormdClient {
       body: JSON.stringify(changes),
     });
   }
-  deleteFolder(id: string): Promise<{ ok: boolean }> {
+  deleteFolder(id: string): Promise<{ ok: boolean; parentId?: string | null }> {
     return this.request(`/api/folders/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });

@@ -15,7 +15,7 @@
   "Recently opened collaborative documents appear here.": "打开协作文档后，会在这里显示最近访问记录。",
   "Create document in “{0}”": "在「{0}」中新建文档",
   "Create folder in “{0}”": "在「{0}」中新建文件夹",
-  "Permanently delete the empty folder “{0}”?": "永久删除空文件夹「{0}」？",
+  "Delete the folder “{0}”? Its contents will move up one level. Conflicting folder names will be numbered.": "删除文件夹「{0}」？里面的内容会移到上一级，同名文件夹会自动加编号。",
   "Permanently delete “{0}”?": "永久删除「{0}」？",
   "Root": "根目录",
   "Search Formd documents by title or folder path": "按标题或文件夹路径搜索 Formd 文档",

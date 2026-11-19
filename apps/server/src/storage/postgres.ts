@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import { documentsTable, foldersTable } from './schema.js';
-import { StorageConflict, validateFolder, type NoteStore } from './index.js';
+import { folderRemoval, StorageConflict, validateFolder, type NoteStore } from './index.js';
 
 function datesToIso<T extends { createdAt: Date; updatedAt: Date }>(row: T) {
   const { createdAt, updatedAt, ...fields } = row;
@@ -102,20 +102,23 @@ export function createPostgresNoteStore(connectionString: string): NoteStore {
         return folder;
       });
     },
-    async deleteFolder(id) {
-      try {
-        await writeFolders(async (tx) => {
-          const deleted = await tx
-            .delete(foldersTable)
-            .where(eq(foldersTable.id, id))
-            .returning({ id: foldersTable.id });
-          if (!deleted.length) throw new StorageConflict('文件夹不存在', 404);
-        });
-      } catch (error) {
-        if (isForeignKeyViolation(error))
-          throw new StorageConflict('只能删除空文件夹');
-        throw error;
-      }
+    deleteFolder(id) {
+      return writeFolders(async (tx) => {
+        // Block concurrent inserts that reference the folder being removed.
+        await tx.select({ id: foldersTable.id }).from(foldersTable)
+          .where(eq(foldersTable.id, id)).for('update');
+        const folders = (await tx.select().from(foldersTable)).map(datesToIso);
+        const { parentId, moved } = folderRemoval(folders, id);
+        for (const folder of moved) {
+          await tx.update(foldersTable)
+            .set({ parentId, name: folder.name, updatedAt: new Date(folder.updatedAt) })
+            .where(eq(foldersTable.id, folder.id));
+        }
+        await tx.update(documentsTable).set({ folderId: parentId })
+          .where(eq(documentsTable.folderId, id));
+        await tx.delete(foldersTable).where(eq(foldersTable.id, id));
+        return parentId;
+      });
     },
     close: () => pool.end(),
   };

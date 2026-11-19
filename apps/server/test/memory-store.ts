@@ -1,6 +1,7 @@
 import type { Folder } from '@formd/core';
 import {
   StorageConflict,
+  folderRemoval,
   validateFolder,
   type NoteStore,
   type StoredNote,
@@ -42,14 +43,13 @@ export function createMemoryNoteStore(): NoteStore {
       return folder;
     },
     async deleteFolder(id) {
-      if (!folders.has(id)) throw new StorageConflict('文件夹不存在', 404);
-      if (
-        [...folders.values()].some((folder) => folder.parentId === id) ||
-        [...records.values()].some((note) => note.folderId === id)
-      ) {
-        throw new StorageConflict('只能删除空文件夹');
+      const { parentId, moved } = folderRemoval([...folders.values()], id);
+      for (const folder of moved) folders.set(folder.id, folder);
+      for (const note of records.values()) {
+        if (note.folderId === id) note.folderId = parentId;
       }
       folders.delete(id);
+      return parentId;
     },
     async close() {},
   };

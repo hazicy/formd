@@ -115,6 +115,7 @@ export default function App() {
   }
   const [notes, setNotes] = useState<Note[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
+  const refreshVersion = useRef(0);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [selected, setSelected] = useState(location.hash.slice(1));
   const [view, setView] = useState<keyof typeof documentViews>('all');
@@ -246,20 +247,23 @@ export default function App() {
     return () => cancelAnimationFrame(frame);
   }, [commentTarget, displayedSession, status]);
   async function refresh() {
+    const version = ++refreshVersion.current;
     try {
       const [data, directories] = await Promise.all([
         client.list(),
         client.listFolders(),
       ]);
-      setFolders(directories);
-      setNotes(data);
-      setError('');
+      if (version === refreshVersion.current) {
+        setFolders(directories);
+        setNotes(data);
+        setError('');
+      }
       return data;
     } catch (e) {
-      setError(String(e));
+      if (version === refreshVersion.current) setError(String(e));
       return null;
     } finally {
-      setLoading(false);
+      if (version === refreshVersion.current) setLoading(false);
     }
   }
   useEffect(() => {
@@ -415,12 +419,13 @@ export default function App() {
       });
     } else {
       setAction({
-        title: `删除「${folder.name}」？`,
-        description: '只能删除空文件夹，此操作无法撤销。',
+        title: `删除「${folderPath(folder.id) || folder.name}」？`,
+        description: '只删除这个文件夹。里面的文档和子文件夹会移到上一级，同名子文件夹会自动加编号。',
         run: () =>
           void mutateFolder(async () => {
-            await client.deleteFolder(folder.id);
-            setFolderId((id) => (id === folder.id ? folder.parentId : id));
+            const { parentId = folder.parentId } = await client.deleteFolder(folder.id);
+            setFolderId((id) => (id === folder.id ? parentId : id));
+            setToast(`已删除「${folder.name}」，内容保留在上一级`);
           }),
       });
     }
