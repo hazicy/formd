@@ -22,6 +22,9 @@
   caret-color: var(--color-text);
   box-sizing: border-box;
 }
+.editor :global(.cm-editor .cm-line:not(.md-quote)) {
+  padding-inline: 0;
+}
 .editor :global(.cm-editor) .selection-toolbar:global(.cm-tooltip) {
   display: flex;
   flex-wrap: wrap;
@@ -64,7 +67,7 @@
 .selection-toolbar button:last-child {
   margin-inline-start: 2px;
   color: var(--color-accent);
-  background: var(--color-selected);
+  background: var(--color-accent-subtle);
   font-weight: 600;
 }
 .selection-toolbar button:last-child:is(:hover, :focus-visible) {

@@ -593,6 +593,7 @@ export default function App() {
                   </span>
                   <Button
                     aria-label="评论"
+                    className={styles['icon-action']}
                     title="查看评论"
                     aria-pressed={commentsOpen}
                     onClick={() =>

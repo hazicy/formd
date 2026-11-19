@@ -2,7 +2,8 @@
   z-index: 26;
 }
 .presence-trigger {
-  font-size: 11px !important;
+  font-size: var(--text-sm);
+  color: var(--color-secondary);
   white-space: nowrap;
 }
 .member-avatars {
@@ -11,7 +12,7 @@
 }
 .member-avatars > span {
   margin-left: -5px;
-  border: 2px solid var(--color-subtle);
+  border: 2px solid var(--color-surface);
   width: 25px;
   height: 25px;
   display: grid;
