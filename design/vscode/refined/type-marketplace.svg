@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<title>Formd · 铸字</title>
+<defs>
+  <linearGradient id="tile" x2=".85" y2="1"><stop stop-color="#fffbf2"/><stop offset="1" stop-color="#f1ddd2"/></linearGradient>
+  <filter id="shadow" x="-35%" y="-25%" width="170%" height="175%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#351c51" flood-opacity=".22"/><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#351c51" flood-opacity=".16"/></filter>
+  <linearGradient id="surface0" x2=".72" y2="1"><stop stop-color="#ffb190"/><stop offset="1" stop-color="#a73350"/></linearGradient>
+</defs>
+<rect x="8" y="8" width="240" height="240" rx="55" fill="url(#tile)"/>
+<rect x="9" y="9" width="238" height="238" rx="54" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2"/>
+<g filter="url(#shadow)">
+  <path d="M91 63Q94 50 106 50Q120 50 117 64L112 88H144L150 62Q153 50 165 50Q179 50 176 63L170 88H185Q199 88 199 102Q199 114 185 114H164L158 141H178Q191 141 191 154Q191 167 178 167H152L146 193Q143 206 131 206Q117 206 120 193L126 167H94L88 193Q85 206 73 206Q59 206 62 193L68 167H54Q41 167 41 154Q41 141 54 141H74L80 114H62Q49 114 49 102Q49 88 62 88H86ZM106 114L100 141H132L138 114Z" fill="url(#surface0)" fill-rule="evenodd" stroke="#fff" stroke-opacity=".24" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,6 +1,7 @@
 import { Button } from '@base-ui/react/button';
 import { Dialog } from '@base-ui/react/dialog';
 import { Input } from '@base-ui/react/input';
+import { Menu } from '@base-ui/react/menu';
 import { Select } from '@base-ui/react/select';
 import { hotkeysCoreFeature, syncDataLoaderFeature } from '@headless-tree/core';
 import { useTree } from '@headless-tree/react';
@@ -10,6 +11,7 @@ import {
   ChevronRight,
   FileText,
   FolderClosed,
+  Ellipsis,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import styles from './App.module.css';
@@ -18,6 +20,7 @@ export type WorkspaceAction = {
   title: string;
   description?: string;
   initialName?: string;
+  destination?: { initialValue: string; options: FolderOption[] };
   run: (name: string) => void;
 };
 
@@ -29,6 +32,9 @@ export function ActionDialog({
   close: () => void;
 }) {
   const [name, setName] = useState(action.initialName ?? '');
+  const [destination, setDestination] = useState(
+    action.destination?.initialValue ?? '',
+  );
   const naming = action.initialName !== undefined;
   return (
     <Dialog.Root
@@ -49,7 +55,7 @@ export function ActionDialog({
               event.preventDefault();
               if (naming && !name.trim()) return;
               close();
-              action.run(name.trim());
+              action.run(action.destination ? destination : name.trim());
             }}
           >
             {naming && (
@@ -59,6 +65,14 @@ export function ActionDialog({
                 onChange={(event) => setName(event.target.value)}
               />
             )}
+            {action.destination && (
+              <FolderSelect
+                label="移动文件夹到"
+                value={destination}
+                options={action.destination.options}
+                onChange={(id) => setDestination(id ?? '')}
+              />
+            )}
             <div className={styles['dialog-actions']}>
               <Dialog.Close render={<Button />}>取消</Dialog.Close>
               <Button
@@ -66,7 +80,7 @@ export function ActionDialog({
                 className={styles.primary}
                 disabled={naming && !name.trim()}
               >
-                {naming ? '保存' : '删除'}
+                {action.destination ? '移动' : naming ? '保存' : '删除'}
               </Button>
             </div>
           </form>
@@ -138,17 +152,63 @@ const ROOT_FOLDER: Folder = {
   updatedAt: '',
 };
 
+export type EntryCommand = 'rename' | 'move' | 'delete';
+
+export function EntryMenu({
+  name,
+  busy,
+  onManage,
+}: {
+  name: string;
+  busy: boolean;
+  onManage: (command: EntryCommand) => void;
+}) {
+  return (
+    <Menu.Root>
+      <Menu.Trigger
+        className={styles['tree-more']}
+        aria-label={`「${name}」的更多操作`}
+        disabled={busy}
+        render={<Button />}
+      >
+        <Ellipsis size={15} />
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Positioner className={styles['select-positioner']} align="end" sideOffset={4}>
+          <Menu.Popup className={styles['select-popup']}>
+            <Menu.Item className={styles['select-item']} onClick={() => onManage('rename')}>
+              重命名
+            </Menu.Item>
+            <Menu.Item className={styles['select-item']} onClick={() => onManage('move')}>
+              移动到…
+            </Menu.Item>
+            <Menu.Item className={styles['select-item']} onClick={() => onManage('delete')}>
+              删除
+            </Menu.Item>
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
 export function FolderTree({
   folders,
   notes,
   selected,
   activeNote,
+  hidden,
+  busy,
+  onManage,
   onChoose,
   onOpen,
 }: {
   folders: Folder[];
   notes: Note[];
   activeNote: string;
+  hidden: boolean;
+  busy: boolean;
+  onManage: (entry: Folder | Note, command: EntryCommand) => void;
   onOpen: (id: string) => void;
   selected: string | null;
   onChoose: (id: string) => void;
@@ -192,10 +252,12 @@ export function FolderTree({
     <div
       {...tree.getContainerProps('文档库文件树')}
       className={styles['folder-tree']}
+      hidden={hidden}
     >
       {tree.getItems().map((item) => {
         const props = item.getProps();
-        return (
+        const entry = item.getItemData();
+        const row = (
           <Button
             {...props}
             key={item.getId()}
@@ -220,13 +282,23 @@ export function FolderTree({
             ) : (
               <span className={styles['tree-indent']} />
             )}
-            {'parentId' in item.getItemData() ? (
+            {'parentId' in entry ? (
               <FolderClosed size={15} />
             ) : (
               <FileText size={15} />
             )}
             <span>{item.getItemName()}</span>
           </Button>
+        );
+        return (
+          <div key={item.getId()} className={styles['tree-entry-row']} role="presentation">
+            {row}
+            <EntryMenu
+              name={item.getItemName()}
+              busy={busy}
+              onManage={(command) => onManage(entry, command)}
+            />
+          </div>
         );
       })}
     </div>

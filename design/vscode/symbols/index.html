@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formd · VS Code 图标提案</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; background: #eeebe4; color: #211e19; font-family: system-ui, sans-serif; }
+main { max-width: 940px; margin: auto; padding: 58px 36px 54px; }
+header { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; border-bottom: 1px solid #bdb5a7; padding-bottom: 24px; margin-bottom: 26px; }
+h1 { font: 56px Georgia, serif; letter-spacing: -.055em; margin: 0; }
+header p { color: #514a40; margin: 5px 0 0; font-size: 14px; }
+.current { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.current img { width: 32px; height: 32px; }
+.grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+article { min-width: 0; padding: 12px; background: #faf8f3; border: 1px solid #dbd5ca; }
+.art { display: grid; place-items: center; aspect-ratio: 1.14; background: var(--wash); }
+.art img { width: 65%; display: block; }
+h2 { margin: 17px 4px 5px; font-size: 20px; }
+article p { margin: 0 4px; min-height: 48px; font-size: 13px; line-height: 1.65; color: #514a40; }
+.samples { display: grid; grid-template-columns: repeat(3,1fr); border-top: 1px solid #dbd5ca; margin-top: 13px; padding-top: 12px; text-align: center; }
+.samples div { display: grid; justify-items: center; gap: 6px; color: #514a40; font-size: 11px; }
+.samples b { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 4px; }
+.dark { background: #252526; }
+.light { background: #ebebeb; }
+.light img { filter: brightness(.335); }
+@media (max-width: 950px) { .grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 500px) { main { padding: 26px 16px; } .grid { grid-template-columns: 1fr; } }
+</style>
+<main>
+<header><div><h1>Formd</h1><p>VS Code 扩展图标 · Markdown 与光标</p></div>
+<p class="current"><img src="../../../apps/vscode/media/formd-marketplace.svg" alt="">现版</p></header>
+<div class="grid">
+<article>
+  <div class="art" style="--wash:#e9e9fd"><img src="markdown-marketplace.svg" alt="Markdown · 折笔图标"></div>
+  <h2>Markdown · 折笔</h2><p>把 M 的中间一笔折成向下的尖角，一个轮廓同时读出 Mark 和 Down。</p>
+  <div class="samples">
+    <div><img src="markdown-marketplace.svg" width="32" height="32" alt=""><span>32 px</span></div>
+    <div><b class="dark"><img src="markdown-activity-bar.svg" width="24" height="24" alt=""></b><span>深色活动栏</span></div>
+    <div><b class="light"><img src="markdown-activity-bar.svg" width="24" height="24" alt=""></b><span>浅色活动栏</span></div>
+  </div>
+</article>
+<article>
+  <div class="art" style="--wash:#e9e9fd"><img src="cursor-marketplace.svg" alt="Cursor · 指针图标"></div>
+  <h2>Cursor · 指针</h2><p>把现版右下角的指针单独放大，用一道折面表现光线。</p>
+  <div class="samples">
+    <div><img src="cursor-marketplace.svg" width="32" height="32" alt=""><span>32 px</span></div>
+    <div><b class="dark"><img src="cursor-activity-bar.svg" width="24" height="24" alt=""></b><span>深色活动栏</span></div>
+    <div><b class="light"><img src="cursor-activity-bar.svg" width="24" height="24" alt=""></b><span>浅色活动栏</span></div>
+  </div>
+</article>
+</div>
+</main>
+</html>

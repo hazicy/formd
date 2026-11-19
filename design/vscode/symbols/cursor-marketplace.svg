@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<title>Formd · Cursor · 指针</title>
+<defs>
+  <linearGradient id="tile" x2=".85" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#d9dcf5"/></linearGradient>
+  <filter id="shadow" x="-35%" y="-25%" width="170%" height="175%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#351c51" flood-opacity=".22"/><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#351c51" flood-opacity=".16"/></filter>
+  <linearGradient id="surface0" x2=".72" y2="1"><stop stop-color="#849dff"/><stop offset="1" stop-color="#292cab"/></linearGradient>
+  <linearGradient id="surface1" x2=".72" y2="1"><stop stop-color="#b2c5ff"/><stop offset="1" stop-color="#5968f0"/></linearGradient>
+</defs>
+<rect x="8" y="8" width="240" height="240" rx="55" fill="url(#tile)"/>
+<rect x="9" y="9" width="238" height="238" rx="54" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2"/>
+<g filter="url(#shadow)">
+  <path d="M77 49Q71 45 71 53V192Q71 203 80 197L115 169L139 201Q145 209 153 203L170 190Q177 184 171 176L147 146L190 137Q201 135 192 128Z" fill="url(#surface0)" fill-rule="evenodd" stroke="#fff" stroke-opacity=".24" stroke-linejoin="round"/>
+  <path d="M77 49Q71 45 71 53V192Q71 203 80 197L115 169L124 137Z" fill="url(#surface1)" fill-rule="evenodd" stroke="#fff" stroke-opacity=".24" stroke-linejoin="round"/>
+</g>
+</svg>

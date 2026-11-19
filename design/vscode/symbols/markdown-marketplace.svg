@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<title>Formd · Markdown · 折笔</title>
+<defs>
+  <linearGradient id="tile" x2=".85" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#d9dcf5"/></linearGradient>
+  <filter id="shadow" x="-35%" y="-25%" width="170%" height="175%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#351c51" flood-opacity=".22"/><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#351c51" flood-opacity=".16"/></filter>
+  <linearGradient id="surface0" x2=".72" y2="1"><stop stop-color="#839bff"/><stop offset="1" stop-color="#292db4"/></linearGradient>
+  <linearGradient id="surface1" x2=".72" y2="1"><stop stop-color="#b7c6ff"/><stop offset="1" stop-color="#4d57e8"/></linearGradient>
+</defs>
+<rect x="8" y="8" width="240" height="240" rx="55" fill="url(#tile)"/>
+<rect x="9" y="9" width="238" height="238" rx="54" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2"/>
+<g filter="url(#shadow)">
+  <path d="M53 172V82Q53 64 70 64Q78 64 84 71L128 123L172 71Q178 64 186 64Q203 64 203 82V172Q203 187 189 187Q175 187 175 172V115L137 161Q128 172 119 161L81 115V172Q81 187 67 187Q53 187 53 172Z" fill="url(#surface0)" fill-rule="evenodd" stroke="#fff" stroke-opacity=".24" stroke-linejoin="round"/>
+  <path d="M128 123L172 71Q178 64 186 64Q196 64 201 73L137 161Q128 172 119 161L107 146Z" fill="url(#surface1)" fill-rule="evenodd" stroke="#fff" stroke-opacity=".24" stroke-linejoin="round"/>
+</g>
+</svg>

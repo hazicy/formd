@@ -1,5 +1,7 @@
 import {
   ActionDialog,
+  EntryMenu,
+  type EntryCommand,
   FolderSelect,
   FolderTree,
   type WorkspaceAction,
@@ -148,11 +150,10 @@ export default function App() {
   const currentFolder = folders.find((folder) => folder.id === folderId);
   const currentFolderId = currentFolder?.id ?? null;
   const normalizedQuery = query.trim().toLowerCase();
-  const visibleNotes = notes.filter((entry) =>
-    normalizedQuery
-      ? entry.title.toLowerCase().includes(normalizedQuery)
-      : entry.folderId === currentFolderId,
-  );
+  const searchingSidebar = Boolean(selected && normalizedQuery);
+  const searchResults = searchingSidebar
+    ? notes.filter((entry) => entry.title.toLowerCase().includes(normalizedQuery))
+    : [];
   const favoriteIds = new Set(favorites);
   const recentOrder = new Map(recent.map((id, index) => [id, index]));
   const dashboardNotes = notes.filter(
@@ -296,14 +297,13 @@ export default function App() {
       setError(String(e));
     }
   }
-  async function remove() {
-    if (!note) return;
+  async function remove(target: Note) {
     setBusy(true);
     try {
-      await client.delete(note.id);
-      const next = notes.filter((n) => n.id !== note.id);
-      setNotes(next);
-      select(next[0]?.id || '');
+      await client.delete(target.id);
+      const next = notes.filter((n) => n.id !== target.id);
+      setNotes((entries) => entries.filter((entry) => entry.id !== target.id));
+      if (location.hash.slice(1) === target.id) select(next[0]?.id || '');
     } catch (e) {
       setError(String(e));
     } finally {
@@ -326,6 +326,77 @@ export default function App() {
     URL.revokeObjectURL(url);
   }
   const editable = !!note && (status === 'connected' || status === 'offline');
+  function manageEntry(entry: Folder | Note, command: EntryCommand) {
+    if ('parentId' in entry) {
+      manageFolder(entry, command);
+      return;
+    }
+
+    if (command === 'rename') {
+      setAction({
+        title: '重命名文档',
+        initialName: entry.title,
+        run: (name) => void mutateFolder(() => client.rename(entry.id, name)),
+      });
+    } else if (command === 'move') {
+      setAction({
+        title: '移动文档',
+        destination: {
+          initialValue: entry.folderId ?? '',
+          options: folderOptions,
+        },
+        run: (value) =>
+          void mutateFolder(() => client.move(entry.id, value || null)),
+      });
+    } else {
+      setAction({
+        title: `删除「${entry.title}」？`,
+        description: '此操作无法撤销。',
+        run: () => void remove(entry),
+      });
+    }
+  }
+
+  function manageFolder(folder: Folder, command: EntryCommand) {
+    if (command === 'rename') {
+      setAction({
+        title: '重命名文件夹',
+        initialName: folder.name,
+        run: (name) =>
+          void mutateFolder(() => client.updateFolder(folder.id, { name })),
+      });
+    } else if (command === 'move') {
+      setAction({
+        title: '移动文件夹',
+        destination: {
+          initialValue: folder.parentId ?? '',
+          options: folderOptions.filter((option) => {
+            let target = byFolderId.get(option.value);
+            while (target) {
+              if (target.id === folder.id) return false;
+              target = target.parentId ? byFolderId.get(target.parentId) : undefined;
+            }
+            return true;
+          }),
+        },
+        run: (value) =>
+          void mutateFolder(() =>
+            client.updateFolder(folder.id, { parentId: value || null }),
+          ),
+      });
+    } else {
+      setAction({
+        title: `删除「${folder.name}」？`,
+        description: '只能删除空文件夹，此操作无法撤销。',
+        run: () =>
+          void mutateFolder(async () => {
+            await client.deleteFolder(folder.id);
+            setFolderId((id) => (id === folder.id ? folder.parentId : id));
+          }),
+      });
+    }
+  }
+
   const searchField = (
     <div className={styles.search}>
       <Search size={15} />
@@ -388,109 +459,53 @@ export default function App() {
             select('');
           }}
         >
-          <FileText size={15} /> 全部文件夹
+          <FileText size={15} /> 文档库首页
         </Button>
+        {selected && searchField}
+        {searchingSidebar && (
+          <>
+            <div className={styles['section-label']}>
+              <span>搜索结果</span>
+              <span>{searchResults.length}</span>
+            </div>
+            <nav className={styles.notes} aria-label="搜索结果">
+              {searchResults.map((n) => (
+                <div key={n.id} className={styles['tree-entry-row']}>
+                  <Button
+                    className={`${styles.note} ${selected === n.id ? styles.active : ''}`}
+                    onClick={() => select(n.id)}
+                    aria-current={selected === n.id ? 'page' : undefined}
+                  >
+                    <FileText size={15} />
+                    <span>{n.title}</span>
+                  </Button>
+                  <EntryMenu
+                    name={n.title}
+                    busy={busy}
+                    onManage={(command) => manageEntry(n, command)}
+                  />
+                </div>
+              ))}
+              {!searchResults.length && (
+                <p className={styles.empty}>没有匹配的文档</p>
+              )}
+            </nav>
+          </>
+        )}
         <FolderTree
           folders={folders}
           notes={notes}
           selected={currentFolderId}
           activeNote={selected}
+          hidden={searchingSidebar}
+          busy={busy}
+          onManage={manageEntry}
           onOpen={select}
           onChoose={(id) => {
             setFolderId(id);
             if (selected) select('');
           }}
         />
-        {selected && (
-          <FolderSelect
-            label="浏览文件夹"
-            value={currentFolderId ?? ''}
-            options={folderOptions}
-            onChange={setFolderId}
-          />
-        )}
-        {currentFolder && (
-          <div className={styles['folder-controls']}>
-            <Button
-              disabled={busy}
-              onClick={() =>
-                setAction({
-                  title: '重命名文件夹',
-                  initialName: currentFolder.name,
-                  run: (name) =>
-                    void mutateFolder(() =>
-                      client.updateFolder(currentFolder.id, { name }),
-                    ),
-                })
-              }
-            >
-              重命名
-            </Button>
-            <FolderSelect
-              label="移动文件夹到"
-              value={currentFolder.parentId ?? ''}
-              disabled={busy}
-              options={folderOptions.filter((option) => {
-                let target = byFolderId.get(option.value);
-                while (target) {
-                  if (target.id === currentFolder.id) return false;
-                  target = target.parentId
-                    ? byFolderId.get(target.parentId)
-                    : undefined;
-                }
-                return true;
-              })}
-              onChange={(parentId) =>
-                void mutateFolder(() =>
-                  client.updateFolder(currentFolder.id, { parentId }),
-                )
-              }
-            />
-            <Button
-              aria-label="删除文件夹"
-              title="删除空文件夹"
-              disabled={busy}
-              onClick={() =>
-                setAction({
-                  title: `删除「${currentFolder.name}」？`,
-                  description: '只能删除空文件夹，此操作无法撤销。',
-                  run: () =>
-                    void mutateFolder(async () => {
-                      await client.deleteFolder(currentFolder.id);
-                      setFolderId(currentFolder.parentId);
-                    }),
-                })
-              }
-            >
-              <Trash2 size={15} />
-            </Button>
-          </div>
-        )}
-        {selected && (
-          <>
-            {searchField}
-            <div className={styles['section-label']}>
-              <span>我的文档</span>
-              <span>{visibleNotes.length}</span>
-            </div>
-            <nav className={styles.notes} aria-label="文档列表">
-              {visibleNotes.map((n) => (
-                <Button
-                  key={n.id}
-                  className={`${styles.note} ${selected === n.id ? styles.active : ''}`}
-                  onClick={() => select(n.id)}
-                  aria-current={selected === n.id ? 'page' : undefined}
-                >
-                  <FileText size={15} />
-                  <span>{n.title}</span>
-                </Button>
-              ))}
-              {normalizedQuery && !visibleNotes.length && (
-                <p className={styles.empty}>没有匹配的文档</p>
-              )}
-            </nav>
-          </>
-        )}
         <div className={styles['sidebar-footer']}>
           <div
             className={styles.avatar}
@@ -561,7 +576,7 @@ export default function App() {
                       setAction({
                         title: `删除「${note.title}」？`,
                         description: '此操作无法撤销。',
-                        run: () => void remove(),
+                        run: () => void remove(note),
                       })
                     }
                   >
