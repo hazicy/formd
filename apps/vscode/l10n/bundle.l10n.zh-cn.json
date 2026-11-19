@@ -68,6 +68,6 @@
   "The document does not exist or could not be synced.": "文档不存在或同步失败",
   "Connection timed out. Check the Formd server URL.": "连接超时，请检查 Formd 服务地址",
   "This document is not bound to a collaboration session. Reopen it.": "文档未绑定到协作会话，请重新打开",
-  "Use Formd: Delete Collaborative Document.": "请使用 Formd: 删除协作文档",
+  "Use the Formd Delete Document command.": "请使用 Formd 的「删除文档」命令",
   "Use Formd: Rename Document.": "请使用 Formd: 重命名文档"
 }

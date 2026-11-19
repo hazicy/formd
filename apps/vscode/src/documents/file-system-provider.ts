@@ -55,7 +55,7 @@ export function createFileSystemProvider(
     },
     delete: () => {
       throw vscode.FileSystemError.NoPermissions(
-        vscode.l10n.t('Use Formd: Delete Collaborative Document.'),
+        vscode.l10n.t('Use the Formd Delete Document command.'),
       );
     },
     rename: () => {

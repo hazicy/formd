@@ -35,7 +35,7 @@
   border: 1px solid var(--color-border);
   border-radius: 14px;
   background: var(--color-surface);
-  box-shadow: 0 2px 6px #30251b12, 0 10px 24px #30251b20;
+  box-shadow: var(--shadow-overlay);
 }
 .selection-toolbar:global(.cm-tooltip-above) {
   translate: 0 -6px;

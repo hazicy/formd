@@ -57,16 +57,19 @@
       {
         "command": "formd.createNote",
         "title": "%formd.createNote%",
+        "category": "Formd",
         "icon": "$(add)"
       },
       {
         "command": "formd.createFolder",
         "title": "%formd.createFolder%",
+        "category": "Formd",
         "icon": "$(new-folder)"
       },
       {
         "command": "formd.deleteNote",
         "title": "%formd.deleteNote%",
+        "category": "Formd",
         "icon": "$(trash)"
       },
       {
@@ -77,11 +80,13 @@
       {
         "command": "formd.renameNote",
         "title": "%formd.renameNote%",
+        "category": "Formd",
         "icon": "$(edit)"
       },
       {
         "command": "formd.openInBrowser",
         "title": "%formd.openInBrowser%",
+        "category": "Formd",
         "icon": "$(globe)"
       },
       {
@@ -125,19 +130,23 @@
       },
       {
         "command": "formd.moveNote",
-        "title": "%formd.moveNote%"
+        "title": "%formd.moveNote%",
+        "category": "Formd"
       },
       {
         "command": "formd.renameFolder",
-        "title": "%formd.renameFolder%"
+        "title": "%formd.renameFolder%",
+        "category": "Formd"
       },
       {
         "command": "formd.moveFolder",
-        "title": "%formd.moveFolder%"
+        "title": "%formd.moveFolder%",
+        "category": "Formd"
       },
       {
         "command": "formd.deleteFolder",
-        "title": "%formd.deleteFolder%"
+        "title": "%formd.deleteFolder%",
+        "category": "Formd"
       }
     ],
     "configuration": {
