@@ -1,5 +1,4 @@
-import { Button } from '@base-ui/react/button';
-import { Input } from '@base-ui/react/input';
+import { Button, Input } from '../../ui';
 import type { Note, PresenceUser } from '@formd/client';
 import {
   BookOpen,

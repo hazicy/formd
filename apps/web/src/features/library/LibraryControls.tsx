@@ -1,8 +1,14 @@
-import { Button } from '@base-ui/react/button';
-import { Dialog } from '@base-ui/react/dialog';
-import { Input } from '@base-ui/react/input';
-import { Menu } from '@base-ui/react/menu';
-import { Select } from '@base-ui/react/select';
+import {
+  Button,
+  ModalActions,
+  ModalClose,
+  DropdownMenu,
+  DropdownMenuItem,
+  Input,
+  Modal,
+  SelectField,
+  type SelectOption,
+} from '../../ui';
 import { hotkeysCoreFeature, syncDataLoaderFeature } from '@headless-tree/core';
 import { useTree } from '@headless-tree/react';
 import type { Folder, Note } from '@formd/client';
@@ -20,7 +26,7 @@ export type LibraryAction = {
   title: string;
   description?: string;
   initialName?: string;
-  destination?: { initialValue: string; options: FolderOption[] };
+  destination?: { initialValue: string; options: SelectOption[] };
   run: (name: string) => void;
 };
 
@@ -37,109 +43,46 @@ export function ActionDialog({
   );
   const naming = action.initialName !== undefined;
   return (
-    <Dialog.Root
-      open
-      onOpenChange={(open) => {
-        if (!open) close();
-      }}
+    <Modal
+      title={action.title}
+      description={action.description}
+      onClose={close}
     >
-      <Dialog.Portal>
-        <Dialog.Backdrop className={styles.backdrop} />
-        <Dialog.Popup className={styles['action-dialog']}>
-          <Dialog.Title>{action.title}</Dialog.Title>
-          {action.description && (
-            <Dialog.Description>{action.description}</Dialog.Description>
-          )}
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (naming && !name.trim()) return;
-              close();
-              action.run(action.destination ? destination : name.trim());
-            }}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (naming && !name.trim()) return;
+          close();
+          action.run(action.destination ? destination : name.trim());
+        }}
+      >
+        {naming && (
+          <Input
+            aria-label="文件夹名称"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        )}
+        {action.destination && (
+          <SelectField
+            label="移动文件夹到"
+            value={destination}
+            options={action.destination.options}
+            onChange={(id) => setDestination(id ?? '')}
+          />
+        )}
+        <ModalActions>
+          <ModalClose render={<Button />}>取消</ModalClose>
+          <Button
+            type="submit"
+            className={styles.primary}
+            disabled={naming && !name.trim()}
           >
-            {naming && (
-              <Input
-                aria-label="文件夹名称"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            )}
-            {action.destination && (
-              <FolderSelect
-                label="移动文件夹到"
-                value={destination}
-                options={action.destination.options}
-                onChange={(id) => setDestination(id ?? '')}
-              />
-            )}
-            <div className={styles['dialog-actions']}>
-              <Dialog.Close render={<Button />}>取消</Dialog.Close>
-              <Button
-                type="submit"
-                className={styles.primary}
-                disabled={naming && !name.trim()}
-              >
-                {action.destination ? '移动' : naming ? '保存' : '删除'}
-              </Button>
-            </div>
-          </form>
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
-
-export type FolderOption = { value: string; label: string };
-
-export function FolderSelect({
-  label,
-  value,
-  options,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  value: string;
-  options: FolderOption[];
-  onChange: (id: string | null) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Select.Root
-      items={options}
-      value={value}
-      disabled={disabled}
-      onValueChange={(next) => onChange(next || null)}
-    >
-      <Select.Trigger aria-label={label} className={styles['folder-select']}>
-        <Select.Value />
-        <Select.Icon>
-          <ChevronDown size={13} />
-        </Select.Icon>
-      </Select.Trigger>
-      <Select.Portal>
-        <Select.Positioner
-          className={styles['select-positioner']}
-          sideOffset={5}
-          alignItemWithTrigger={false}
-        >
-          <Select.Popup className={styles['select-popup']}>
-            <Select.List>
-              {options.map((item) => (
-                <Select.Item
-                  key={item.value}
-                  value={item.value}
-                  className={styles['select-item']}
-                >
-                  <Select.ItemText>{item.label}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.List>
-          </Select.Popup>
-        </Select.Positioner>
-      </Select.Portal>
-    </Select.Root>
+            {action.destination ? '移动' : naming ? '保存' : '删除'}
+          </Button>
+        </ModalActions>
+      </form>
+    </Modal>
   );
 }
 
@@ -168,57 +111,30 @@ export function EntryMenu({
   onDownload?: () => void;
 }) {
   return (
-    <Menu.Root>
-      <Menu.Trigger
-        className={styles['tree-more']}
-        aria-label={`「${name}」的更多操作`}
-        disabled={busy}
-        render={<Button />}
-      >
-        <Ellipsis size={15} />
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner
-          className={styles['select-positioner']}
-          align="end"
-          sideOffset={4}
-        >
-          <Menu.Popup className={styles['select-popup']}>
-            {favorite && (
-              <Menu.Item
-                className={styles['select-item']}
-                onClick={favorite.toggle}
-              >
-                {favorite.active ? '取消收藏' : '收藏'}
-              </Menu.Item>
-            )}
-            <Menu.Item
-              className={styles['select-item']}
-              onClick={() => onManage('rename')}
-            >
-              重命名
-            </Menu.Item>
-            <Menu.Item
-              className={styles['select-item']}
-              onClick={() => onManage('move')}
-            >
-              移动到…
-            </Menu.Item>
-            {onDownload && (
-              <Menu.Item className={styles['select-item']} onClick={onDownload}>
-                下载 Markdown
-              </Menu.Item>
-            )}
-            <Menu.Item
-              className={styles['select-item']}
-              onClick={() => onManage('delete')}
-            >
-              删除
-            </Menu.Item>
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
+    <DropdownMenu
+      label={`「${name}」的更多操作`}
+      disabled={busy}
+      triggerClassName={styles['tree-more']}
+      trigger={<Ellipsis size={15} />}
+    >
+      {favorite && (
+        <DropdownMenuItem onClick={favorite.toggle}>
+          {favorite.active ? '取消收藏' : '收藏'}
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuItem onClick={() => onManage('rename')}>
+        重命名
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => onManage('move')}>
+        移动到…
+      </DropdownMenuItem>
+      {onDownload && (
+        <DropdownMenuItem onClick={onDownload}>下载 Markdown</DropdownMenuItem>
+      )}
+      <DropdownMenuItem onClick={() => onManage('delete')}>
+        删除
+      </DropdownMenuItem>
+    </DropdownMenu>
   );
 }
 

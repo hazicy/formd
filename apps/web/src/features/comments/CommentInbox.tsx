@@ -1,4 +1,4 @@
-import { Button } from '@base-ui/react/button';
+import { Button } from '../../ui';
 import type { CommentInboxItem, FormdClient } from '@formd/client';
 import { useEffect, useState } from 'react';
 import styles from '../../styles/workspace.module.css';

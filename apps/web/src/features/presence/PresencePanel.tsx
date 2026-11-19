@@ -1,6 +1,4 @@
-import { Button } from '@base-ui/react/button';
-import { Input } from '@base-ui/react/input';
-import { Popover } from '@base-ui/react/popover';
+import { Button, Input, Popover } from '../../ui';
 import styles from './PresencePanel.module.css';
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { Users, Check, X } from 'lucide-react';
