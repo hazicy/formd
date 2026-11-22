@@ -30,7 +30,10 @@ test('edit with live Markdown, collaborate, export and delete a document', async
   await title.fill('Shared browser note');
   await title.press('Enter');
   await expect(
-    page.getByRole('button', { name: 'Shared browser note' }),
+    page.getByRole('navigation', { name: '最近访问' }).getByRole('button', {
+      name: 'Shared browser note',
+      exact: true,
+    }),
   ).toBeVisible();
   const documentRow = page.getByRole('treeitem', { name: 'Shared browser note', exact: true });
   const documentMenu = page.getByRole('button', { name: '「Shared browser note」的更多操作' });
@@ -238,6 +241,12 @@ test('browse and search the workspace without opening an editor', async ({
     await page.goto('/');
     const table = page.getByRole('table');
     const search = page.getByRole('textbox', { name: '搜索文档' });
+    const sidebar = page.getByRole('complementary', { name: '工作空间侧栏' });
+    await page.getByRole('button', { name: '关闭侧栏' }).click();
+    await expect(sidebar).toBeHidden();
+    await expect(page.getByRole('button', { name: '首页' })).toBeVisible();
+    await page.getByRole('button', { name: '打开侧栏' }).click();
+    await expect(sidebar).toBeVisible();
     await expect(table.getByText(note.title)).toBeVisible();
     await search.fill('no matching document');
     await expect(table.getByText('没有匹配的文档')).toBeVisible();

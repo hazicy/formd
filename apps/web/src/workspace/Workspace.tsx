@@ -37,6 +37,8 @@ export function Workspace() {
     null,
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [query, setQuery] = useState('');
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const library = useDocumentLibrary({
@@ -93,7 +95,10 @@ export function Workspace() {
     saveProfile(profile);
   }
 
-  const openSidebar = () => setSidebarOpen(true);
+  const openSidebar = () => {
+    setSidebarCollapsed(false);
+    setSidebarOpen(true);
+  };
   const errorNotice = error && (
     <div className={styles.error} role="alert">
       <span>{error}</span>
@@ -101,10 +106,18 @@ export function Workspace() {
     </div>
   );
 
-  return (
-    <div className={styles.app}>
+  return (  
+    <div className={styles.app} data-sidebar-collapsed={sidebarCollapsed}>
       <WorkspaceSidebar
         open={sidebarOpen}
+        collapsed={sidebarCollapsed}
+        recent={library.recent}
+        onToggle={() => {
+          if (window.matchMedia('(max-width: 700px)').matches)
+            setSidebarOpen(false);
+          else setSidebarCollapsed(true);
+        }}
+        onCreate={library.createNote}
         user={user}
         folders={library.folders}
         notes={library.notes}
@@ -114,6 +127,7 @@ export function Workspace() {
         workspacePage={workspacePage}
         onClose={() => setSidebarOpen(false)}
         onHome={() => {
+          setQuery('');
           library.chooseFolder(null);
           library.setView('all');
           openNote('');
@@ -123,6 +137,7 @@ export function Workspace() {
         onChooseFolder={(id) => {
           library.chooseFolder(id);
           if (noteId || workspacePage) openNote('');
+          else setSidebarOpen(false);
         }}
         onOpenNote={openNote}
         onManage={library.manageEntry}
@@ -177,6 +192,8 @@ export function Workspace() {
         ) : (
           <DocumentLibrary
             library={library}
+            query={query}
+            onQueryChange={setQuery}
             onOpenSidebar={openSidebar}
             onOpenNote={openNote}
             onDownload={editor.downloadMarkdown}

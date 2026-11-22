@@ -1,4 +1,4 @@
-import { Button } from '../../ui';
+import { Button, Input } from '../../ui';
 import type { Note } from '@formd/client';
 import {
   Clock,
@@ -6,6 +6,7 @@ import {
   FolderPlus,
   PanelLeft,
   Plus,
+  Search,
   Star,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -85,6 +86,8 @@ function LibraryToolbar({
   busy,
   onCreateFolder,
   onCreateNote,
+  query,
+  onQueryChange,
 }: {
   title: string;
   onOpenSidebar: () => void;
@@ -93,33 +96,56 @@ function LibraryToolbar({
   busy: boolean;
   onCreateFolder: () => void;
   onCreateNote: () => void;
+  query: string;
+  onQueryChange: (query: string) => void;
 }) {
   return (
-    <LibraryHeader
-      title={title}
-      onOpenSidebar={onOpenSidebar}
-      actions={
-        <div className={styles['list-create']}>
-          <Button
-            aria-label="新建文件夹"
-            title="新建文件夹"
-            disabled={busy}
-            onClick={onCreateFolder}
-          >
-            <FolderPlus size={16} />
-          </Button>
+    <header className={styles['library-header']}>
+      <div className={styles['library-top']}>
+        <Button
+          className={styles['mobile-menu']}
+          aria-label="打开侧栏"
+          onClick={onOpenSidebar}
+        >
+          <PanelLeft size={16} />
+        </Button>
+        <DocumentFilters view={view} onChange={onViewChange} />
+        <Button
+          className={styles['icon-action']}
+          aria-label="新建文件夹"
+          title="新建文件夹"
+          disabled={busy}
+          onClick={onCreateFolder}
+        >
+          <FolderPlus size={16} />
+        </Button>
+      </div>
+      <div className={styles['library-hero']}>
+        <h1>{title}</h1>
+        <div
+          className={styles['library-search']}
+          role="search"
+          aria-label="当前文档视图"
+        >
+          <Search size={17} aria-hidden="true" />
+          <Input
+            aria-label="搜索文档"
+            placeholder="搜索文档标题…"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+          />
           <Button
             className={styles.primary}
+            aria-label="快速新建文档"
+            title="新建文档"
             disabled={busy}
             onClick={onCreateNote}
           >
-            <Plus size={16} /> 新建文档
+            <Plus size={18} />
           </Button>
         </div>
-      }
-    >
-      <DocumentFilters view={view} onChange={onViewChange} />
-    </LibraryHeader>
+      </div>
+    </header>
   );
 }
 
@@ -127,6 +153,7 @@ function DocumentTable({
   notes,
   view,
   folderId,
+  query,
   loading,
   busy,
   favorites,
@@ -140,6 +167,7 @@ function DocumentTable({
   notes: Note[];
   view: DocumentView;
   folderId: string | null;
+  query: string;
   loading: boolean;
   busy: boolean;
   favorites: string[];
@@ -152,8 +180,10 @@ function DocumentTable({
 }) {
   const favoriteIds = new Set(favorites);
   const recentOrder = new Map(recent.map((id, index) => [id, index]));
+  const normalizedQuery = query.trim().toLowerCase();
   const visibleNotes = notes.filter(
     (entry) =>
+      entry.title.toLowerCase().includes(normalizedQuery) &&
       (!folderId || entry.folderId === folderId) &&
       (view !== 'favorites' || favoriteIds.has(entry.id)) &&
       (view !== 'recent' || recentOrder.has(entry.id)),
@@ -164,7 +194,7 @@ function DocumentTable({
     );
 
   return (
-    <section className={styles['document-list']} aria-label="工作空间文档">
+    <section className={styles['library-results']} aria-label="工作空间文档">
       <table className={styles['documents-table']}>
         <thead>
           <tr>
@@ -204,23 +234,37 @@ function DocumentTable({
                 </time>
               </td>
               <td>
-                <EntryMenu
-                  name={entry.title}
-                  busy={busy}
-                  favorite={{
-                    active: favoriteIds.has(entry.id),
-                    toggle: () => onFavorite(entry.id),
-                  }}
-                  onManage={(command) => onManage(entry, command)}
-                  onDownload={() => void onDownload(entry)}
-                />
+                <div className={styles['row-actions']}>
+                  <Button
+                    className={styles['favorite-action']}
+                    aria-label={`${favoriteIds.has(entry.id) ? '取消收藏' : '收藏'} ${entry.title}`}
+                    aria-pressed={favoriteIds.has(entry.id)}
+                    onClick={() => onFavorite(entry.id)}
+                  >
+                    <Star size={15} />
+                  </Button>
+                  <EntryMenu
+                    name={entry.title}
+                    busy={busy}
+                    favorite={{
+                      active: favoriteIds.has(entry.id),
+                      toggle: () => onFavorite(entry.id),
+                    }}
+                    onManage={(command) => onManage(entry, command)}
+                    onDownload={() => void onDownload(entry)}
+                  />
+                </div>
               </td>
             </tr>
           ))}
           {!visibleNotes.length && (
             <tr>
               <td className={styles['list-empty']} colSpan={5}>
-                {loading ? '正在加载文档…' : documentViews[view].empty}
+                {loading
+                  ? '正在加载文档…'
+                  : normalizedQuery
+                    ? '没有匹配的文档'
+                    : documentViews[view].empty}
               </td>
             </tr>
           )}
@@ -232,12 +276,16 @@ function DocumentTable({
 
 export function DocumentLibrary({
   library,
+  query,
+  onQueryChange,
   onOpenSidebar,
   onOpenNote,
   onDownload,
   children,
 }: {
   library: ReturnType<typeof useDocumentLibrary>;
+  query: string;
+  onQueryChange: (query: string) => void;
   onOpenSidebar: () => void;
   onOpenNote: (id: string) => void;
   onDownload: (note: Note) => void;
@@ -253,10 +301,13 @@ export function DocumentLibrary({
         busy={library.busy}
         onCreateFolder={library.createFolder}
         onCreateNote={library.createNote}
+        query={query}
+        onQueryChange={onQueryChange}
       />
       {children}
       <DocumentTable
         notes={library.notes}
+        query={query}
         view={library.view}
         folderId={library.currentFolderId}
         loading={library.loading}
