@@ -14,9 +14,7 @@
   ],
   "main": "./dist/extension.cjs",
   "activationEvents": [
-    "onFileSystem:formd",
-    "onView:formd.notes",
-    "onView:formd.recent"
+    "onFileSystem:formd"
   ],
   "scripts": {
     "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.cjs",
@@ -26,6 +24,28 @@
   },
   "contributes": {
     "commands": [
+      {
+        "command": "formd.editComment",
+        "title": "%formd.editComment%",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "formd.saveComment",
+        "title": "%formd.saveComment%"
+      },
+      {
+        "command": "formd.cancelCommentEdit",
+        "title": "%formd.cancelCommentEdit%"
+      },
+      {
+        "command": "formd.commentInbox",
+        "title": "%formd.commentInbox%"
+      },
+      {
+        "command": "formd.deleteComment",
+        "title": "%formd.deleteComment%",
+        "icon": "$(trash)"
+      },
       {
         "command": "formd.submitComment",
         "title": "%formd.submitComment%"
@@ -201,11 +221,35 @@
       ]
     },
     "menus": {
+      "comments/comment/title": [
+        {
+          "command": "formd.editComment",
+          "when": "commentController == formd && comment == formd-comment",
+          "group": "inline@1"
+        },
+        {
+          "command": "formd.deleteComment",
+          "when": "commentController == formd && comment == formd-comment",
+          "group": "inline"
+        }
+      ],
+      "comments/comment/context": [
+        {
+          "command": "formd.saveComment",
+          "when": "commentController == formd && comment == formd-comment",
+          "group": "navigation@1"
+        },
+        {
+          "command": "formd.cancelCommentEdit",
+          "when": "commentController == formd && comment == formd-comment",
+          "group": "navigation@2"
+        }
+      ],
       "comments/commentThread/context": [
         {
           "command": "formd.submitComment",
           "when": "commentController == formd && commentThread != formd-resolved",
-          "group": "navigation"
+          "group": "navigation@1"
         }
       ],
       "comments/commentThread/title": [
@@ -293,6 +337,22 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "formd.editComment",
+          "when": "false"
+        },
+        {
+          "command": "formd.saveComment",
+          "when": "false"
+        },
+        {
+          "command": "formd.cancelCommentEdit",
+          "when": "false"
+        },
+        {
+          "command": "formd.deleteComment",
+          "when": "false"
+        },
         {
           "command": "formd.submitComment",
           "when": "false"

@@ -42,7 +42,9 @@ test('deleting a folder preserves its notes and nested folders', async () => {
   const store = createMemoryNoteStore();
   const instance = await createFormdServer(store);
   try {
-    const client = new FormdClient(`http://127.0.0.1:${await listen(instance)}`);
+    const client = new FormdClient(
+      `http://127.0.0.1:${await listen(instance)}`,
+    );
     const parent = await client.createFolder('上级');
     const removed = await client.createFolder('待删除', parent.id);
     const existing = await client.createFolder('资料', parent.id);
@@ -53,7 +55,9 @@ test('deleting a folder preserves its notes and nested folders', async () => {
     const nestedNote = await client.create('子目录文档', '', nested.id);
 
     assert.equal((await client.deleteFolder(removed.id)).parentId, parent.id);
-    const folders = new Map((await client.listFolders()).map((entry) => [entry.id, entry]));
+    const folders = new Map(
+      (await client.listFolders()).map((entry) => [entry.id, entry]),
+    );
     assert.equal(folders.has(removed.id), false);
     assert.equal(folders.get(existing.id)?.name, '资料');
     assert.equal(folders.get(child.id)?.name, '资料 (2)');
@@ -61,10 +65,15 @@ test('deleting a folder preserves its notes and nested folders', async () => {
     assert.equal(folders.get(sameName.id)?.name, '待删除 (2)');
     assert.equal(folders.get(sameName.id)?.parentId, parent.id);
     assert.equal(folders.get(nested.id)?.parentId, child.id);
-    const notes = new Map((await client.list()).map((entry) => [entry.id, entry]));
+    const notes = new Map(
+      (await client.list()).map((entry) => [entry.id, entry]),
+    );
     assert.equal(notes.get(note.id)?.folderId, parent.id);
     assert.equal(notes.get(nestedNote.id)?.folderId, nested.id);
-    assert.equal((await store.load()).find((entry) => entry.id === note.id)?.folderId, parent.id);
+    assert.equal(
+      (await store.load()).find((entry) => entry.id === note.id)?.folderId,
+      parent.id,
+    );
     await client.rename(note.id, '仍可编辑');
   } finally {
     await instance.close();
@@ -244,6 +253,29 @@ test('anchored comments and concurrent replies survive server restart', async ()
         first.text.toString() === 'Prefix paragraph',
       'Concurrent edits did not merge',
     );
+    const deleted = first.comments
+      .list()[0]
+      .messages.find((message) => message.body === 'First reply')!;
+    first.comments.deleteMessage(id, deleted);
+    await until(
+      () => second.comments.list()[0].messages.length === 2,
+      'Comment deletion did not synchronize',
+    );
+    const original = first.comments.list()[0].messages[0];
+    const peerOriginal = second.comments.list()[0].messages[0];
+    first.comments.toggleReaction(id, original, '👍', 'first');
+    second.comments.toggleReaction(id, peerOriginal, '👍', 'second');
+    await until(
+      () => first.comments.reactions(id, original, 'first')[0].count === 2,
+      'Concurrent reactions did not merge',
+    );
+    first.comments.toggleReaction(id, original, '👍', 'first');
+    first.comments.editMessage(id, original, 'Updated first comment');
+    await until(
+      () =>
+        second.comments.list()[0].messages[0].body === 'Updated first comment',
+      'Comment edit did not synchronize',
+    );
     first.comments.setResolved(id, true);
     await until(
       () => first.persistenceStatus === 'saved',
@@ -262,10 +294,14 @@ test('anchored comments and concurrent replies survive server restart', async ()
       'Reopened editor did not connect',
     );
     const [thread] = reopened.comments.list();
+    assert.deepEqual(
+      reopened.comments.reactions(id, thread.messages[0], 'second')[0],
+      { label: '👍', count: 1, authorHasReacted: true },
+    );
     assert.equal(thread.resolved, true);
     assert.deepEqual(
       new Set(thread.messages.map((message) => message.body)),
-      new Set(['First comment', 'First reply', 'Second reply']),
+      new Set(['Updated first comment', 'Second reply']),
     );
     assert.deepEqual(resolveSelection(reopened.text, thread.anchor), {
       anchor: 7,

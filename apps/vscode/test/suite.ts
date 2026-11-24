@@ -373,6 +373,32 @@ export async function run() {
       .pages()
       .find((candidate) => candidate.url().includes('workbench'));
     assert.ok(workbench, 'VS Code workbench is unavailable');
+    await workbench.locator('.comment-form .monaco-editor').click();
+    await workbench.keyboard.press('End');
+    await workbench.keyboard.press('Space');
+    await workbench.keyboard.press('@');
+    await until(
+      () => commentInput.getText() === 'Review from native VS Code @',
+      'Typing @ did not reach the end of the comment draft',
+    );
+    const completions =
+      await vscode.commands.executeCommand<vscode.CompletionList>(
+        'vscode.executeCompletionItemProvider',
+        commentInput.uri,
+        commentInput.positionAt(commentInput.getText().length),
+      );
+    assert.ok(
+      completions?.items.some((item) => item.label === '@Web Bob'),
+      `Formd did not provide Web Bob as a completion: ${JSON.stringify({ draft: commentInput.uri.toString(), active: vscode.window.activeTextEditor?.document.uri.toString(), visible: vscode.window.visibleTextEditors.map((item) => item.document.uri.toString()), completions: completions?.items.map((item) => item.label) })}`,
+    );
+    await workbench
+      .locator('.suggest-widget')
+      .getByText('@Web Bob', { exact: true })
+      .click({ timeout: 8000 });
+    await until(
+      () => commentInput.getText() === 'Review from native VS Code @Web Bob ',
+      'Mention did not append to the native comment draft',
+    );
     await workbench
       .getByRole('button', {
         name: vscode.env.language === 'zh-cn' ? /^发布评论/ : /^Post Comment/,
@@ -382,7 +408,7 @@ export async function run() {
     await page.getByRole('button', { name: '评论', exact: true }).click();
     const comments = page.getByRole('complementary', { name: '文档评论' });
     await comments
-      .getByText('Review from native VS Code', { exact: true })
+      .getByText('Review from native VS Code @Web Bob', { exact: true })
       .waitFor({ timeout: 10000 });
     await comments
       .getByRole('textbox', { name: '回复内容' })

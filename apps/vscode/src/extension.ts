@@ -1,9 +1,11 @@
 import { folderPath, pickDestination } from './folder-picker.js';
 import * as vscode from 'vscode';
+import { randomUUID } from 'node:crypto';
 import WebSocket from 'ws';
 import {
   FormdClient,
   markdownFilename,
+  resolveSelection,
   type Note,
   type Folder,
   createGuestUser,
@@ -66,7 +68,13 @@ export function activate(context: vscode.ExtensionContext) {
       'drafts',
     ).fsPath,
   );
-  const comments = new DocumentComments();
+  const storedReactionActor = context.globalState.get<string>(
+    'formd.reactionActor',
+  );
+  const reactionActor = storedReactionActor ?? randomUUID();
+  if (!storedReactionActor)
+    void context.globalState.update('formd.reactionActor', reactionActor);
+  const comments = new DocumentComments(reactionActor);
   const sessions: DocumentSessions = new DocumentSessions(
     client,
     drafts,
@@ -131,6 +139,18 @@ export function activate(context: vscode.ExtensionContext) {
   register<vscode.CommentReply>('formd.submitComment', async (reply) => {
     if (reply) await comments.submit(reply);
   });
+  register<vscode.Comment>('formd.deleteComment', async (comment) => {
+    if (comment) comments.delete(comment);
+  });
+  register<vscode.Comment>('formd.editComment', async (comment) => {
+    if (comment) comments.edit(comment, 'start');
+  });
+  register<vscode.Comment>('formd.saveComment', async (comment) => {
+    if (comment) comments.edit(comment, 'save');
+  });
+  register<vscode.Comment>('formd.cancelCommentEdit', async (comment) => {
+    if (comment) comments.edit(comment, 'cancel');
+  });
   register<vscode.CommentThread>('formd.resolveComment', async (thread) => {
     if (thread) comments.resolve(thread, true);
   });
@@ -189,6 +209,53 @@ export function activate(context: vscode.ExtensionContext) {
     if (server === client().baseUrl) recent.visit(note);
     return uri;
   }
+  register('formd.commentInbox', async () => {
+    const target = client();
+    const items = await target.commentInbox(getProfile().name);
+    if (!items.length) {
+      void vscode.window.showInformationMessage(
+        vscode.l10n.t('No Formd mentions or replies.'),
+      );
+      return;
+    }
+    const picked = await vscode.window.showQuickPick(
+      items.map((item) => ({
+        label: item.noteTitle,
+        description:
+          item.reason === 'mention'
+            ? vscode.l10n.t('Mention from {0}', item.message.author)
+            : vscode.l10n.t('Reply from {0}', item.message.author),
+        detail: item.message.body.replace(/\s+/g, ' ').slice(0, 160),
+        item,
+      })),
+      {
+        title: vscode.l10n.t('Formd Comment Inbox'),
+        matchOnDescription: true,
+        matchOnDetail: true,
+      },
+    );
+    if (!picked) return;
+    const { noteId, noteTitle, anchor } = picked.item;
+    const uri = await openDocument(
+      { server: target.baseUrl, noteId },
+      markdownFilename(noteTitle),
+    );
+    const binding = sessions.getByUri(uri)?.binding;
+    if (!binding) return;
+    await binding.flush();
+    const editor = vscode.window.activeTextEditor;
+    if (editor?.document.uri.toString() !== uri.toString()) return;
+    const location = resolveSelection(binding.viewText, anchor);
+    if (!location) return;
+    editor.selection = new vscode.Selection(
+      editor.document.positionAt(location.anchor),
+      editor.document.positionAt(location.head),
+    );
+    editor.revealRange(
+      editor.selection,
+      vscode.TextEditorRevealType.InCenterIfOutsideViewport,
+    );
+  });
   register('formd.recoverDraft', async () => {
     const { baseUrl } = client();
     const available = drafts.list(baseUrl);

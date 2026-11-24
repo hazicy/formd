@@ -1,4 +1,8 @@
 {
+  "No Formd mentions or replies.": "没有提及或回复你的 Formd 评论。",
+  "Mention from {0}": "{0} 提及了你",
+  "Reply from {0}": "{0} 回复了你",
+  "Formd Comment Inbox": "Formd 评论收件箱",
   "Write a Formd comment": "撰写 Formd 评论",
   "$(sync) Formd Saving": "$(sync) Formd 待同步",
   "Waiting for the server to confirm persistence.": "正在等待服务器确认保存。",

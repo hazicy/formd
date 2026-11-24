@@ -1,4 +1,9 @@
 {
+  "formd.editComment": "Edit Comment",
+  "formd.saveComment": "Save",
+  "formd.cancelCommentEdit": "Cancel",
+  "formd.commentInbox": "Formd: Comment Inbox",
+  "formd.deleteComment": "Delete Comment",
   "formd.submitComment": "Post Comment",
   "formd.resolveComment": "Resolve Thread",
   "formd.reopenComment": "Reopen Thread",
