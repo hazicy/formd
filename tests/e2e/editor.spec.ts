@@ -244,9 +244,10 @@ test('browse and search the workspace without opening an editor', async ({
     const sidebar = page.getByRole('complementary', { name: '工作空间侧栏' });
     await page.getByRole('button', { name: '关闭侧栏' }).click();
     await expect(sidebar).toBeHidden();
-    await expect(page.getByRole('button', { name: '首页' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '首页' })).toBeHidden();
     await page.getByRole('button', { name: '打开侧栏' }).click();
     await expect(sidebar).toBeVisible();
+    await expect(sidebar.getByRole('button', { name: '首页' })).toBeVisible();
     await expect(table.getByText(note.title)).toBeVisible();
     await search.fill('no matching document');
     await expect(table.getByText('没有匹配的文档')).toBeVisible();

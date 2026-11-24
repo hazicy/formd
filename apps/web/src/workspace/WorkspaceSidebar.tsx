@@ -73,57 +73,6 @@ export function WorkspaceSidebar({
 
   return (
     <>
-      <div className={styles.rail}>
-        <nav className={styles['rail-nav']} aria-label="文档库导航">
-          <Button
-            className={`${styles.note} ${!activeNoteId && !workspacePage && !currentFolderId ? styles.active : ''}`}
-            aria-current={
-              !activeNoteId && !workspacePage && !currentFolderId
-                ? 'page'
-                : undefined
-            }
-            aria-label="首页"
-            title="首页"
-            onClick={() => {
-              setQuery('');
-              onHome();
-            }}
-          >
-            <House size={16} />
-          </Button>
-          <Button
-            className={`${styles.note} ${workspacePage === 'inbox' && !activeNoteId ? styles.active : ''}`}
-            aria-current={
-              workspacePage === 'inbox' && !activeNoteId ? 'page' : undefined
-            }
-            aria-label="待我处理"
-            title="待我处理"
-            onClick={onInbox}
-          >
-            <Inbox size={16} />
-          </Button>
-          <Button
-            className={`${styles.note} ${workspacePage === 'plugins' && !activeNoteId ? styles.active : ''}`}
-            aria-current={
-              workspacePage === 'plugins' && !activeNoteId ? 'page' : undefined
-            }
-            aria-label="插件"
-            title="插件"
-            onClick={onPlugins}
-          >
-            <Puzzle size={16} />
-          </Button>
-        </nav>
-        <div
-          className={styles.avatar}
-          style={{ backgroundColor: user.color }}
-          title={user.name}
-          aria-label={user.name}
-          role="img"
-        >
-          {user.name.slice(0, 1)}
-        </div>
-      </div>
       {open && (
         <div
           className={styles['sidebar-backdrop']}
@@ -138,9 +87,14 @@ export function WorkspaceSidebar({
         aria-label="工作空间侧栏"
       >
         <div className={styles.brand}>
-          <span>
-            Formd<span className={styles['brand-accent']}>.</span>
-          </span>
+          <img
+            src={`${import.meta.env.BASE_URL}favicon.svg`}
+            className={styles['brand-mark']}
+            alt=""
+            width={24}
+            height={24}
+          />
+          <span>Formd</span>
           <Button
             className={styles['icon-action']}
             aria-label="搜索全部文档"
@@ -176,6 +130,40 @@ export function WorkspaceSidebar({
         <Button className={styles.note} disabled={busy} onClick={onCreate}>
           <SquarePen size={16} /> 新建文档
         </Button>
+        <nav className={styles['sidebar-nav']} aria-label="文档库导航">
+          <Button
+            className={`${styles.note} ${!activeNoteId && !workspacePage && !currentFolderId ? styles.active : ''}`}
+            aria-current={
+              !activeNoteId && !workspacePage && !currentFolderId
+                ? 'page'
+                : undefined
+            }
+            onClick={() => {
+              setQuery('');
+              onHome();
+            }}
+          >
+            <House size={16} /> 首页
+          </Button>
+          <Button
+            className={`${styles.note} ${workspacePage === 'inbox' && !activeNoteId ? styles.active : ''}`}
+            aria-current={
+              workspacePage === 'inbox' && !activeNoteId ? 'page' : undefined
+            }
+            onClick={onInbox}
+          >
+            <Inbox size={16} /> 待我处理
+          </Button>
+          <Button
+            className={`${styles.note} ${workspacePage === 'plugins' && !activeNoteId ? styles.active : ''}`}
+            aria-current={
+              workspacePage === 'plugins' && !activeNoteId ? 'page' : undefined
+            }
+            onClick={onPlugins}
+          >
+            <Puzzle size={16} /> 插件
+          </Button>
+        </nav>
         <div className={styles['sidebar-content']}>
           {searchingSidebar && (
             <>
@@ -251,6 +239,18 @@ export function WorkspaceSidebar({
               )}
             </nav>
           )}
+        </div>
+        <div className={styles['sidebar-profile']}>
+          <span
+            className={styles.avatar}
+            style={{ backgroundColor: user.color }}
+            aria-hidden="true"
+          >
+            {user.name.slice(0, 1)}
+          </span>
+          <span className={styles['profile-name']} title={user.name}>
+            {user.name}
+          </span>
         </div>
       </aside>
     </>
