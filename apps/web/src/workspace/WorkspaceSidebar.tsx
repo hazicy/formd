@@ -88,11 +88,11 @@ export function WorkspaceSidebar({
       >
         <div className={styles.brand}>
           <img
-            src={`${import.meta.env.BASE_URL}favicon.svg`}
+            src={`${import.meta.env.BASE_URL}formd.svg`}
             className={styles['brand-mark']}
             alt=""
-            width={24}
-            height={24}
+            width={28}
+            height={28}
           />
           <span>Formd</span>
           <Button
