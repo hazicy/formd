@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="578" viewBox="0 0 1000 578" role="img" aria-label="VS Code Activity Bar preview"><g font-family="system-ui, sans-serif">
+<rect width="1000" height="578" fill="#EBEFEB"/>
+<text x="48" y="68" font-size="34" font-weight="650" fill="#20322E">VS Code Activity Bar</text>
+<g fill="#465954" font-size="14"><text x="48" y="115">Dark theme</text><text x="520" y="115">Light theme</text><text x="48" y="540">24 × 24 px · Monochrome</text></g>
+<g transform="translate(48 136)">
+    <rect width="432" height="370" rx="18" fill="#282C30"/>
+    <rect width="56" height="370" rx="16" fill="#202326"/>
+    <path fill="#202326" d="M36 0h20v370H36z"/>
+    <g fill="none" stroke="#949BA2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 29h12l5 5v14H20zM32 29v6h5"/>
+    <circle cx="26" cy="88" r="7"/><path d="m31 93 6 6"/>
+    <path d="M22 138v15m0-5c8 0 13-3 13-10"/><circle cx="22" cy="135" r="2.5"/><circle cx="35" cy="135" r="2.5"/><circle cx="22" cy="156" r="2.5"/>
+    <rect x="20" y="223" width="16" height="16" rx="3"/><path d="M25 228h6m-6 6h6"/>
+    </g>
+    <rect x="0" y="171" width="56" height="46" fill="#F5F7F8" opacity=".065"/>
+    <rect x="0" y="171" width="2" height="46" rx="1" fill="#61968A"/>
+    <svg x="16" y="182" width="24" height="24" viewBox="0 0 120 110"><path d="M16 40H79C90 40 96 33 92 25C89 19 80 20 77 28L55 81C51 91 43 94 38 88C32 81 38 70 50 70H104" fill="none" stroke="#F5F7F8" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+    <text x="83" y="51" fill="#F5F7F8" font-size="15" font-weight="650">Formd</text>
+    <path d="M82 75H406" stroke="#949BA2" opacity=".22"/>
+    <g font-size="13" fill="#949BA2">
+    <text x="83" y="111">WORKSPACE</text>
+    <text x="104" y="148">Drafts</text>
+    <text x="104" y="178">Shared notes</text>
+    <text x="104" y="208">Ideas.md</text>
+    </g>
+    <path d="m84 143 4 4 5-4m-9 30 4 4 5-4" stroke="#949BA2" fill="none" stroke-linecap="round"/>
+    </g><g transform="translate(520 136)">
+    <rect width="432" height="370" rx="18" fill="#F9FAF9"/>
+    <rect width="56" height="370" rx="16" fill="#EDEFF0"/>
+    <path fill="#EDEFF0" d="M36 0h20v370H36z"/>
+    <g fill="none" stroke="#626E72" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 29h12l5 5v14H20zM32 29v6h5"/>
+    <circle cx="26" cy="88" r="7"/><path d="m31 93 6 6"/>
+    <path d="M22 138v15m0-5c8 0 13-3 13-10"/><circle cx="22" cy="135" r="2.5"/><circle cx="35" cy="135" r="2.5"/><circle cx="22" cy="156" r="2.5"/>
+    <rect x="20" y="223" width="16" height="16" rx="3"/><path d="M25 228h6m-6 6h6"/>
+    </g>
+    <rect x="0" y="171" width="56" height="46" fill="#273032" opacity=".065"/>
+    <rect x="0" y="171" width="2" height="46" rx="1" fill="#61968A"/>
+    <svg x="16" y="182" width="24" height="24" viewBox="0 0 120 110"><path d="M16 40H79C90 40 96 33 92 25C89 19 80 20 77 28L55 81C51 91 43 94 38 88C32 81 38 70 50 70H104" fill="none" stroke="#273032" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+    <text x="83" y="51" fill="#273032" font-size="15" font-weight="650">Formd</text>
+    <path d="M82 75H406" stroke="#626E72" opacity=".22"/>
+    <g font-size="13" fill="#626E72">
+    <text x="83" y="111">WORKSPACE</text>
+    <text x="104" y="148">Drafts</text>
+    <text x="104" y="178">Shared notes</text>
+    <text x="104" y="208">Ideas.md</text>
+    </g>
+    <path d="m84 143 4 4 5-4m-9 30 4 4 5-4" stroke="#626E72" fill="none" stroke-linecap="round"/>
+    </g></g></svg>

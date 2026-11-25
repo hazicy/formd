@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="12" y1="6" x2="116" y2="124" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9A8CFF"/>
+      <stop offset="1" stop-color="#4F3FD6"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="60" y1="58" x2="88" y2="86" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C6CF5"/>
+      <stop offset="1" stop-color="#4F3FD6"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="64" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#271C8F" flood-opacity=".35"/>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="32" fill="url(#bg)"/>
+  <rect width="128" height="64" rx="32" fill="url(#gloss)"/>
+  <!-- 后层：另一位协作者的页面 -->
+  <rect x="24" y="30" width="58" height="70" rx="17" fill="#fff" fill-opacity=".38" transform="rotate(-9 53 65)"/>
+  <!-- 前层：当前文档，镂空 M -->
+  <g filter="url(#shadow)">
+    <rect x="42" y="30" width="60" height="72" rx="17" fill="#fff"/>
+  </g>
+  <path d="M58 83V59L72 73L86 59V83" stroke="url(#ink)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 协作者光标 -->
+  <path d="M96 18V40" stroke="#22D3EE" stroke-width="5" stroke-linecap="round"/>
+  <rect x="88" y="12" width="22" height="12" rx="6" fill="#22D3EE"/>
+</svg>

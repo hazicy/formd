@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="978" height="416" viewBox="0 0 978 416">
+<rect width="978" height="416" fill="#f6f2ee"/><g font-family="PingFang SC, Microsoft YaHei, sans-serif"><text x="32" y="65" font-size="30" font-weight="600" fill="#302b32">Markdown 协作写作</text><g transform="translate(32 104)">
+<rect width="294" height="280" rx="24" fill="white"/>
+<svg x="24" y="26" width="108" height="108" viewBox="0 0 64 64"><rect width="64" height="64" rx="19" fill="#DDEBE4"/><g fill="none" stroke="#245849" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M26 17 20 47M44 17 38 47"/><path d="M17 27h32M14 38h32" stroke="#527C6F"/></g></svg>
+<svg x="186" y="70" width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="19" fill="#DDEBE4"/><g fill="none" stroke="#245849" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M26 17 20 47M44 17 38 47"/><path d="M17 27h32M14 38h32" stroke="#527C6F"/></g></svg>
+<svg x="232" y="74" width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="19" fill="#DDEBE4"/><g fill="none" stroke="#245849" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M26 17 20 47M44 17 38 47"/><path d="M17 27h32M14 38h32" stroke="#527C6F"/></g></svg>
+<path d="M24 159H270" stroke="#ece8e4"/>
+<text x="24" y="202" fill="#245849" font-size="22" font-weight="600">共写标题</text>
+<text x="24" y="237" fill="#245849" font-size="14">两色笔画交织成一个 Markdown 标题符号</text>
+</g><g transform="translate(342 104)">
+<rect width="294" height="280" rx="24" fill="white"/>
+<svg x="24" y="26" width="108" height="108" viewBox="0 0 64 64"><rect width="64" height="64" rx="19" fill="#EEE4F4"/><g fill="none" stroke="#584069" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21 27 32 15 43"/><path d="M36 21 48 32 36 43" stroke="#826293"/></g></svg>
+<svg x="186" y="70" width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="19" fill="#EEE4F4"/><g fill="none" stroke="#584069" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21 27 32 15 43"/><path d="M36 21 48 32 36 43" stroke="#826293"/></g></svg>
+<svg x="232" y="74" width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="19" fill="#EEE4F4"/><g fill="none" stroke="#584069" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21 27 32 15 43"/><path d="M36 21 48 32 36 43" stroke="#826293"/></g></svg>
+<path d="M24 159H270" stroke="#ece8e4"/>
+<text x="24" y="202" fill="#584069" font-size="22" font-weight="600">并肩引用</text>
+<text x="24" y="237" fill="#584069" font-size="14">两枚圆润的 &gt; 并排，取自 Markdown 引用语法</text>
+</g><g transform="translate(652 104)">
+<rect width="294" height="280" rx="24" fill="white"/>
+<svg x="24" y="26" width="108" height="108" viewBox="0 0 64 64"><rect width="64" height="64" rx="19" fill="#F5E6D9"/><g fill="none" stroke="#714633" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 17l-3 15m10-15-3 15m-9-10h15m-16 5h15M36 24h12M17 41h9M36 48h10" stroke-width="3.5"/><path d="M31 36v10m21-3v10" stroke="#A06B4C" stroke-width="4"/></g></svg>
+<svg x="186" y="70" width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="19" fill="#F5E6D9"/><g fill="none" stroke="#714633" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 17l-3 15m10-15-3 15m-9-10h15m-16 5h15M36 24h12M17 41h9M36 48h10" stroke-width="3.5"/><path d="M31 36v10m21-3v10" stroke="#A06B4C" stroke-width="4"/></g></svg>
+<svg x="232" y="74" width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="19" fill="#F5E6D9"/><g fill="none" stroke="#714633" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 17l-3 15m10-15-3 15m-9-10h15m-16 5h15M36 24h12M17 41h9M36 48h10" stroke-width="3.5"/><path d="M31 36v10m21-3v10" stroke="#A06B4C" stroke-width="4"/></g></svg>
+<path d="M24 159H270" stroke="#ece8e4"/>
+<text x="24" y="202" fill="#714633" font-size="22" font-weight="600">双光标</text>
+<text x="24" y="237" fill="#714633" font-size="14">Markdown 标题下，两枚光标同时落在文稿上</text>
+</g></g>
+</svg>

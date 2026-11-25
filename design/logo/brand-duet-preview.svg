@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="936" height="520" viewBox="0 0 936 520">
+
+<defs><linearGradient id="ink" x1="0%" y1="80%" x2="100%" y2="15%"><stop stop-color="#6340C3"/><stop offset=".62" stop-color="#8564E9"/><stop offset="1" stop-color="#CC80C2"/></linearGradient><linearGradient id="tile" x2="65%" y2="100%"><stop stop-color="#FFF9FA"/><stop offset="1" stop-color="#EDE3FF"/></linearGradient></defs>
+<rect width="936" height="520" fill="#EAE7F0"/>
+<rect x="24" y="24" width="540" height="472" rx="28" fill="#FBF9F8"/>
+<rect x="582" y="24" width="330" height="270" rx="28" fill="#262034"/>
+<rect x="582" y="312" width="330" height="184" rx="28" fill="#F6F2FA"/>
+<g font-family="PingFang SC, sans-serif" font-size="15"><text x="52" y="70" fill="#292140">合笔</text><text x="609" y="68" fill="#E9E1F4">VS Code 活动栏</text><text x="609" y="355" fill="#292140">Android</text></g>
+<svg x="95" y="64" width="400" height="400" viewBox="0 0 128 128"><path fill="url(#ink)" d="M22 76C22 58 36 38 49 38C58 38 63 43 64 52C72 39 82 31 93 32C108 33 112 48 104 62L89 87C84 95 75 99 68 96C63 94 62 88 66 83L85 54C87 51 86 48 83 48C78 49 71 56 66 63L52 84C47 91 40 92 35 88C31 84 33 78 37 72L46 58C49 53 48 50 45 50C40 50 34 57 30 66C28 71 27 76 25 81C24 85 22 81 22 76Z"/></svg>
+<rect x="609" y="91" width="48" height="178" rx="8" fill="#1D182A"/>
+<rect x="609" y="139" width="48" height="44" rx="4" fill="#393049"/><path d="M610 142v38" stroke="#C5ADFD" stroke-width="2"/>
+<g fill="none" stroke="#8D819E" stroke-width="1.5"><path d="M626 109h14v15h-14z"/><circle cx="632" cy="204" r="6"/><path d="m637 209 5 5"/></g>
+<svg x="621" y="149" width="24" height="24" viewBox="0 0 128 128"><path fill="#F7F0FF" d="M22 76C22 58 36 38 49 38C58 38 63 43 64 52C72 39 82 31 93 32C108 33 112 48 104 62L89 87C84 95 75 99 68 96C63 94 62 88 66 83L85 54C87 51 86 48 83 48C78 49 71 56 66 63L52 84C47 91 40 92 35 88C31 84 33 78 37 72L46 58C49 53 48 50 45 50C40 50 34 57 30 66C28 71 27 76 25 81C24 85 22 81 22 76Z"/></svg><svg x="691" y="84" width="159" height="159" viewBox="0 0 128 128"><path fill="#F7F0FF" d="M22 76C22 58 36 38 49 38C58 38 63 43 64 52C72 39 82 31 93 32C108 33 112 48 104 62L89 87C84 95 75 99 68 96C63 94 62 88 66 83L85 54C87 51 86 48 83 48C78 49 71 56 66 63L52 84C47 91 40 92 35 88C31 84 33 78 37 72L46 58C49 53 48 50 45 50C40 50 34 57 30 66C28 71 27 76 25 81C24 85 22 81 22 76Z"/></svg>
+<rect x="620" y="374" width="98" height="98" rx="29" fill="url(#tile)"/>
+<svg x="625" y="379" width="88" height="88" viewBox="0 0 128 128"><path fill="url(#ink)" d="M22 76C22 58 36 38 49 38C58 38 63 43 64 52C72 39 82 31 93 32C108 33 112 48 104 62L89 87C84 95 75 99 68 96C63 94 62 88 66 83L85 54C87 51 86 48 83 48C78 49 71 56 66 63L52 84C47 91 40 92 35 88C31 84 33 78 37 72L46 58C49 53 48 50 45 50C40 50 34 57 30 66C28 71 27 76 25 81C24 85 22 81 22 76Z"/></svg>
+<circle cx="785" cy="423" r="40" fill="#DED3F2"/>
+<svg x="750" y="388" width="70" height="70" viewBox="0 0 128 128"><path fill="#473367" d="M22 76C22 58 36 38 49 38C58 38 63 43 64 52C72 39 82 31 93 32C108 33 112 48 104 62L89 87C84 95 75 99 68 96C63 94 62 88 66 83L85 54C87 51 86 48 83 48C78 49 71 56 66 63L52 84C47 91 40 92 35 88C31 84 33 78 37 72L46 58C49 53 48 50 45 50C40 50 34 57 30 66C28 71 27 76 25 81C24 85 22 81 22 76Z"/></svg>
+<svg x="852" y="411" width="24" height="24" viewBox="0 0 128 128"><path fill="#292140" d="M22 76C22 58 36 38 49 38C58 38 63 43 64 52C72 39 82 31 93 32C108 33 112 48 104 62L89 87C84 95 75 99 68 96C63 94 62 88 66 83L85 54C87 51 86 48 83 48C78 49 71 56 66 63L52 84C47 91 40 92 35 88C31 84 33 78 37 72L46 58C49 53 48 50 45 50C40 50 34 57 30 66C28 71 27 76 25 81C24 85 22 81 22 76Z"/></svg>
+
+</svg>

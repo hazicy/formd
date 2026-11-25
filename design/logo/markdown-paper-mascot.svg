@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Markdown 小稿纸</title>
+  <desc id="desc">一张斜着身子、举手打招呼的稿纸，纸面印有 Markdown 的 M 和向下箭头。</desc>
+
+  <!-- Limbs sit behind the paper, so the body stays visually uninterrupted. -->
+  <g fill="none" stroke="#24262B" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M79 131C65 137 55 148 49 161"/>
+    <path d="M182 120C198 120 208 109 209 93"/>
+    <path d="M102 181C102 200 95 211 85 214H77"/>
+    <path d="M149 182C151 199 160 207 171 207H178"/>
+  </g>
+  <g fill="#24262B">
+    <circle cx="47" cy="164" r="6"/>
+    <circle cx="209" cy="91" r="6.5"/>
+  </g>
+
+  <g transform="rotate(-10 129 122)">
+    <path d="M86 55H145L181 91V170C181 178 174 185 166 185H92C82 185 75 178 75 168V67C75 60 79 55 86 55Z"
+          fill="#FFF5DC" stroke="#24262B" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M145 55V81C145 87 149 91 155 91H181Z"
+          fill="#F3BA52" stroke="#24262B" stroke-width="6" stroke-linejoin="round"/>
+    <g fill="#24262B">
+      <ellipse cx="110" cy="107" rx="3.5" ry="5"/>
+      <ellipse cx="136" cy="107" rx="3.5" ry="5"/>
+    </g>
+    <path d="M119 112Q123 117 127 112" fill="none" stroke="#24262B" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M97 157V133L111 147L125 133V157 M150 133V157 M142 149L150 157L158 149"
+          fill="none" stroke="#24262B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="902" height="340" viewBox="0 0 902 340">
+<rect width="902" height="340" fill="#EEE9E0"/><g fill="#31584E" font-family="PingFang SC, Microsoft YaHei, sans-serif"><text x="24" y="48" font-size="24" font-weight="600">相向两笔</text><g transform="translate(24 76)">
+<rect width="274" height="240" rx="14" fill="#FAF7F0"/>
+<svg x="51" y="16" width="172" height="158" viewBox="0 0 120 110"><g fill="none" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path stroke="#31584E" d="M18 42H52Q60 42 62 34L65 22 M34 82L43 45"/><path stroke="#AB594B" d="M102 67H68Q60 67 58 75L55 87 M86 27L77 64"/></g>
+</svg>
+<text x="20" y="204" font-size="16">原稿</text>
+<svg x="190" y="184" width="32" height="29" viewBox="0 0 120 110"><g fill="none" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path stroke="#31584E" d="M18 42H52Q60 42 62 34L65 22 M34 82L43 45"/><path stroke="#AB594B" d="M102 67H68Q60 67 58 75L55 87 M86 27L77 64"/></g>
+</svg>
+<svg x="232" y="187" width="24" height="22" viewBox="0 0 120 110"><g fill="none" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path stroke="#31584E" d="M18 42H52Q60 42 62 34L65 22 M34 82L43 45"/><path stroke="#AB594B" d="M102 67H68Q60 67 58 75L55 87 M86 27L77 64"/></g>
+</svg>
+</g><g transform="translate(314 76)">
+<rect width="274" height="240" rx="14" fill="#FAF7F0"/>
+<svg x="51" y="16" width="172" height="158" viewBox="0 0 120 110"><g fill="none" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path stroke="#31584E" d="M19 42H49C56 42 61 38 63 31L65 23 M35 81L44 43"/><path stroke="#AB594B" d="M19 42H49C56 42 61 38 63 31L65 23 M35 81L44 43" transform="rotate(180 60 55)"/></g></svg>
+<text x="20" y="204" font-size="16">弧线更舒展</text>
+<svg x="190" y="184" width="32" height="29" viewBox="0 0 120 110"><g fill="none" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path stroke="#31584E" d="M19 42H49C56 42 61 38 63 31L65 23 M35 81L44 43"/><path stroke="#AB594B" d="M19 42H49C56 42 61 38 63 31L65 23 M35 81L44 43" transform="rotate(180 60 55)"/></g></svg>
+<svg x="232" y="187" width="24" height="22" viewBox="0 0 120 110"><g fill="none" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path stroke="#31584E" d="M19 42H49C56 42 61 38 63 31L65 23 M35 81L44 43"/><path stroke="#AB594B" d="M19 42H49C56 42 61 38 63 31L65 23 M35 81L44 43" transform="rotate(180 60 55)"/></g></svg>
+</g><g transform="translate(604 76)">
+<rect width="274" height="240" rx="14" fill="#FAF7F0"/>
+<svg x="51" y="16" width="172" height="158" viewBox="0 0 120 110"><g fill="none" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path stroke="#31584E" d="M23 43H50C56 43 60 40 62 34L65 26 M38 79L46 44"/><path stroke="#AB594B" d="M23 43H50C56 43 60 40 62 34L65 26 M38 79L46 44" transform="rotate(180 60 55)"/></g></svg>
+<text x="20" y="204" font-size="16">轮廓更紧凑</text>
+<svg x="190" y="184" width="32" height="29" viewBox="0 0 120 110"><g fill="none" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path stroke="#31584E" d="M23 43H50C56 43 60 40 62 34L65 26 M38 79L46 44"/><path stroke="#AB594B" d="M23 43H50C56 43 60 40 62 34L65 26 M38 79L46 44" transform="rotate(180 60 55)"/></g></svg>
+<svg x="232" y="187" width="24" height="22" viewBox="0 0 120 110"><g fill="none" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path stroke="#31584E" d="M23 43H50C56 43 60 40 62 34L65 26 M38 79L46 44"/><path stroke="#AB594B" d="M23 43H50C56 43 60 40 62 34L65 26 M38 79L46 44" transform="rotate(180 60 55)"/></g></svg>
+</g></g>
+</svg>

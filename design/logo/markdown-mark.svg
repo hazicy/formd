@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Markdown</title>
+  <path fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" d="
+    M 20 84 V 44 L 42 68 L 64 44 V 84
+    M 96 44 V 84
+    M 84 72 L 96 84 L 108 72
+  "/>
+</svg>

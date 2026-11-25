@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#4338CA"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#bg)"/>
+  <!-- f: 文本行构成的字母 -->
+  <path d="M46 98V50C46 38 53 32 65 32H92" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M46 64H72" stroke="#fff" stroke-width="14" stroke-linecap="round"/>
+  <!-- 协作者光标 -->
+  <rect x="84" y="52" width="10" height="26" rx="5" fill="#67E8F9"/>
+</svg>

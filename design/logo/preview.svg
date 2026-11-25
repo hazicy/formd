@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="666" viewBox="0 0 1040 666" role="img" aria-label="Formd 标志设计对比">
+<style>
+  text { fill: #22241f; font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif; }
+  .caption { fill: #5d6058; font-size: 16px; }
+  .size { fill: #5d6058; font-size: 11px; text-anchor: middle; }
+</style>
+<rect width="1040" height="666" fill="#f6f4ee"/>
+<text x="48" y="78" font-size="38" font-weight="700">Formd 标志设计</text>
+<text x="49" y="112" class="caption">纯 Markdown 写作 · 四种设计方向</text>
+<g transform="translate(48 145)">
+  <rect width="460" height="226" rx="18" fill="#fff" stroke="#e3dfd6"/>
+  <svg x="28" y="28" width="76" height="76" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#07594D"/><g fill="none" stroke="#F6FFF8" stroke-width="3.75"><path d="M27 19 20 45M42 19 35 45M19 27H46M16 37H43" stroke-linecap="round"/></g></svg>
+  <text x="123" y="83" font-family="Helvetica Neue, Arial, sans-serif" font-size="50" letter-spacing="-2.5" font-weight="700">formd</text>
+  <svg x="356" y="57" width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#07594D"/><g fill="none" stroke="#F6FFF8" stroke-width="3.75"><path d="M27 19 20 45M42 19 35 45M19 27H46M16 37H43" stroke-linecap="round"/></g></svg>
+  <svg x="403" y="61" width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#07594D"/><g fill="none" stroke="#F6FFF8" stroke-width="3.75"><path d="M27 19 20 45M42 19 35 45M19 27H46M16 37H43" stroke-linecap="round"/></g></svg>
+  <text x="368" y="99" class="size">24</text><text x="411" y="99" class="size">16</text>
+  <path d="M28 128h404" stroke="#e8e4dc"/>
+  <text x="28" y="167" font-size="21" font-weight="600">01  标题符号</text>
+  <text x="28" y="198" class="caption">用 Markdown 的 # 起笔</text>
+</g>
+<g transform="translate(532 145)">
+  <rect width="460" height="226" rx="18" fill="#fff" stroke="#e3dfd6"/>
+  <svg x="28" y="28" width="76" height="76" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#24272D"/><g fill="none" stroke="#FBFBF6" stroke-width="3.75"><path d="M17 25h29M17 39h15" stroke-linecap="round"/><path d="M42 33v12" stroke="#CBF875" stroke-linecap="round"/></g></svg>
+  <text x="123" y="83" font-family="Helvetica Neue, Arial, sans-serif" font-size="50" letter-spacing="-2.5" font-weight="700">formd</text>
+  <svg x="356" y="57" width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#24272D"/><g fill="none" stroke="#FBFBF6" stroke-width="3.75"><path d="M17 25h29M17 39h15" stroke-linecap="round"/><path d="M42 33v12" stroke="#CBF875" stroke-linecap="round"/></g></svg>
+  <svg x="403" y="61" width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#24272D"/><g fill="none" stroke="#FBFBF6" stroke-width="3.75"><path d="M17 25h29M17 39h15" stroke-linecap="round"/><path d="M42 33v12" stroke="#CBF875" stroke-linecap="round"/></g></svg>
+  <text x="368" y="99" class="size">24</text><text x="411" y="99" class="size">16</text>
+  <path d="M28 128h404" stroke="#e8e4dc"/>
+  <text x="28" y="167" font-size="21" font-weight="600">02  写作光标</text>
+  <text x="28" y="198" class="caption">两行文字和行尾的光标</text>
+</g>
+<g transform="translate(48 395)">
+  <rect width="460" height="226" rx="18" fill="#fff" stroke="#e3dfd6"/>
+  <svg x="28" y="28" width="76" height="76" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#A33926"/><g fill="none" stroke="#FFFAED" stroke-width="3.75"><path d="M22 18h15l8 8v20H22zM37 18v9h8" stroke-linejoin="round"/><path d="M28 36h11" stroke-linecap="round"/></g></svg>
+  <text x="123" y="83" font-family="Helvetica Neue, Arial, sans-serif" font-size="50" letter-spacing="-2.5" font-weight="700">formd</text>
+  <svg x="356" y="57" width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#A33926"/><g fill="none" stroke="#FFFAED" stroke-width="3.75"><path d="M22 18h15l8 8v20H22zM37 18v9h8" stroke-linejoin="round"/><path d="M28 36h11" stroke-linecap="round"/></g></svg>
+  <svg x="403" y="61" width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#A33926"/><g fill="none" stroke="#FFFAED" stroke-width="3.75"><path d="M22 18h15l8 8v20H22zM37 18v9h8" stroke-linejoin="round"/><path d="M28 36h11" stroke-linecap="round"/></g></svg>
+  <text x="368" y="99" class="size">24</text><text x="411" y="99" class="size">16</text>
+  <path d="M28 128h404" stroke="#e8e4dc"/>
+  <text x="28" y="167" font-size="21" font-weight="600">03  折页</text>
+  <text x="28" y="198" class="caption">用折角和留白勾勒一页纸</text>
+</g>
+<g transform="translate(532 395)">
+  <rect width="460" height="226" rx="18" fill="#fff" stroke="#e3dfd6"/>
+  <svg x="28" y="28" width="76" height="76" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#293D91"/><g fill="none" stroke="#F4F7FF" stroke-width="3.75"><path d="M22 46V20h23M22 32h16" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
+  <text x="123" y="83" font-family="Helvetica Neue, Arial, sans-serif" font-size="50" letter-spacing="-2.5" font-weight="700">formd</text>
+  <svg x="356" y="57" width="24" height="24" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#293D91"/><g fill="none" stroke="#F4F7FF" stroke-width="3.75"><path d="M22 46V20h23M22 32h16" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
+  <svg x="403" y="61" width="16" height="16" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#293D91"/><g fill="none" stroke="#F4F7FF" stroke-width="3.75"><path d="M22 46V20h23M22 32h16" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
+  <text x="368" y="99" class="size">24</text><text x="411" y="99" class="size">16</text>
+  <path d="M28 128h404" stroke="#e8e4dc"/>
+  <text x="28" y="167" font-size="21" font-weight="600">04  字母 F</text>
+  <text x="28" y="198" class="caption">把 F 写成靠左排列的文本</text>
+</g>
+</svg>

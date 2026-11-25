@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="740" height="420" viewBox="0 0 740 420" role="img" aria-label="Markdown 双人吉祥物预览">
+
+<rect width="740" height="420" fill="#EBE8E1"/>
+<rect x="20" y="20" width="430" height="380" rx="14" fill="#F9F4EB"/>
+<rect x="466" y="20" width="254" height="234" rx="14" fill="#242322"/>
+<rect x="466" y="270" width="254" height="130" rx="14" fill="#F9F4EB"/>
+<svg x="67" y="42" width="336" height="336" viewBox="0 0 264 256"><mask id="large" maskUnits="userSpaceOnUse" x="0" y="0" width="264" height="256">
+<path d="M15 105C15 54 53 20 109 20H141C187 20 220 48 220 87C220 93 218 100 215 104C207 102 199 101 190 101C144 101 107 131 96 176L89 205C84 228 73 239 58 239C34 239 15 219 15 193Z M98 239C104 233 109 224 112 213L121 178C130 142 156 116 193 116C227 116 250 139 250 171V195C250 221 230 239 204 239Z" fill="white"/>
+<ellipse cx="49" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="76" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="171" cy="166" rx="7" ry="12" fill="black"/><ellipse cx="204" cy="166" rx="7" ry="12" fill="black"/>
+<path d="M100 84V57L115 73L130 57V84 M161 57V84 M152 75L161 84L170 75" fill="none" stroke="black" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</mask>
+<rect width="264" height="256" fill="#242322" mask="url(#large)"/></svg>
+<svg x="509" y="53" width="168" height="168" viewBox="0 0 264 256"><mask id="reverse" maskUnits="userSpaceOnUse" x="0" y="0" width="264" height="256">
+<path d="M15 105C15 54 53 20 109 20H141C187 20 220 48 220 87C220 93 218 100 215 104C207 102 199 101 190 101C144 101 107 131 96 176L89 205C84 228 73 239 58 239C34 239 15 219 15 193Z M98 239C104 233 109 224 112 213L121 178C130 142 156 116 193 116C227 116 250 139 250 171V195C250 221 230 239 204 239Z" fill="white"/>
+<ellipse cx="49" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="76" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="171" cy="166" rx="7" ry="12" fill="black"/><ellipse cx="204" cy="166" rx="7" ry="12" fill="black"/>
+<path d="M100 84V57L115 73L130 57V84 M161 57V84 M152 75L161 84L170 75" fill="none" stroke="black" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</mask>
+<rect width="264" height="256" fill="#F9F4EB" mask="url(#reverse)"/></svg>
+<svg x="507" y="310" width="48" height="48" viewBox="0 0 264 256"><mask id="small" maskUnits="userSpaceOnUse" x="0" y="0" width="264" height="256">
+<path d="M15 105C15 54 53 20 109 20H141C187 20 220 48 220 87C220 93 218 100 215 104C207 102 199 101 190 101C144 101 107 131 96 176L89 205C84 228 73 239 58 239C34 239 15 219 15 193Z M98 239C104 233 109 224 112 213L121 178C130 142 156 116 193 116C227 116 250 139 250 171V195C250 221 230 239 204 239Z" fill="white"/>
+<ellipse cx="49" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="76" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="171" cy="166" rx="7" ry="12" fill="black"/><ellipse cx="204" cy="166" rx="7" ry="12" fill="black"/>
+<path d="M100 84V57L115 73L130 57V84 M161 57V84 M152 75L161 84L170 75" fill="none" stroke="black" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</mask>
+<rect width="264" height="256" fill="#242322" mask="url(#small)"/></svg>
+<svg x="581" y="318" width="32" height="32" viewBox="0 0 264 256"><mask id="medium" maskUnits="userSpaceOnUse" x="0" y="0" width="264" height="256">
+<path d="M15 105C15 54 53 20 109 20H141C187 20 220 48 220 87C220 93 218 100 215 104C207 102 199 101 190 101C144 101 107 131 96 176L89 205C84 228 73 239 58 239C34 239 15 219 15 193Z M98 239C104 233 109 224 112 213L121 178C130 142 156 116 193 116C227 116 250 139 250 171V195C250 221 230 239 204 239Z" fill="white"/>
+<ellipse cx="49" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="76" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="171" cy="166" rx="7" ry="12" fill="black"/><ellipse cx="204" cy="166" rx="7" ry="12" fill="black"/>
+<path d="M100 84V57L115 73L130 57V84 M161 57V84 M152 75L161 84L170 75" fill="none" stroke="black" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</mask>
+<rect width="264" height="256" fill="#242322" mask="url(#medium)"/></svg>
+<svg x="646" y="322" width="24" height="24" viewBox="0 0 264 256"><mask id="tiny" maskUnits="userSpaceOnUse" x="0" y="0" width="264" height="256">
+<path d="M15 105C15 54 53 20 109 20H141C187 20 220 48 220 87C220 93 218 100 215 104C207 102 199 101 190 101C144 101 107 131 96 176L89 205C84 228 73 239 58 239C34 239 15 219 15 193Z M98 239C104 233 109 224 112 213L121 178C130 142 156 116 193 116C227 116 250 139 250 171V195C250 221 230 239 204 239Z" fill="white"/>
+<ellipse cx="49" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="76" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="171" cy="166" rx="7" ry="12" fill="black"/><ellipse cx="204" cy="166" rx="7" ry="12" fill="black"/>
+<path d="M100 84V57L115 73L130 57V84 M161 57V84 M152 75L161 84L170 75" fill="none" stroke="black" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</mask>
+<rect width="264" height="256" fill="#242322" mask="url(#tiny)"/></svg>
+</svg>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-label="交织标志预览">
+<rect width="960" height="560" fill="#eee9df"/>
+<rect x="26" y="26" width="563" height="508" rx="6" fill="#faf6ed"/>
+<rect x="605" y="26" width="329" height="321" rx="6" fill="#263d38"/>
+<rect x="605" y="363" width="329" height="171" rx="6" fill="#faf6ed"/>
+<g font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="14">
+<text x="52" y="66" fill="#30534D">交织</text>
+<text x="52" y="502" fill="#30534D">Markdown 协作写作</text>
+<text x="629" y="66" fill="#F4EBDB">单色</text>
+<text x="629" y="401" fill="#30534D">小尺寸</text>
+</g>
+<svg x="138" y="102" width="340" height="340" viewBox="0 0 120 120"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="11">
+<path d="M71 15C61 11 51 17 48 28L33 86C30 98 40 107 50 103C55 101 58 97 60 91L74 37C77 26 86 20 96 24" stroke="#30534D"/>
+<path d="M14 49C11 39 19 30 29 32L94 49C107 52 111 64 103 72C100 76 94 77 89 76L31 61C20 58 11 66 13 76" stroke="#A84D44"/>
+<path d="M44.8 40.4 40.3 57.8" stroke="#30534D"/>
+</g></svg>
+<svg x="692" y="110" width="155" height="155" viewBox="0 0 120 120"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="11">
+<path d="M71 15C61 11 51 17 48 28L41 55 M36 74L33 86C30 98 40 107 50 103C55 101 58 97 60 91L62 83 M68 61L74 37C77 26 86 20 96 24" stroke="#F4EBDB"/>
+<path d="M14 49C11 39 19 30 29 32L36 34 M54 39L64 41 M81 46L94 49C107 52 111 64 103 72C100 76 94 77 89 76L28 60C19 59 11 66 13 76" stroke="#F4EBDB"/>
+<path d="M44.8 40.4 40.3 57.8" stroke="#F4EBDB"/>
+</g></svg>
+<svg x="657" y="445" width="48" height="48" viewBox="0 0 120 120"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="11">
+<path d="M71 15C61 11 51 17 48 28L33 86C30 98 40 107 50 103C55 101 58 97 60 91L74 37C77 26 86 20 96 24" stroke="#30534D"/>
+<path d="M14 49C11 39 19 30 29 32L94 49C107 52 111 64 103 72C100 76 94 77 89 76L31 61C20 58 11 66 13 76" stroke="#A84D44"/>
+<path d="M44.8 40.4 40.3 57.8" stroke="#30534D"/>
+</g></svg>
+<svg x="748" y="453" width="32" height="32" viewBox="0 0 120 120"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="11">
+<path d="M71 15C61 11 51 17 48 28L33 86C30 98 40 107 50 103C55 101 58 97 60 91L74 37C77 26 86 20 96 24" stroke="#30534D"/>
+<path d="M14 49C11 39 19 30 29 32L94 49C107 52 111 64 103 72C100 76 94 77 89 76L31 61C20 58 11 66 13 76" stroke="#A84D44"/>
+<path d="M44.8 40.4 40.3 57.8" stroke="#30534D"/>
+</g></svg>
+<svg x="829" y="457" width="24" height="24" viewBox="0 0 120 120"><g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="11">
+<path d="M71 15C61 11 51 17 48 28L33 86C30 98 40 107 50 103C55 101 58 97 60 91L74 37C77 26 86 20 96 24" stroke="#30534D"/>
+<path d="M14 49C11 39 19 30 29 32L94 49C107 52 111 64 103 72C100 76 94 77 89 76L31 61C20 58 11 66 13 76" stroke="#A84D44"/>
+<path d="M44.8 40.4 40.3 57.8" stroke="#30534D"/>
+</g></svg>
+</svg>

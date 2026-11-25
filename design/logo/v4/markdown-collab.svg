@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#4338CA"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#bg)"/>
+  <!-- M: Markdown -->
+  <path d="M25 86V42L43 64L61 42V86" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- ↓: 第二位协作者的笔画，同时是 Markdown 标志里的箭头 -->
+  <path d="M92 42V84M77 70L92 85L107 70" stroke="#67E8F9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

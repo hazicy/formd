@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="850" height="500" viewBox="0 0 850 500" role="img" aria-label="共享文稿标志应用预览">
+
+<rect width="850" height="500" fill="#E8ECE4"/>
+<rect x="24" y="24" width="474" height="452" rx="18" fill="#F8F1E3"/>
+<rect x="516" y="24" width="310" height="212" rx="18" fill="#252B29"/>
+<rect x="516" y="254" width="310" height="222" rx="18" fill="#D6E1D3"/>
+<g font-family="PingFang SC, system-ui, sans-serif">
+<text x="52" y="70" fill="#2D5045" font-size="21" font-weight="600">共享文稿</text>
+<text x="540" y="62" fill="#F0F3EB" font-size="15">VS Code 活动栏</text>
+<text x="540" y="291" fill="#2D5045" font-size="15">Android 桌面图标</text>
+</g>
+<svg x="107" y="100" width="308" height="308" viewBox="3 0 120 120"><path fill="#2D5045" fill-rule="evenodd" d="M17 39C17 27 26 19 38 19H60C67 19 71 23 71 30V37H88C101 37 109 45 109 57V81C109 93 100 101 88 101H66C59 101 55 97 55 90V83H38C25 83 17 75 17 63Z M36 42C34 44 34 47 36 49L46 59C48 61 51 61 53 59C55 57 55 54 53 52L43 42C41 40 38 40 36 42Z M73 61C71 63 71 66 73 68L83 78C85 80 88 80 90 78C92 76 92 73 90 71L80 61C78 59 75 59 73 61Z"/></svg>
+<rect x="540" y="89" width="46" height="121" rx="10" fill="#191F1D"/>
+<rect x="540" y="131" width="46" height="41" fill="#323B37"/>
+<rect x="540" y="131" width="2" height="41" rx="1" fill="#AFCBB9"/>
+<g stroke="#8C9A92" fill="none" stroke-width="1.4"><path d="M557 101h10v15h-10z"/><circle cx="561" cy="187" r="5"/><path d="m565 191 4 4"/></g>
+<svg x="551" y="139" width="24" height="24" viewBox="3 0 120 120"><path fill="#E7EFE7" fill-rule="evenodd" d="M17 39C17 27 26 19 38 19H60C67 19 71 23 71 30V37H88C101 37 109 45 109 57V81C109 93 100 101 88 101H66C59 101 55 97 55 90V83H38C25 83 17 75 17 63Z M36 42C34 44 34 47 36 49L46 59C48 61 51 61 53 59C55 57 55 54 53 52L43 42C41 40 38 40 36 42Z M73 61C71 63 71 66 73 68L83 78C85 80 88 80 90 78C92 76 92 73 90 71L80 61C78 59 75 59 73 61Z"/></svg>
+<svg x="655" y="89" width="119" height="119" viewBox="3 0 120 120"><path fill="#E7EFE7" fill-rule="evenodd" d="M17 39C17 27 26 19 38 19H60C67 19 71 23 71 30V37H88C101 37 109 45 109 57V81C109 93 100 101 88 101H66C59 101 55 97 55 90V83H38C25 83 17 75 17 63Z M36 42C34 44 34 47 36 49L46 59C48 61 51 61 53 59C55 57 55 54 53 52L43 42C41 40 38 40 36 42Z M73 61C71 63 71 66 73 68L83 78C85 80 88 80 90 78C92 76 92 73 90 71L80 61C78 59 75 59 73 61Z"/></svg>
+<circle cx="611" cy="378" r="58" fill="#F8F1E3"/><rect x="698" y="320" width="116" height="116" rx="31" fill="#F8F1E3"/>
+<svg x="564" y="331" width="94" height="94" viewBox="3 0 120 120"><path fill="#2D5045" fill-rule="evenodd" d="M17 39C17 27 26 19 38 19H60C67 19 71 23 71 30V37H88C101 37 109 45 109 57V81C109 93 100 101 88 101H66C59 101 55 97 55 90V83H38C25 83 17 75 17 63Z M36 42C34 44 34 47 36 49L46 59C48 61 51 61 53 59C55 57 55 54 53 52L43 42C41 40 38 40 36 42Z M73 61C71 63 71 66 73 68L83 78C85 80 88 80 90 78C92 76 92 73 90 71L80 61C78 59 75 59 73 61Z"/></svg><svg x="709" y="331" width="94" height="94" viewBox="3 0 120 120"><path fill="#2D5045" fill-rule="evenodd" d="M17 39C17 27 26 19 38 19H60C67 19 71 23 71 30V37H88C101 37 109 45 109 57V81C109 93 100 101 88 101H66C59 101 55 97 55 90V83H38C25 83 17 75 17 63Z M36 42C34 44 34 47 36 49L46 59C48 61 51 61 53 59C55 57 55 54 53 52L43 42C41 40 38 40 36 42Z M73 61C71 63 71 66 73 68L83 78C85 80 88 80 90 78C92 76 92 73 90 71L80 61C78 59 75 59 73 61Z"/></svg>
+</svg>

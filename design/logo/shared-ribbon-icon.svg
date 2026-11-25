@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-label="交织应用图标"><defs><linearGradient id="violet" x2=".4" y2="1"><stop stop-color="#5148BC"/><stop offset="1" stop-color="#27234B"/></linearGradient></defs>
+<rect width="192" height="192" rx="46" fill="url(#violet)"/><g transform="translate(26 36) scale(1.25)" color="#fff">  <defs>
+    <mask id="icon-under" maskUnits="userSpaceOnUse" x="0" y="0" width="112" height="96">
+      <rect width="112" height="96" fill="white"/>
+      <path d="M44 29c7-6 17-5 23 2s5 17-2 23" fill="none" stroke="black" stroke-width="21" stroke-linecap="round"/>
+    </mask>
+    <mask id="icon-over" maskUnits="userSpaceOnUse" x="0" y="0" width="112" height="96">
+      <rect width="112" height="96" fill="white"/>
+      <path d="M68 67c-7 6-17 5-23-2s-5-17 2-23" fill="none" stroke="black" stroke-width="21" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <g fill="none" stroke="currentColor" stroke-width="11" stroke-linejoin="round">
+    <path mask="url(#icon-over)" d="M22 47 44 29c7-6 17-5 23 2s5 17-2 23L43 72c-7 6-17 5-23-2s-5-17 2-23Z"/>
+    <path mask="url(#icon-under)" d="M90 49 68 67c-7 6-17 5-23-2s-5-17 2-23l22-18c7-6 17-5 23 2s5 17-2 23Z"/>
+  </g>
+</g></svg>

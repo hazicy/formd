@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="264" height="256" viewBox="0 0 264 256" role="img" aria-label="Markdown 双人吉祥物">
+<mask id="cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="264" height="256">
+<path d="M15 105C15 54 53 20 109 20H141C187 20 220 48 220 87C220 93 218 100 215 104C207 102 199 101 190 101C144 101 107 131 96 176L89 205C84 228 73 239 58 239C34 239 15 219 15 193Z M98 239C104 233 109 224 112 213L121 178C130 142 156 116 193 116C227 116 250 139 250 171V195C250 221 230 239 204 239Z" fill="white"/>
+<ellipse cx="49" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="76" cy="107" rx="7" ry="12" fill="black"/><ellipse cx="171" cy="166" rx="7" ry="12" fill="black"/><ellipse cx="204" cy="166" rx="7" ry="12" fill="black"/>
+<path d="M100 84V57L115 73L130 57V84 M161 57V84 M152 75L161 84L170 75" fill="none" stroke="black" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</mask>
+<rect width="264" height="256" fill="#242322" mask="url(#cutouts)"/>
+</svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-labelledby="title desc">
+  <title id="title">Markdown 小墨灵</title>
+  <desc id="desc">一只圆润的墨色吉祥物，双耳与额头形成 M 形，胸口有一枚向下的箭头。</desc>
+
+  <!-- The ears and forehead follow the silhouette of a handwritten M. -->
+  <path fill="#29253D" d="
+    M 28 116
+    C 26 95 32 78 43 65
+    L 39 39
+    C 38 31 45 27 51 32
+    L 95 62
+    Q 98 64 102 61
+    L 140 32
+    C 146 27 153 31 152 39
+    L 149 67
+    C 160 80 166 96 164 116
+    C 164 143 150 161 128 166
+    C 119 168 110 166 104 162
+    C 100 160 97 160 93 162
+    C 87 166 77 168 68 166
+    C 44 162 30 144 28 116
+    Z
+  "/>
+
+  <path fill="#F5EADC" d="
+    M 58 98
+    C 58 91 62 87 68 87
+    C 74 87 78 91 78 98
+    C 78 105 74 109 68 109
+    C 62 109 58 105 58 98
+    Z
+    M 115 98
+    C 115 91 119 87 125 87
+    C 131 87 135 91 135 98
+    C 135 105 131 109 125 109
+    C 119 109 115 105 115 98
+    Z
+  "/>
+  <path d="M 89 106 Q 96 114 103 106" fill="none" stroke="#F5EADC" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- The down arrow completes the Markdown M↓ motif. -->
+  <path d="M 96 123 V 145 M 86 136 L 96 146 L 106 136"
+        fill="none" stroke="#FFA88D" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
